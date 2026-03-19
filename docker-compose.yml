@@ -1,5 +1,5 @@
 services:
-  app:
+  geostreak:
     image: ghcr.io/baseijs/geostreak:latest
     ports:
       - "3000:3000"
