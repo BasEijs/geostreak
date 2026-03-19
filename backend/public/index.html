@@ -258,8 +258,8 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
 .confirm-box p { font-size: 14px; color: var(--text-muted); margin-bottom: 20px; }
 .confirm-actions { display: flex; gap: 10px; }
 
-.leaflet-container { background: #0d1520 !important; }
-.leaflet-tile { filter: brightness(0.65) saturate(0.5); }
+.leaflet-container { background: #e8e8e8 !important; }
+.leaflet-tile { filter: none; }
 
 /* TYPED ANSWER */
 .typed-answer-area { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
@@ -1606,7 +1606,7 @@ function buildMapQ(country, area, isCapitalMap) {
   setTimeout(()=>{
     if(map){map.remove();map=null;}
     map=L.map('map',{zoomControl:true,attributionControl:false}).setView([20,0],2);
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}',{maxZoom:9,attribution:''}).addTo(map);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',{maxZoom:9,attribution:''}).addTo(map);
     marker=null;
     map.on('click',e=>{
       if(awaitingNext) return;
