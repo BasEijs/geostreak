@@ -169,7 +169,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .next-btn:hover { border-color: var(--accent); }
 
 /* MATCHING QUESTION */
-.match-area { display: flex; flex-direction: column; padding: 12px 16px 0; gap: 8px; min-height: 0; overflow: hidden; }
+.match-area { display: flex; flex-direction: column; padding: 16px 16px 0; gap: 10px; min-height: 0; overflow: hidden; }
 .answer-area.match-mode { flex: 0 1 auto; overflow-y: auto; min-height: 0; }
 .match-instructions { font-size: 12px; color: var(--text-muted); text-align: center; flex-shrink: 0; }
 .match-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex: 1; align-content: start; overflow-y: auto; min-height: 0; }
@@ -192,13 +192,13 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .match-flag { width: 48px; height: 32px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border); flex-shrink: 0; }
 .match-connected { position: absolute; right: -6px; top: 50%; transform: translateY(-50%); width: 12px; height: 12px; background: var(--success); border-radius: 50%; border: 2px solid var(--bg); }
 .match-submit { flex-shrink: 0; }
-#match-submit-container { flex-shrink: 0; padding: 0 16px 10px; display: none; gap: 10px; }
+#match-submit-container { flex-shrink: 0; padding: 10px 16px 12px; display: none; gap: 10px; }
 #match-submit-container.visible { display: flex; }
 #match-submit-container .btn-primary { flex: 1; }
 #match-reset-btn { width: auto; padding: 13px 20px; }
 
 /* GAMEOVER */
-#gameover-screen { min-height: 100vh; flex-direction: column; align-items: center; justify-content: center; padding: 40px 24px; gap: 24px; }
+#gameover-screen { min-height: 100vh; flex-direction: column; }
 .gameover-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 36px; max-width: 400px; width: 100%; text-align: center; }
 .gameover-title { font-family: 'Bebas Neue',sans-serif; font-size: 46px; color: var(--danger); letter-spacing: 2px; }
 .gameover-diff { margin: 10px 0; }
@@ -383,6 +383,7 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
 <!-- GAME -->
 <div id="game-screen" class="screen">
   <div class="game-header">
+    <div class="nav-logo">GeoStreak</div>
     <div class="streak-display">
       <div class="streak-number" id="streak-count">0</div>
       <div class="streak-label" id="streak-label-el">streak</div>
@@ -410,6 +411,11 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
 
 <!-- GAMEOVER -->
 <div id="gameover-screen" class="screen">
+  <nav>
+    <div class="nav-logo">GeoStreak</div>
+    <div></div>
+  </nav>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;gap:24px">
   <div class="gameover-card">
     <div class="gameover-title" id="gameover-title">Game Over</div>
     <div class="gameover-diff" id="gameover-diff"></div>
