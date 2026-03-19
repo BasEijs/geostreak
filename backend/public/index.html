@@ -426,6 +426,53 @@
   .leaflet-container { background: #0d1520 !important; }
   .leaflet-tile { filter: brightness(0.65) saturate(0.5); }
 
+  /* ADMIN */
+  #admin-screen { min-height: 100vh; flex-direction: column; }
+  .admin-content {
+    flex: 1; padding: 32px 24px; max-width: 700px;
+    width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 24px;
+  }
+  .admin-title { font-family: 'Bebas Neue', sans-serif; font-size: 36px; letter-spacing: 2px; }
+  .admin-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .admin-section-header {
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    font-size: 12px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 2px; color: var(--text-muted);
+  }
+  .admin-user-row {
+    display: grid; grid-template-columns: 1fr auto auto auto;
+    gap: 12px; align-items: center;
+    padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 14px;
+  }
+  .admin-user-row:last-child { border-bottom: none; }
+  .admin-badge {
+    font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 1px;
+    background: rgba(240,180,41,0.15); color: var(--accent); border: 1px solid rgba(240,180,41,0.3);
+  }
+  .admin-user-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .btn-xs { width: auto; padding: 5px 10px; font-size: 12px; border-radius: 6px; white-space: nowrap; }
+  .btn-warning { background: rgba(240,180,41,0.15); color: var(--accent); border: 1px solid rgba(240,180,41,0.3); }
+  .btn-warning:hover { background: rgba(240,180,41,0.25); }
+  .clear-scores-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.04); gap: 12px;
+  }
+  .clear-scores-row:last-child { border-bottom: none; }
+  .clear-scores-label { font-size: 14px; }
+  .clear-scores-label span { font-size: 12px; color: var(--text-muted); display: block; margin-top: 2px; }
+  .confirm-modal {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 24px;
+  }
+  .confirm-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 28px; max-width: 360px; width: 100%; text-align: center;
+  }
+  .confirm-box h3 { font-size: 18px; margin-bottom: 8px; }
+  .confirm-box p { font-size: 14px; color: var(--text-muted); margin-bottom: 20px; }
+  .confirm-actions { display: flex; gap: 10px; }
+
   @media (max-width: 600px) {
     .choices-grid { grid-template-columns: 1fr; }
     .flag-img { width: 160px; height: 107px; }
@@ -467,6 +514,7 @@
     <div class="nav-logo">GeoStreak</div>
     <div class="nav-user">
       <strong id="nav-username"></strong>
+      <button class="btn btn-ghost btn-sm" id="admin-nav-btn" style="display:none" onclick="showAdmin()">⚙ Admin</button>
       <button class="btn btn-ghost btn-sm" onclick="logout()">Sign out</button>
     </div>
   </nav>
@@ -568,6 +616,65 @@
     <div class="gameover-actions">
       <button class="btn btn-primary" id="play-again-btn" onclick="startGame()">Play Again</button>
       <button class="btn btn-ghost" onclick="showMenu()">Back to Menu</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="admin-screen" class="screen">
+  <nav>
+    <div class="nav-logo">GeoStreak</div>
+    <div class="nav-user">
+      <strong id="admin-nav-username"></strong>
+      <button class="btn btn-ghost btn-sm" onclick="showMenu()">← Back</button>
+      <button class="btn btn-ghost btn-sm" onclick="logout()">Sign out</button>
+    </div>
+  </nav>
+  <div class="admin-content">
+    <div class="admin-title">⚙ Admin Panel</div>
+
+    <!-- Users -->
+    <div class="admin-section">
+      <div class="admin-section-header">Users</div>
+      <div id="admin-users-list"></div>
+    </div>
+
+    <!-- Clear leaderboards -->
+    <div class="admin-section">
+      <div class="admin-section-header">Clear Leaderboards</div>
+      <div class="clear-scores-row">
+        <div class="clear-scores-label">
+          🌍 Easy
+          <span>Delete all Easy scores for everyone</span>
+        </div>
+        <button class="btn btn-danger btn-xs" onclick="confirmClearAll('easy')">Clear All</button>
+      </div>
+      <div class="clear-scores-row">
+        <div class="clear-scores-label">
+          🗺️ Medium
+          <span>Delete all Medium scores for everyone</span>
+        </div>
+        <button class="btn btn-danger btn-xs" onclick="confirmClearAll('medium')">Clear All</button>
+      </div>
+      <div class="clear-scores-row">
+        <div class="clear-scores-label">
+          💀 Jeroen Mode
+          <span>Delete all Jeroen Mode scores for everyone</span>
+        </div>
+        <button class="btn btn-danger btn-xs" onclick="confirmClearAll('jeroen')">Clear All</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm modal -->
+<div class="confirm-modal" id="confirm-modal" style="display:none">
+  <div class="confirm-box">
+    <h3 id="confirm-title">Are you sure?</h3>
+    <p id="confirm-msg"></p>
+    <div class="confirm-actions">
+      <button class="btn btn-ghost" onclick="closeConfirm()">Cancel</button>
+      <button class="btn btn-danger" id="confirm-ok-btn">Confirm</button>
     </div>
   </div>
 </div>
@@ -716,6 +823,7 @@ const DIFF_CONFIG = {
 // ── STATE ──
 let token = localStorage.getItem('token');
 let username = localStorage.getItem('username');
+let isAdmin = localStorage.getItem('is_admin') === '1';
 let streak = 0;
 let currentDiff = 'easy';
 let currentStatTab = 'easy';
@@ -743,6 +851,7 @@ function showScreen(id) {
 function showMenu() {
   showScreen('menu-screen');
   document.getElementById('nav-username').textContent = username;
+  document.getElementById('admin-nav-btn').style.display = isAdmin ? 'inline-block' : 'none';
   document.body.classList.remove('jeroen-mode');
   loadAllStats();
   loadLeaderboard(currentStatTab);
@@ -770,15 +879,17 @@ async function submitAuth() {
     });
     const data = await res.json();
     if (!res.ok) return showAuthError(data.error || 'Something went wrong');
-    token=data.token; username=data.username;
-    localStorage.setItem('token',token); localStorage.setItem('username',username);
+    token=data.token; username=data.username; isAdmin=!!data.is_admin;
+    localStorage.setItem('token',token);
+    localStorage.setItem('username',username);
+    localStorage.setItem('is_admin', isAdmin ? '1' : '0');
     showMenu();
   } catch { showAuthError('Could not connect to server'); }
 }
 
 function logout() {
-  token=null; username=null;
-  localStorage.removeItem('token'); localStorage.removeItem('username');
+  token=null; username=null; isAdmin=false;
+  localStorage.removeItem('token'); localStorage.removeItem('username'); localStorage.removeItem('is_admin');
   showScreen('auth-screen');
 }
 
@@ -1087,6 +1198,106 @@ async function endGame() {
   showScreen('gameover-screen');
   document.body.classList.remove('jeroen-mode');
 }
+// ── ADMIN ──
+
+async function showAdmin() {
+  showScreen('admin-screen');
+  document.getElementById('admin-nav-username').textContent = username;
+  await loadAdminUsers();
+}
+
+async function loadAdminUsers() {
+  try {
+    const res = await fetch('/api/admin/users', {headers:{Authorization:'Bearer '+token}});
+    const users = await res.json();
+    const list = document.getElementById('admin-users-list');
+    list.innerHTML = users.map(u => `
+      <div class="admin-user-row">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px">
+            ${u.username}
+            ${u.is_admin ? '<span class="admin-badge">Admin</span>' : ''}
+            ${u.username === username ? '<span style="font-size:11px;color:var(--text-muted)">(you)</span>' : ''}
+          </div>
+          <div class="admin-user-meta">${u.games_played} games · joined ${new Date(u.created_at).toLocaleDateString()}</div>
+        </div>
+        <button class="btn btn-warning btn-xs" onclick="toggleAdmin(${u.id}, ${u.is_admin}, '${u.username}')">
+          ${u.is_admin ? 'Remove Admin' : 'Make Admin'}
+        </button>
+        <button class="btn btn-ghost btn-xs" onclick="showUserScores(${u.id}, '${u.username}')">
+          Scores
+        </button>
+        ${u.username !== username ? `<button class="btn btn-danger btn-xs" onclick="confirmDeleteUser(${u.id}, '${u.username}')">Delete</button>` : '<div></div>'}
+      </div>
+      <div class="admin-user-scores" id="user-scores-${u.id}">
+        <button class="btn btn-danger btn-xs" onclick="confirmClearUser(${u.id}, '${u.username}', 'easy')">Clear Easy</button>
+        <button class="btn btn-danger btn-xs" onclick="confirmClearUser(${u.id}, '${u.username}', 'medium')">Clear Medium</button>
+        <button class="btn btn-danger btn-xs" onclick="confirmClearUser(${u.id}, '${u.username}', 'jeroen')">Clear Jeroen</button>
+        <button class="btn btn-danger btn-xs" onclick="confirmClearUser(${u.id}, '${u.username}', null)">Clear All</button>
+      </div>
+    `).join('');
+  } catch {}
+}
+
+function showUserScores(id, name) {
+  const el = document.getElementById('user-scores-'+id);
+  el.classList.toggle('open');
+}
+
+async function toggleAdmin(id, currentStatus, name) {
+  const newStatus = currentStatus ? 0 : 1;
+  const action = newStatus ? `Make ${name} an admin?` : `Remove admin from ${name}?`;
+  confirm2(action, '', async () => {
+    await fetch(`/api/admin/users/${id}/set-admin`, {
+      method:'POST', headers:{'Content-Type':'application/json', Authorization:'Bearer '+token},
+      body: JSON.stringify({is_admin: newStatus})
+    });
+    await loadAdminUsers();
+  });
+}
+
+function confirmDeleteUser(id, name) {
+  confirm2(`Delete user "${name}"?`, 'This will also delete all their scores. This cannot be undone.', async () => {
+    await fetch(`/api/admin/users/${id}`, {method:'DELETE', headers:{Authorization:'Bearer '+token}});
+    await loadAdminUsers();
+  });
+}
+
+function confirmClearAll(difficulty) {
+  const labels = {easy:'Easy',medium:'Medium',jeroen:'Jeroen Mode'};
+  confirm2(`Clear all ${labels[difficulty]} scores?`, 'This will delete every score on this leaderboard. Cannot be undone.', async () => {
+    await fetch(`/api/admin/scores?difficulty=${difficulty}`, {method:'DELETE', headers:{Authorization:'Bearer '+token}});
+  });
+}
+
+function confirmClearUser(id, name, difficulty) {
+  const labels = {easy:'Easy',medium:'Medium',jeroen:'Jeroen Mode',null:'all'};
+  const label = difficulty ? labels[difficulty] : 'all';
+  confirm2(`Clear ${label} scores for "${name}"?`, 'Cannot be undone.', async () => {
+    const url = difficulty
+      ? `/api/admin/scores/user/${id}?difficulty=${difficulty}`
+      : `/api/admin/scores/user/${id}`;
+    await fetch(url, {method:'DELETE', headers:{Authorization:'Bearer '+token}});
+    showUserScores(id, name); // close the scores panel
+  });
+}
+
+let confirmCallback = null;
+function confirm2(title, msg, cb) {
+  confirmCallback = cb;
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-msg').textContent = msg;
+  document.getElementById('confirm-modal').style.display = 'flex';
+  document.getElementById('confirm-ok-btn').onclick = async () => {
+    closeConfirm();
+    await cb();
+  };
+}
+function closeConfirm() {
+  document.getElementById('confirm-modal').style.display = 'none';
+  confirmCallback = null;
+}
+
 </script>
 </body>
 </html>

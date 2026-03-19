@@ -20,6 +20,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
+    is_admin INTEGER NOT NULL DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
   CREATE TABLE IF NOT EXISTS scores (
@@ -31,6 +32,9 @@ db.exec(`
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
 `);
+
+// Migrate: add is_admin column if it doesn't exist yet (for existing databases)
+try { db.exec(`ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0`); } catch {}
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -47,6 +51,13 @@ function auth(req, res, next) {
   }
 }
 
+// Admin middleware
+function adminOnly(req, res, next) {
+  const user = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.id);
+  if (!user?.is_admin) return res.status(403).json({ error: 'Admin access required' });
+  next();
+}
+
 // Register
 app.post('/api/register', (req, res) => {
   const { username, password } = req.body;
@@ -59,7 +70,7 @@ app.post('/api/register', (req, res) => {
     const stmt = db.prepare('INSERT INTO users (username, password_hash) VALUES (?, ?)');
     const result = stmt.run(username.trim(), hash);
     const token = jwt.sign({ id: result.lastInsertRowid, username: username.trim() }, JWT_SECRET, { expiresIn: '30d' });
-    res.json({ token, username: username.trim() });
+    res.json({ token, username: username.trim(), is_admin: 0 });
   } catch (e) {
     if (e.message.includes('UNIQUE')) return res.status(409).json({ error: 'Username already taken' });
     res.status(500).json({ error: 'Server error' });
@@ -74,7 +85,7 @@ app.post('/api/login', (req, res) => {
     return res.status(401).json({ error: 'Invalid username or password' });
   }
   const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: '30d' });
-  res.json({ token, username: user.username });
+  res.json({ token, username: user.username, is_admin: user.is_admin });
 });
 
 const VALID_DIFFICULTIES = ['easy', 'medium', 'jeroen'];
@@ -88,7 +99,7 @@ app.post('/api/scores', auth, (req, res) => {
   res.json({ ok: true });
 });
 
-// Leaderboard - best streak per user per difficulty
+// Leaderboard
 app.get('/api/leaderboard', (req, res) => {
   const difficulty = req.query.difficulty || 'medium';
   if (!VALID_DIFFICULTIES.includes(difficulty)) return res.status(400).json({ error: 'Invalid difficulty' });
@@ -113,6 +124,62 @@ app.get('/api/me/stats', auth, (req, res) => {
     stats[diff] = { best_streak: best?.best || 0, games_played: count?.total || 0 };
   }
   res.json(stats);
+});
+
+// ── ADMIN ROUTES ──
+
+// List all users
+app.get('/api/admin/users', auth, adminOnly, (req, res) => {
+  const users = db.prepare(`
+    SELECT u.id, u.username, u.is_admin, u.created_at,
+      COUNT(s.id) as games_played
+    FROM users u
+    LEFT JOIN scores s ON s.user_id = u.id
+    GROUP BY u.id
+    ORDER BY u.created_at ASC
+  `).all();
+  res.json(users);
+});
+
+// Promote/demote admin
+app.post('/api/admin/users/:id/set-admin', auth, adminOnly, (req, res) => {
+  const { is_admin } = req.body;
+  if (typeof is_admin !== 'number') return res.status(400).json({ error: 'Invalid value' });
+  if (parseInt(req.params.id) === req.user.id && !is_admin) {
+    return res.status(400).json({ error: 'Cannot remove your own admin status' });
+  }
+  db.prepare('UPDATE users SET is_admin = ? WHERE id = ?').run(is_admin, req.params.id);
+  res.json({ ok: true });
+});
+
+// Delete user
+app.delete('/api/admin/users/:id', auth, adminOnly, (req, res) => {
+  if (parseInt(req.params.id) === req.user.id) {
+    return res.status(400).json({ error: 'Cannot delete yourself' });
+  }
+  db.prepare('DELETE FROM scores WHERE user_id = ?').run(req.params.id);
+  db.prepare('DELETE FROM users WHERE id = ?').run(req.params.id);
+  res.json({ ok: true });
+});
+
+// Clear all scores for a difficulty
+app.delete('/api/admin/scores', auth, adminOnly, (req, res) => {
+  const { difficulty } = req.query;
+  if (!VALID_DIFFICULTIES.includes(difficulty)) return res.status(400).json({ error: 'Invalid difficulty' });
+  db.prepare('DELETE FROM scores WHERE difficulty = ?').run(difficulty);
+  res.json({ ok: true });
+});
+
+// Clear scores for a specific user on a specific difficulty
+app.delete('/api/admin/scores/user/:id', auth, adminOnly, (req, res) => {
+  const { difficulty } = req.query;
+  if (difficulty && !VALID_DIFFICULTIES.includes(difficulty)) return res.status(400).json({ error: 'Invalid difficulty' });
+  if (difficulty) {
+    db.prepare('DELETE FROM scores WHERE user_id = ? AND difficulty = ?').run(req.params.id, difficulty);
+  } else {
+    db.prepare('DELETE FROM scores WHERE user_id = ?').run(req.params.id);
+  }
+  res.json({ ok: true });
 });
 
 // Catch-all: serve frontend
