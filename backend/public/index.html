@@ -551,10 +551,10 @@ const EASY_COUNTRIES = [
   {name:"Netherlands",capital:"Amsterdam",flag:"nl",lat:52.13,lng:5.29,continent:"Europe"},
   {name:"Belgium",capital:"Brussels",flag:"be",lat:50.50,lng:4.47,continent:"Europe"},
   {name:"Portugal",capital:"Lisbon",flag:"pt",lat:39.40,lng:-8.22,continent:"Europe"},
-  {name:"Sweden",capital:"Stockholm",flag:"se",lat:60.13,lng:18.64,continent:"Europe"},
-  {name:"Norway",capital:"Oslo",flag:"no",lat:60.47,lng:8.47,continent:"Europe"},
+  {name:"Sweden",capital:"Stockholm",flag:"se",lat:60.13,lng:18.64,continent:"Europe",extraRadius:700},
+  {name:"Norway",capital:"Oslo",flag:"no",lat:60.47,lng:8.47,continent:"Europe",extraRadius:700},
   {name:"Denmark",capital:"Copenhagen",flag:"dk",lat:56.26,lng:9.50,continent:"Europe"},
-  {name:"Finland",capital:"Helsinki",flag:"fi",lat:61.92,lng:25.75,continent:"Europe"},
+  {name:"Finland",capital:"Helsinki",flag:"fi",lat:61.92,lng:25.75,continent:"Europe",extraRadius:600},
   {name:"Poland",capital:"Warsaw",flag:"pl",lat:51.92,lng:19.15,continent:"Europe"},
   {name:"Switzerland",capital:"Bern",flag:"ch",lat:46.82,lng:8.23,continent:"Europe"},
   {name:"Austria",capital:"Vienna",flag:"at",lat:47.52,lng:14.55,continent:"Europe"},
@@ -564,21 +564,21 @@ const EASY_COUNTRIES = [
   {name:"Hungary",capital:"Budapest",flag:"hu",lat:47.16,lng:19.50,continent:"Europe"},
   {name:"Ireland",capital:"Dublin",flag:"ie",lat:53.41,lng:-8.24,continent:"Europe"},
   {name:"Ukraine",capital:"Kyiv",flag:"ua",lat:48.38,lng:31.17,continent:"Europe"},
-  {name:"United States",capital:"Washington D.C.",flag:"us",lat:37.09,lng:-95.71,continent:"North America"},
-  {name:"Canada",capital:"Ottawa",flag:"ca",lat:56.13,lng:-106.35,continent:"North America"},
-  {name:"Mexico",capital:"Mexico City",flag:"mx",lat:23.63,lng:-102.55,continent:"North America"},
-  {name:"Brazil",capital:"Brasília",flag:"br",lat:-14.24,lng:-51.93,continent:"South America"},
+  {name:"United States",capital:"Washington D.C.",flag:"us",lat:37.09,lng:-95.71,continent:"North America",extraRadius:2500},
+  {name:"Canada",capital:"Ottawa",flag:"ca",lat:56.13,lng:-106.35,continent:"North America",extraRadius:3000},
+  {name:"Mexico",capital:"Mexico City",flag:"mx",lat:23.63,lng:-102.55,continent:"North America",extraRadius:1200},
+  {name:"Brazil",capital:"Brasília",flag:"br",lat:-14.24,lng:-51.93,continent:"South America",extraRadius:2000},
   {name:"Argentina",capital:"Buenos Aires",flag:"ar",lat:-38.42,lng:-63.62,continent:"South America"},
-  {name:"China",capital:"Beijing",flag:"cn",lat:35.86,lng:104.20,continent:"Asia"},
+  {name:"China",capital:"Beijing",flag:"cn",lat:35.86,lng:104.20,continent:"Asia",extraRadius:2500},
   {name:"Japan",capital:"Tokyo",flag:"jp",lat:36.20,lng:138.25,continent:"Asia"},
-  {name:"India",capital:"New Delhi",flag:"in",lat:20.59,lng:78.96,continent:"Asia"},
+  {name:"India",capital:"New Delhi",flag:"in",lat:20.59,lng:78.96,continent:"Asia",extraRadius:1500},
   {name:"South Korea",capital:"Seoul",flag:"kr",lat:35.91,lng:127.77,continent:"Asia"},
-  {name:"Indonesia",capital:"Jakarta",flag:"id",lat:-0.79,lng:113.92,continent:"Asia"},
+  {name:"Indonesia",capital:"Jakarta",flag:"id",lat:-0.79,lng:113.92,continent:"Asia",extraRadius:2000},
   {name:"Turkey",capital:"Ankara",flag:"tr",lat:38.96,lng:35.24,continent:"Asia"},
   {name:"Saudi Arabia",capital:"Riyadh",flag:"sa",lat:23.89,lng:45.08,continent:"Asia"},
   {name:"Israel",capital:"Jerusalem",flag:"il",lat:31.05,lng:34.85,continent:"Asia"},
-  {name:"Russia",capital:"Moscow",flag:"ru",lat:61.52,lng:105.32,continent:"Europe"},
-  {name:"Australia",capital:"Canberra",flag:"au",lat:-25.27,lng:133.78,continent:"Oceania"},
+  {name:"Russia",capital:"Moscow",flag:"ru",lat:61.52,lng:105.32,continent:"Europe",extraRadius:4000},
+  {name:"Australia",capital:"Canberra",flag:"au",lat:-25.27,lng:133.78,continent:"Oceania",extraRadius:2000},
   {name:"New Zealand",capital:"Wellington",flag:"nz",lat:-40.90,lng:174.89,continent:"Oceania"},
   {name:"South Africa",capital:"Pretoria",flag:"za",lat:-30.56,lng:22.94,continent:"Africa"},
   {name:"Egypt",capital:"Cairo",flag:"eg",lat:26.82,lng:30.80,continent:"Africa"},
@@ -588,7 +588,7 @@ const EASY_COUNTRIES = [
 const MEDIUM_EXTRA = [
   {name:"Afghanistan",capital:"Kabul",flag:"af",lat:33.93,lng:67.71,continent:"Asia"},
   {name:"Albania",capital:"Tirana",flag:"al",lat:41.15,lng:20.17,continent:"Europe"},
-  {name:"Algeria",capital:"Algiers",flag:"dz",lat:28.03,lng:1.66,continent:"Africa"},
+  {name:"Algeria",capital:"Algiers",flag:"dz",lat:28.03,lng:1.66,continent:"Africa",extraRadius:1800},
   {name:"Bangladesh",capital:"Dhaka",flag:"bd",lat:23.68,lng:90.36,continent:"Asia"},
   {name:"Bolivia",capital:"Sucre",flag:"bo",lat:-16.29,lng:-63.59,continent:"South America"},
   {name:"Bulgaria",capital:"Sofia",flag:"bg",lat:42.73,lng:25.49,continent:"Europe"},
@@ -602,7 +602,7 @@ const MEDIUM_EXTRA = [
   {name:"Iran",capital:"Tehran",flag:"ir",lat:32.43,lng:53.69,continent:"Asia"},
   {name:"Iraq",capital:"Baghdad",flag:"iq",lat:33.22,lng:43.68,continent:"Asia"},
   {name:"Jordan",capital:"Amman",flag:"jo",lat:30.59,lng:36.24,continent:"Asia"},
-  {name:"Kazakhstan",capital:"Astana",flag:"kz",lat:48.02,lng:66.92,continent:"Asia"},
+  {name:"Kazakhstan",capital:"Astana",flag:"kz",lat:48.02,lng:66.92,continent:"Asia",extraRadius:1500},
   {name:"Kenya",capital:"Nairobi",flag:"ke",lat:-0.02,lng:37.91,continent:"Africa"},
   {name:"Malaysia",capital:"Kuala Lumpur",flag:"my",lat:4.21,lng:108.96,continent:"Asia"},
   {name:"Morocco",capital:"Rabat",flag:"ma",lat:31.79,lng:-7.09,continent:"Africa"},
@@ -615,7 +615,7 @@ const MEDIUM_EXTRA = [
   {name:"Philippines",capital:"Manila",flag:"ph",lat:12.88,lng:121.77,continent:"Asia"},
   {name:"Serbia",capital:"Belgrade",flag:"rs",lat:44.02,lng:21.01,continent:"Europe"},
   {name:"Sri Lanka",capital:"Colombo",flag:"lk",lat:7.87,lng:80.77,continent:"Asia"},
-  {name:"Sudan",capital:"Khartoum",flag:"sd",lat:12.86,lng:30.22,continent:"Africa"},
+  {name:"Sudan",capital:"Khartoum",flag:"sd",lat:12.86,lng:30.22,continent:"Africa",extraRadius:1000},
   {name:"Syria",capital:"Damascus",flag:"sy",lat:34.80,lng:38.10,continent:"Asia"},
   {name:"Tanzania",capital:"Dodoma",flag:"tz",lat:-6.37,lng:34.89,continent:"Africa"},
   {name:"Thailand",capital:"Bangkok",flag:"th",lat:15.87,lng:100.99,continent:"Asia"},
@@ -649,7 +649,7 @@ const JEROEN_EXTRA = [
   {name:"Taiwan",capital:"Taipei",flag:"tw",lat:23.70,lng:121.00,continent:"Asia"},
   {name:"Palestine",capital:"Ramallah",flag:"ps",lat:31.95,lng:35.23,continent:"Asia"},
   {name:"Western Sahara",capital:"El Aaiún",flag:"eh",lat:24.22,lng:-12.89,continent:"Africa"},
-  {name:"Greenland",capital:"Nuuk",flag:"gl",lat:71.71,lng:-42.60,continent:"North America"},
+  {name:"Greenland",capital:"Nuuk",flag:"gl",lat:71.71,lng:-42.60,continent:"North America",extraRadius:2000},
   {name:"Faroe Islands",capital:"Tórshavn",flag:"fo",lat:62.00,lng:-6.79,continent:"Europe"},
   {name:"Hong Kong",capital:"Hong Kong",flag:"hk",lat:22.35,lng:114.18,continent:"Asia"},
   {name:"Macau",capital:"Macau",flag:"mo",lat:22.17,lng:113.55,continent:"Asia"},
@@ -1636,14 +1636,15 @@ function submitMapAnswer(isCapitalMap) {
   L.circleMarker([country.lat,country.lng],{radius:10,fillColor:'#22c55e',fillOpacity:1,color:'#fff',weight:2}).addTo(map);
   L.polyline([[g.lat,g.lng],[country.lat,country.lng]],{color:'#f0b429',weight:2,dashArray:'5,4'}).addTo(map);
   document.getElementById('map-submit').style.display='none';
-  const correct=dist<=cfg.mapThreshold;
+  const effectiveThreshold = Math.max(cfg.mapThreshold, country.extraRadius || 0);
+  const correct=dist<=effectiveThreshold;
   const badge=document.getElementById('distance-badge');
   badge.style.display='block';
   badge.innerHTML=`
     <div class="dist-value">${Math.round(dist)} km</div>
     <div class="dist-label">from ${localName(country)}</div>
     <div class="dist-verdict" style="color:${correct?'var(--success)':'var(--danger)'}">
-      ${correct ? t().ui.withinKm(cfg.mapThreshold) : t().ui.tooFar(cfg.mapThreshold)}</div>`;
+      ${correct ? t().ui.withinKm(effectiveThreshold) : t().ui.tooFar(effectiveThreshold)}</div>`;
   showFeedback(correct,
     correct ? t().ui.closeEnough(Math.round(dist)) : t().ui.tooFarDist(Math.round(dist)),
     localName(country));
