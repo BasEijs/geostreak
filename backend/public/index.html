@@ -499,6 +499,16 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
               <span class="slider"></span>
             </label>
           </div>
+          <div class="setting-row">
+            <div class="setting-label">
+              Include historical capitals
+              <span>When enabled, capital questions for defunct countries (Soviet Union, Yugoslavia etc.) are also asked. Off by default — these are extremely hard. Only works when historical flags are also enabled.</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="setting-historical-capitals">
+              <span class="slider"></span>
+            </label>
+          </div>
         </div>
       </div>
       <div class="settings-save">
@@ -708,6 +718,7 @@ let gameSettings = {
   jeroen_map_threshold: 400,
   jeroen_show_historical_label: true,
   jeroen_historical_flags: true,
+  jeroen_historical_capitals: false,
 };
 
 function getDiffConfig(diff) {
@@ -1225,9 +1236,10 @@ function nextQuestion() {
   const cfg = getDiffConfig(currentDiff);
   const pool = cfg.countries.filter(c => !c.historical || currentDiff==='jeroen');
   const nonHistoricalPool = pool.filter(c => !c.historical);
+  // Historical countries only appear in capital questions if that toggle is on, flags always use full pool
+  const capitalPool = gameSettings.jeroen_historical_capitals ? pool : nonHistoricalPool;
   const type = cfg.questionTypes[Math.floor(Math.random()*cfg.questionTypes.length)];
-  // Historical countries only appear in flag questions
-  const country = getRandom(type === 'flag' ? pool : nonHistoricalPool);
+  const country = getRandom(type === 'flag' ? pool : type === 'capital' ? capitalPool : nonHistoricalPool);
   currentQ = {type, country};
 
   const badges = {capital:'🏛 Capital', flag:'🚩 Flag', map:'🗺 Map', continent:'🌍 Continent', 'match-flags':'🚩 Match Flags', 'match-capitals':'🏛 Match Capitals', 'capital-map':'🗺 Capital → Map'};
@@ -1781,6 +1793,7 @@ async function loadAdminSettings() {
     document.getElementById('setting-jeroen-map').value = s.jeroen_map_threshold;
     document.getElementById('setting-historical-label').checked = s.jeroen_show_historical_label;
     document.getElementById('setting-historical-flags').checked = s.jeroen_historical_flags;
+    document.getElementById('setting-historical-capitals').checked = s.jeroen_historical_capitals;
   } catch {}
 }
 
@@ -1792,6 +1805,7 @@ async function saveSettings() {
     jeroen_map_threshold: parseInt(document.getElementById('setting-jeroen-map').value) || 400,
     jeroen_show_historical_label: document.getElementById('setting-historical-label').checked ? '1' : '0',
     jeroen_historical_flags: document.getElementById('setting-historical-flags').checked ? '1' : '0',
+    jeroen_historical_capitals: document.getElementById('setting-historical-capitals').checked ? '1' : '0',
   };
   try {
     await fetch('/api/admin/settings', {
