@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GeoStreak</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1e2d45;
+    --accent: #f0b429;
+    --accent2: #e85d04;
+    --text: #e8edf5;
+    --text-muted: #6b7a99;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --jeroen: #a855f7;
+    --jeroen2: #ec4899;
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(240,180,41,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(240,180,41,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body.jeroen-mode::before {
+    background-image:
+      linear-gradient(rgba(168,85,247,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(168,85,247,0.05) 1px, transparent 1px);
+  }
+
+  .screen { display: none; position: relative; z-index: 1; }
+  .screen.active { display: flex; }
+
+  /* AUTH */
+  #auth-screen {
+    min-height: 100vh;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 32px;
+    padding: 24px;
+  }
+
+  .logo { text-align: center; }
+  .logo h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(56px, 10vw, 96px);
+    letter-spacing: 4px;
+    line-height: 1;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .logo p {
+    color: var(--text-muted);
+    font-size: 14px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-top: 8px;
+  }
+
+  .auth-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px;
+    width: 100%;
+    max-width: 380px;
+  }
+
+  .auth-tabs {
+    display: flex; gap: 4px;
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 4px;
+    margin-bottom: 24px;
+  }
+  .auth-tab {
+    flex: 1; padding: 8px; border: none;
+    background: none; color: var(--text-muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px; font-weight: 500;
+    border-radius: 6px; cursor: pointer; transition: all 0.2s;
+  }
+  .auth-tab.active { background: var(--surface2); color: var(--text); }
+
+  .form-group { margin-bottom: 16px; }
+  .form-group label {
+    display: block; font-size: 12px; font-weight: 500;
+    color: var(--text-muted); text-transform: uppercase;
+    letter-spacing: 1px; margin-bottom: 8px;
+  }
+  .form-group input {
+    width: 100%; padding: 12px 16px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 15px;
+    outline: none; transition: border-color 0.2s;
+  }
+  .form-group input:focus { border-color: var(--accent); }
+
+  .btn {
+    width: 100%; padding: 13px; border: none;
+    border-radius: 8px; font-family: 'DM Sans', sans-serif;
+    font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #000; }
+  .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:hover { border-color: var(--accent); }
+  .btn-sm { width: auto; padding: 8px 16px; font-size: 13px; }
+  .btn-danger { background: var(--danger); color: #fff; border: none; }
+  .btn-jeroen { background: linear-gradient(135deg, var(--jeroen), var(--jeroen2)); color: #fff; }
+  .btn-jeroen:hover { opacity: 0.9; transform: translateY(-1px); }
+
+  .error-msg {
+    background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
+    border-radius: 8px; padding: 10px 14px; font-size: 13px;
+    color: #fca5a5; margin-bottom: 16px; display: none;
+  }
+  .error-msg.show { display: block; }
+
+  /* MENU */
+  #menu-screen { min-height: 100vh; flex-direction: column; }
+
+  nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 24px; border-bottom: 1px solid var(--border);
+    background: var(--surface); flex-shrink: 0;
+  }
+  .nav-logo {
+    font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 2px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .nav-user { display: flex; align-items: center; gap: 12px; font-size: 14px; color: var(--text-muted); }
+  .nav-user strong { color: var(--text); }
+
+  .menu-content {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; padding: 32px 24px; gap: 28px; overflow-y: auto;
+  }
+
+  .difficulty-picker { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .diff-card {
+    background: var(--surface); border: 2px solid var(--border);
+    border-radius: var(--radius); padding: 18px 20px; cursor: pointer;
+    transition: all 0.2s; text-align: center; min-width: 130px; flex: 1; max-width: 190px;
+  }
+  .diff-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .diff-card.selected { border-color: var(--accent); background: var(--surface2); }
+  .diff-card.jeroen-card:hover { border-color: var(--jeroen); }
+  .diff-card.jeroen-card.selected { border-color: var(--jeroen); background: rgba(168,85,247,0.08); }
+  .diff-icon { font-size: 26px; margin-bottom: 6px; }
+  .diff-name { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 1px; margin-bottom: 4px; }
+  .diff-card.jeroen-card .diff-name {
+    background: linear-gradient(135deg, var(--jeroen), var(--jeroen2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .diff-desc { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
+
+  .timer-toggle {
+    display: none; align-items: center; gap: 14px;
+    background: var(--surface); border: 1px solid rgba(168,85,247,0.3);
+    border-radius: var(--radius); padding: 14px 18px; font-size: 14px;
+    max-width: 420px; width: 100%;
+  }
+  .timer-toggle.visible { display: flex; }
+  .timer-toggle label { cursor: pointer; flex: 1; }
+  .timer-toggle span { color: var(--text-muted); font-size: 12px; }
+
+  .switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute; cursor: pointer; inset: 0;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 24px; transition: 0.2s;
+  }
+  .slider:before {
+    content: ''; position: absolute;
+    height: 16px; width: 16px; left: 3px; bottom: 3px;
+    background: var(--text-muted); border-radius: 50%; transition: 0.2s;
+  }
+  input:checked + .slider { background: rgba(168,85,247,0.3); border-color: var(--jeroen); }
+  input:checked + .slider:before { transform: translateX(20px); background: var(--jeroen); }
+
+  .play-btn {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #000; font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px; letter-spacing: 3px; padding: 17px 52px;
+    border: none; border-radius: var(--radius); cursor: pointer;
+    transition: all 0.2s; box-shadow: 0 8px 32px rgba(240,180,41,0.2);
+  }
+  .play-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(240,180,41,0.3); }
+  .play-btn.jeroen-play {
+    background: linear-gradient(135deg, var(--jeroen), var(--jeroen2));
+    color: #fff; box-shadow: 0 8px 32px rgba(168,85,247,0.25);
+  }
+  .play-btn.jeroen-play:hover { box-shadow: 0 12px 40px rgba(168,85,247,0.4); }
+
+  /* Stats & Leaderboard */
+  .stats-section { width: 100%; max-width: 540px; }
+  .stats-tabs {
+    display: flex; gap: 4px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 4px; margin-bottom: 14px;
+  }
+  .stats-tab {
+    flex: 1; padding: 7px; border: none; background: none;
+    color: var(--text-muted); font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 500; border-radius: 6px; cursor: pointer; transition: all 0.2s;
+  }
+  .stats-tab.active { background: var(--surface2); color: var(--text); }
+  .stats-tab.jeroen-tab.active { background: rgba(168,85,247,0.15); color: var(--jeroen); }
+
+  .stats-row { display: flex; gap: 12px; margin-bottom: 14px; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px 20px; text-align: center; flex: 1;
+  }
+  .stat-card .value {
+    font-family: 'Bebas Neue', sans-serif; font-size: 38px; color: var(--accent); line-height: 1;
+  }
+  .stat-card.jeroen-stat .value { color: var(--jeroen); }
+  .stat-card .label { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); margin-top: 4px; }
+
+  .leaderboard {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .leaderboard-header {
+    padding: 13px 20px; border-bottom: 1px solid var(--border);
+    font-size: 12px; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); font-weight: 600;
+  }
+  .leaderboard-cols {
+    display: grid; grid-template-columns: 32px 1fr 70px 60px;
+    gap: 8px; padding: 6px 20px;
+    font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--text-muted); border-bottom: 1px solid var(--border);
+  }
+  .leaderboard-row {
+    display: grid; grid-template-columns: 32px 1fr 70px 60px;
+    gap: 8px; align-items: center;
+    padding: 10px 20px; border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 14px; transition: background 0.15s;
+  }
+  .leaderboard-row:hover { background: var(--surface2); }
+  .leaderboard-row:last-child { border-bottom: none; }
+  .lb-streak { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--accent); text-align: right; }
+  .lb-streak.jeroen-streak { color: var(--jeroen); }
+  .lb-games { font-size: 12px; color: var(--text-muted); text-align: right; }
+  .lb-empty { padding: 28px; text-align: center; color: var(--text-muted); font-size: 14px; }
+  .lb-me { background: rgba(240,180,41,0.05) !important; }
+  .lb-me.jeroen-row { background: rgba(168,85,247,0.06) !important; }
+
+  /* GAME */
+  #game-screen { min-height: 100vh; flex-direction: column; }
+
+  .game-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 18px; background: var(--surface);
+    border-bottom: 1px solid var(--border); z-index: 10; flex-shrink: 0; gap: 10px;
+  }
+  .jeroen-mode .game-header { border-bottom-color: rgba(168,85,247,0.3); }
+
+  .streak-display { display: flex; align-items: baseline; gap: 6px; }
+  .streak-number {
+    font-family: 'Bebas Neue', sans-serif; font-size: 36px; color: var(--accent); line-height: 1;
+  }
+  .jeroen-mode .streak-number { color: var(--jeroen); }
+  .streak-label { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); }
+
+  .timer-wrap { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1; }
+  .timer-bar-bg {
+    width: 100%; max-width: 180px; height: 5px;
+    background: var(--surface2); border-radius: 3px; overflow: hidden;
+  }
+  .timer-bar { height: 100%; background: var(--jeroen); border-radius: 3px; transition: width 1s linear, background 0.5s; }
+  .timer-count { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--jeroen); line-height: 1; }
+  .timer-count.urgent { color: var(--danger); animation: pulse 0.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  .header-right { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+  .question-badge {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 20px; padding: 4px 11px; font-size: 11px;
+    color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; white-space: nowrap;
+  }
+  .diff-badge {
+    font-size: 10px; padding: 3px 9px; border-radius: 20px;
+    font-weight: 600; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap;
+  }
+  .diff-badge.easy { background: rgba(34,197,94,0.12); color: var(--success); border: 1px solid rgba(34,197,94,0.25); }
+  .diff-badge.medium { background: rgba(240,180,41,0.12); color: var(--accent); border: 1px solid rgba(240,180,41,0.25); }
+  .diff-badge.jeroen { background: rgba(168,85,247,0.15); color: var(--jeroen); border: 1px solid rgba(168,85,247,0.3); }
+
+  .game-body { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  .question-area {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 14px 18px; flex-shrink: 0;
+  }
+  .question-text { font-size: clamp(14px, 2.5vw, 18px); font-weight: 500; line-height: 1.4; }
+  .question-text span { color: var(--accent); font-weight: 600; }
+  .jeroen-mode .question-text span { color: var(--jeroen); }
+
+  .answer-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+
+  #map-container { flex: 1; position: relative; }
+  #map { width: 100%; height: 100%; min-height: 300px; }
+  .map-hint {
+    position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+    background: rgba(10,14,26,0.88); border: 1px solid var(--border);
+    border-radius: 20px; padding: 6px 16px; font-size: 12px;
+    color: var(--text-muted); z-index: 1000; pointer-events: none; white-space: nowrap;
+  }
+  #map-submit {
+    position: absolute; bottom: 50px; right: 14px; z-index: 1000;
+    width: auto; padding: 10px 20px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #000; font-weight: 700; border-radius: 8px; display: none;
+    border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; cursor: pointer;
+  }
+  .jeroen-mode #map-submit { background: linear-gradient(135deg, var(--jeroen), var(--jeroen2)); color: #fff; }
+
+  .choices-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; padding: 14px 18px; flex: 1; align-content: start;
+  }
+  .choice-btn {
+    padding: 15px 13px; background: var(--surface);
+    border: 1.5px solid var(--border); border-radius: var(--radius);
+    color: var(--text); font-family: 'DM Sans', sans-serif;
+    font-size: 14px; font-weight: 500; cursor: pointer;
+    transition: all 0.15s; text-align: left; display: flex; align-items: center; gap: 10px;
+  }
+  .choice-btn:hover:not(:disabled) { border-color: var(--accent); background: var(--surface2); }
+  .jeroen-mode .choice-btn:hover:not(:disabled) { border-color: var(--jeroen); }
+  .choice-btn.correct { border-color: var(--success); background: rgba(34,197,94,0.1); }
+  .choice-btn.wrong { border-color: var(--danger); background: rgba(239,68,68,0.1); }
+  .choice-btn:disabled { cursor: default; }
+  .choice-letter {
+    width: 24px; height: 24px; border-radius: 5px; background: var(--surface2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: var(--text-muted); flex-shrink: 0;
+  }
+
+  .flag-display { padding: 18px; display: flex; align-items: center; justify-content: center; }
+  .flag-img {
+    width: 200px; height: 133px; object-fit: cover;
+    border-radius: var(--radius); border: 1px solid var(--border);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+
+  .feedback-bar {
+    padding: 13px 18px; display: flex; align-items: center;
+    justify-content: space-between; gap: 16px; flex-shrink: 0;
+    animation: slideUp 0.25s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .feedback-bar.correct-bar { background: rgba(34,197,94,0.08); border-top: 1px solid rgba(34,197,94,0.2); }
+  .feedback-bar.wrong-bar { background: rgba(239,68,68,0.07); border-top: 1px solid rgba(239,68,68,0.2); }
+  .feedback-text { font-size: 15px; font-weight: 500; }
+  .feedback-bar.correct-bar .feedback-text { color: var(--success); }
+  .feedback-bar.wrong-bar .feedback-text { color: #fca5a5; }
+  .feedback-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .next-btn {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); font-family: 'DM Sans', sans-serif;
+    font-size: 14px; font-weight: 600; padding: 8px 16px;
+    border-radius: 8px; cursor: pointer; white-space: nowrap; transition: all 0.15s;
+  }
+  .next-btn:hover { border-color: var(--accent); }
+
+  .distance-badge {
+    position: absolute; top: 10px; right: 10px;
+    background: rgba(10,14,26,0.92); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 14px; text-align: center; z-index: 2000; display: none;
+  }
+  .distance-badge .dist-value { font-family: 'Bebas Neue', sans-serif; font-size: 26px; color: var(--accent); }
+  .distance-badge .dist-label { font-size: 10px; color: var(--text-muted); }
+  .distance-badge .dist-verdict { margin-top: 3px; font-size: 11px; font-weight: 600; }
+
+  /* GAME OVER */
+  #gameover-screen {
+    min-height: 100vh; flex-direction: column;
+    align-items: center; justify-content: center; padding: 40px 24px; gap: 24px;
+  }
+  .gameover-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 36px; max-width: 400px; width: 100%; text-align: center;
+  }
+  .gameover-title { font-family: 'Bebas Neue', sans-serif; font-size: 46px; color: var(--danger); letter-spacing: 2px; }
+  .gameover-diff { margin: 10px 0; }
+  .gameover-streak { font-family: 'Bebas Neue', sans-serif; font-size: 84px; color: var(--accent); line-height: 1; margin: 4px 0; }
+  .gameover-streak.jeroen-score { color: var(--jeroen); }
+  .gameover-sub { color: var(--text-muted); font-size: 13px; margin-bottom: 16px; }
+  .gameover-msg { font-size: 15px; margin-bottom: 22px; color: var(--text); }
+  .gameover-actions { display: flex; gap: 10px; flex-direction: column; }
+
+  .leaflet-container { background: #0d1520 !important; }
+  .leaflet-tile { filter: brightness(0.65) saturate(0.5); }
+
+  @media (max-width: 600px) {
+    .choices-grid { grid-template-columns: 1fr; }
+    .flag-img { width: 160px; height: 107px; }
+    .diff-card { min-width: 100px; padding: 14px 10px; }
+    .game-header { flex-wrap: wrap; }
+    .header-right { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth-screen" class="screen active">
+  <div class="logo">
+    <h1>GeoStreak</h1>
+    <p>How far can you go?</p>
+  </div>
+  <div class="auth-box">
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchTab('login')">Sign In</button>
+      <button class="auth-tab" onclick="switchTab('register')">Register</button>
+    </div>
+    <div id="auth-error" class="error-msg"></div>
+    <div class="form-group">
+      <label>Username</label>
+      <input id="auth-username" type="text" placeholder="your username" autocomplete="username" maxlength="20">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input id="auth-password" type="password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn btn-primary" onclick="submitAuth()">Continue</button>
+  </div>
+</div>
+
+<!-- MENU -->
+<div id="menu-screen" class="screen">
+  <nav>
+    <div class="nav-logo">GeoStreak</div>
+    <div class="nav-user">
+      <strong id="nav-username"></strong>
+      <button class="btn btn-ghost btn-sm" onclick="logout()">Sign out</button>
+    </div>
+  </nav>
+  <div class="menu-content">
+
+    <div class="difficulty-picker">
+      <div class="diff-card selected" data-diff="easy" onclick="selectDiff('easy')">
+        <div class="diff-icon">🌍</div>
+        <div class="diff-name">Easy</div>
+        <div class="diff-desc">Well-known countries · No map · No timer</div>
+      </div>
+      <div class="diff-card" data-diff="medium" onclick="selectDiff('medium')">
+        <div class="diff-icon">🗺️</div>
+        <div class="diff-name">Medium</div>
+        <div class="diff-desc">All countries · All question types · No timer</div>
+      </div>
+      <div class="diff-card jeroen-card" data-diff="jeroen" onclick="selectDiff('jeroen')">
+        <div class="diff-icon">💀</div>
+        <div class="diff-name">Jeroen Mode</div>
+        <div class="diff-desc">Disputed & autonomous territories · 400km map limit · Optional timer</div>
+      </div>
+    </div>
+
+    <div class="timer-toggle" id="timer-toggle">
+      <label for="timer-switch">
+        <strong>Enable 15-second timer</strong>
+        <div><span>Time runs out = streak ends. Pain is optional. Or is it?</span></div>
+      </label>
+      <label class="switch">
+        <input type="checkbox" id="timer-switch">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <button class="play-btn" id="play-btn" onclick="startGame()">PLAY</button>
+
+    <div class="stats-section">
+      <div class="stats-tabs">
+        <button class="stats-tab active" onclick="switchStatTab('easy')">Easy</button>
+        <button class="stats-tab" onclick="switchStatTab('medium')">Medium</button>
+        <button class="stats-tab jeroen-tab" onclick="switchStatTab('jeroen')">Jeroen Mode</button>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card" id="stat-card-best">
+          <div class="value" id="stat-best">—</div>
+          <div class="label">Best Streak</div>
+        </div>
+        <div class="stat-card" id="stat-card-games">
+          <div class="value" id="stat-games">—</div>
+          <div class="label">Games Played</div>
+        </div>
+      </div>
+      <div class="leaderboard">
+        <div class="leaderboard-header" id="lb-title">🏆 Easy Leaderboard</div>
+        <div class="leaderboard-cols">
+          <div>#</div><div>Player</div><div style="text-align:right">Best</div><div style="text-align:right">Games</div>
+        </div>
+        <div id="leaderboard-body"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- GAME -->
+<div id="game-screen" class="screen">
+  <div class="game-header">
+    <div class="streak-display">
+      <div class="streak-number" id="streak-count">0</div>
+      <div class="streak-label">streak</div>
+    </div>
+    <div class="timer-wrap" id="timer-wrap" style="display:none">
+      <div class="timer-count" id="timer-count">15</div>
+      <div class="timer-bar-bg"><div class="timer-bar" id="timer-bar"></div></div>
+    </div>
+    <div class="header-right">
+      <div class="question-badge" id="q-type-badge">—</div>
+      <div class="diff-badge" id="diff-badge">—</div>
+      <button class="btn btn-ghost btn-sm btn-danger" onclick="giveUp()">Quit</button>
+    </div>
+  </div>
+  <div class="game-body">
+    <div class="question-area">
+      <div class="question-text" id="question-text"></div>
+    </div>
+    <div class="answer-area" id="answer-area"></div>
+    <div id="feedback-bar" style="display:none"></div>
+  </div>
+</div>
+
+<!-- GAME OVER -->
+<div id="gameover-screen" class="screen">
+  <div class="gameover-card">
+    <div class="gameover-title">Game Over</div>
+    <div class="gameover-diff" id="gameover-diff"></div>
+    <div class="gameover-streak" id="final-streak">0</div>
+    <div class="gameover-sub">correct answers in a row</div>
+    <div class="gameover-msg" id="gameover-msg"></div>
+    <div class="gameover-actions">
+      <button class="btn btn-primary" id="play-again-btn" onclick="startGame()">Play Again</button>
+      <button class="btn btn-ghost" onclick="showMenu()">Back to Menu</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──
+
+const EASY_COUNTRIES = [
+  {name:"France",capital:"Paris",flag:"fr",lat:46.23,lng:2.21,continent:"Europe"},
+  {name:"Germany",capital:"Berlin",flag:"de",lat:51.17,lng:10.45,continent:"Europe"},
+  {name:"United Kingdom",capital:"London",flag:"gb",lat:55.38,lng:-3.44,continent:"Europe"},
+  {name:"Italy",capital:"Rome",flag:"it",lat:41.87,lng:12.57,continent:"Europe"},
+  {name:"Spain",capital:"Madrid",flag:"es",lat:40.46,lng:-3.75,continent:"Europe"},
+  {name:"Netherlands",capital:"Amsterdam",flag:"nl",lat:52.13,lng:5.29,continent:"Europe"},
+  {name:"Belgium",capital:"Brussels",flag:"be",lat:50.50,lng:4.47,continent:"Europe"},
+  {name:"Portugal",capital:"Lisbon",flag:"pt",lat:39.40,lng:-8.22,continent:"Europe"},
+  {name:"Sweden",capital:"Stockholm",flag:"se",lat:60.13,lng:18.64,continent:"Europe"},
+  {name:"Norway",capital:"Oslo",flag:"no",lat:60.47,lng:8.47,continent:"Europe"},
+  {name:"Denmark",capital:"Copenhagen",flag:"dk",lat:56.26,lng:9.50,continent:"Europe"},
+  {name:"Finland",capital:"Helsinki",flag:"fi",lat:61.92,lng:25.75,continent:"Europe"},
+  {name:"Poland",capital:"Warsaw",flag:"pl",lat:51.92,lng:19.15,continent:"Europe"},
+  {name:"Switzerland",capital:"Bern",flag:"ch",lat:46.82,lng:8.23,continent:"Europe"},
+  {name:"Austria",capital:"Vienna",flag:"at",lat:47.52,lng:14.55,continent:"Europe"},
+  {name:"Greece",capital:"Athens",flag:"gr",lat:39.07,lng:21.82,continent:"Europe"},
+  {name:"Czech Republic",capital:"Prague",flag:"cz",lat:49.82,lng:15.47,continent:"Europe"},
+  {name:"Romania",capital:"Bucharest",flag:"ro",lat:45.94,lng:24.97,continent:"Europe"},
+  {name:"Hungary",capital:"Budapest",flag:"hu",lat:47.16,lng:19.50,continent:"Europe"},
+  {name:"Ireland",capital:"Dublin",flag:"ie",lat:53.41,lng:-8.24,continent:"Europe"},
+  {name:"Ukraine",capital:"Kyiv",flag:"ua",lat:48.38,lng:31.17,continent:"Europe"},
+  {name:"United States",capital:"Washington D.C.",flag:"us",lat:37.09,lng:-95.71,continent:"North America"},
+  {name:"Canada",capital:"Ottawa",flag:"ca",lat:56.13,lng:-106.35,continent:"North America"},
+  {name:"Mexico",capital:"Mexico City",flag:"mx",lat:23.63,lng:-102.55,continent:"North America"},
+  {name:"Brazil",capital:"Brasília",flag:"br",lat:-14.24,lng:-51.93,continent:"South America"},
+  {name:"Argentina",capital:"Buenos Aires",flag:"ar",lat:-38.42,lng:-63.62,continent:"South America"},
+  {name:"China",capital:"Beijing",flag:"cn",lat:35.86,lng:104.20,continent:"Asia"},
+  {name:"Japan",capital:"Tokyo",flag:"jp",lat:36.20,lng:138.25,continent:"Asia"},
+  {name:"India",capital:"New Delhi",flag:"in",lat:20.59,lng:78.96,continent:"Asia"},
+  {name:"South Korea",capital:"Seoul",flag:"kr",lat:35.91,lng:127.77,continent:"Asia"},
+  {name:"Indonesia",capital:"Jakarta",flag:"id",lat:-0.79,lng:113.92,continent:"Asia"},
+  {name:"Turkey",capital:"Ankara",flag:"tr",lat:38.96,lng:35.24,continent:"Asia"},
+  {name:"Saudi Arabia",capital:"Riyadh",flag:"sa",lat:23.89,lng:45.08,continent:"Asia"},
+  {name:"Israel",capital:"Jerusalem",flag:"il",lat:31.05,lng:34.85,continent:"Asia"},
+  {name:"Russia",capital:"Moscow",flag:"ru",lat:61.52,lng:105.32,continent:"Europe"},
+  {name:"Australia",capital:"Canberra",flag:"au",lat:-25.27,lng:133.78,continent:"Oceania"},
+  {name:"New Zealand",capital:"Wellington",flag:"nz",lat:-40.90,lng:174.89,continent:"Oceania"},
+  {name:"South Africa",capital:"Pretoria",flag:"za",lat:-30.56,lng:22.94,continent:"Africa"},
+  {name:"Egypt",capital:"Cairo",flag:"eg",lat:26.82,lng:30.80,continent:"Africa"},
+  {name:"Nigeria",capital:"Abuja",flag:"ng",lat:9.08,lng:8.68,continent:"Africa"},
+];
+
+const MEDIUM_EXTRA = [
+  {name:"Afghanistan",capital:"Kabul",flag:"af",lat:33.93,lng:67.71,continent:"Asia"},
+  {name:"Albania",capital:"Tirana",flag:"al",lat:41.15,lng:20.17,continent:"Europe"},
+  {name:"Algeria",capital:"Algiers",flag:"dz",lat:28.03,lng:1.66,continent:"Africa"},
+  {name:"Bangladesh",capital:"Dhaka",flag:"bd",lat:23.68,lng:90.36,continent:"Asia"},
+  {name:"Bolivia",capital:"Sucre",flag:"bo",lat:-16.29,lng:-63.59,continent:"South America"},
+  {name:"Bulgaria",capital:"Sofia",flag:"bg",lat:42.73,lng:25.49,continent:"Europe"},
+  {name:"Cambodia",capital:"Phnom Penh",flag:"kh",lat:12.57,lng:104.99,continent:"Asia"},
+  {name:"Chile",capital:"Santiago",flag:"cl",lat:-35.68,lng:-71.54,continent:"South America"},
+  {name:"Colombia",capital:"Bogotá",flag:"co",lat:4.57,lng:-74.30,continent:"South America"},
+  {name:"Croatia",capital:"Zagreb",flag:"hr",lat:45.10,lng:15.20,continent:"Europe"},
+  {name:"Ecuador",capital:"Quito",flag:"ec",lat:-1.83,lng:-78.18,continent:"South America"},
+  {name:"Ethiopia",capital:"Addis Ababa",flag:"et",lat:9.15,lng:40.49,continent:"Africa"},
+  {name:"Ghana",capital:"Accra",flag:"gh",lat:7.95,lng:-1.02,continent:"Africa"},
+  {name:"Iran",capital:"Tehran",flag:"ir",lat:32.43,lng:53.69,continent:"Asia"},
+  {name:"Iraq",capital:"Baghdad",flag:"iq",lat:33.22,lng:43.68,continent:"Asia"},
+  {name:"Jordan",capital:"Amman",flag:"jo",lat:30.59,lng:36.24,continent:"Asia"},
+  {name:"Kazakhstan",capital:"Astana",flag:"kz",lat:48.02,lng:66.92,continent:"Asia"},
+  {name:"Kenya",capital:"Nairobi",flag:"ke",lat:-0.02,lng:37.91,continent:"Africa"},
+  {name:"Malaysia",capital:"Kuala Lumpur",flag:"my",lat:4.21,lng:108.96,continent:"Asia"},
+  {name:"Morocco",capital:"Rabat",flag:"ma",lat:31.79,lng:-7.09,continent:"Africa"},
+  {name:"Mozambique",capital:"Maputo",flag:"mz",lat:-18.67,lng:35.53,continent:"Africa"},
+  {name:"Myanmar",capital:"Naypyidaw",flag:"mm",lat:16.87,lng:96.21,continent:"Asia"},
+  {name:"Nepal",capital:"Kathmandu",flag:"np",lat:28.39,lng:84.12,continent:"Asia"},
+  {name:"North Korea",capital:"Pyongyang",flag:"kp",lat:40.34,lng:127.51,continent:"Asia"},
+  {name:"Pakistan",capital:"Islamabad",flag:"pk",lat:30.38,lng:69.35,continent:"Asia"},
+  {name:"Peru",capital:"Lima",flag:"pe",lat:-9.19,lng:-75.02,continent:"South America"},
+  {name:"Philippines",capital:"Manila",flag:"ph",lat:12.88,lng:121.77,continent:"Asia"},
+  {name:"Serbia",capital:"Belgrade",flag:"rs",lat:44.02,lng:21.01,continent:"Europe"},
+  {name:"Sri Lanka",capital:"Colombo",flag:"lk",lat:7.87,lng:80.77,continent:"Asia"},
+  {name:"Sudan",capital:"Khartoum",flag:"sd",lat:12.86,lng:30.22,continent:"Africa"},
+  {name:"Syria",capital:"Damascus",flag:"sy",lat:34.80,lng:38.10,continent:"Asia"},
+  {name:"Tanzania",capital:"Dodoma",flag:"tz",lat:-6.37,lng:34.89,continent:"Africa"},
+  {name:"Thailand",capital:"Bangkok",flag:"th",lat:15.87,lng:100.99,continent:"Asia"},
+  {name:"Uganda",capital:"Kampala",flag:"ug",lat:1.37,lng:32.29,continent:"Africa"},
+  {name:"United Arab Emirates",capital:"Abu Dhabi",flag:"ae",lat:23.42,lng:53.85,continent:"Asia"},
+  {name:"Uzbekistan",capital:"Tashkent",flag:"uz",lat:41.38,lng:64.59,continent:"Asia"},
+  {name:"Venezuela",capital:"Caracas",flag:"ve",lat:6.42,lng:-66.59,continent:"South America"},
+  {name:"Vietnam",capital:"Hanoi",flag:"vn",lat:14.06,lng:108.28,continent:"Asia"},
+  {name:"Yemen",capital:"Sana'a",flag:"ye",lat:15.55,lng:48.52,continent:"Asia"},
+  {name:"Zimbabwe",capital:"Harare",flag:"zw",lat:-19.02,lng:29.15,continent:"Africa"},
+];
+
+const JEROEN_EXTRA = [
+  {name:"Kosovo",capital:"Pristina",flag:"xk",lat:42.60,lng:20.90,continent:"Europe"},
+  {name:"Taiwan",capital:"Taipei",flag:"tw",lat:23.70,lng:121.00,continent:"Asia"},
+  {name:"Palestine",capital:"Ramallah",flag:"ps",lat:31.95,lng:35.23,continent:"Asia"},
+  {name:"Western Sahara",capital:"El Aaiún",flag:"eh",lat:24.22,lng:-12.89,continent:"Africa"},
+  {name:"Greenland",capital:"Nuuk",flag:"gl",lat:71.71,lng:-42.60,continent:"North America"},
+  {name:"Faroe Islands",capital:"Tórshavn",flag:"fo",lat:62.00,lng:-6.79,continent:"Europe"},
+  {name:"Hong Kong",capital:"Hong Kong",flag:"hk",lat:22.35,lng:114.18,continent:"Asia"},
+  {name:"Macau",capital:"Macau",flag:"mo",lat:22.17,lng:113.55,continent:"Asia"},
+  {name:"New Caledonia",capital:"Nouméa",flag:"nc",lat:-20.90,lng:165.62,continent:"Oceania"},
+  {name:"Puerto Rico",capital:"San Juan",flag:"pr",lat:18.22,lng:-66.59,continent:"North America"},
+  {name:"Somaliland",capital:"Hargeisa",flag:"so",lat:9.56,lng:44.08,continent:"Africa"},
+  {name:"Transnistria",capital:"Tiraspol",flag:"md",lat:46.84,lng:29.64,continent:"Europe"},
+  {name:"Abkhazia",capital:"Sukhumi",flag:"ge",lat:43.00,lng:41.02,continent:"Asia"},
+  {name:"South Ossetia",capital:"Tskhinvali",flag:"ge",lat:42.23,lng:43.97,continent:"Asia"},
+  {name:"Northern Cyprus",capital:"Nicosia (North)",flag:"cy",lat:35.25,lng:33.03,continent:"Europe"},
+  {name:"Artsakh",capital:"Stepanakert",flag:"am",lat:39.81,lng:46.75,continent:"Asia"},
+  {name:"Åland Islands",capital:"Mariehamn",flag:"ax",lat:60.10,lng:19.94,continent:"Europe"},
+  {name:"Gibraltar",capital:"Gibraltar",flag:"gi",lat:36.14,lng:-5.35,continent:"Europe"},
+  {name:"Isle of Man",capital:"Douglas",flag:"im",lat:54.24,lng:-4.55,continent:"Europe"},
+  {name:"Guam",capital:"Hagåtña",flag:"gu",lat:13.44,lng:144.79,continent:"Oceania"},
+  {name:"Falkland Islands",capital:"Stanley",flag:"fk",lat:-51.80,lng:-59.52,continent:"South America"},
+  {name:"Svalbard",capital:"Longyearbyen",flag:"sj",lat:77.87,lng:20.95,continent:"Europe"},
+  {name:"Cayman Islands",capital:"George Town",flag:"ky",lat:19.31,lng:-81.25,continent:"North America"},
+  {name:"Bermuda",capital:"Hamilton",flag:"bm",lat:32.30,lng:-64.75,continent:"North America"},
+  {name:"French Polynesia",capital:"Papeete",flag:"pf",lat:-17.68,lng:-149.41,continent:"Oceania"},
+];
+
+const DIFF_CONFIG = {
+  easy: {
+    label:"Easy", badge:"easy",
+    countries: EASY_COUNTRIES,
+    questionTypes: ["capital","flag","continent"],
+    mapThreshold: 1000,
+    timerSeconds: null,
+  },
+  medium: {
+    label:"Medium", badge:"medium",
+    countries: [...EASY_COUNTRIES, ...MEDIUM_EXTRA],
+    questionTypes: ["capital","flag","continent","map"],
+    mapThreshold: 800,
+    timerSeconds: null,
+  },
+  jeroen: {
+    label:"Jeroen Mode 💀", badge:"jeroen",
+    countries: [...EASY_COUNTRIES, ...MEDIUM_EXTRA, ...JEROEN_EXTRA],
+    questionTypes: ["capital","flag","continent","map"],
+    mapThreshold: 400,
+    timerSeconds: 15,
+  },
+};
+
+// ── STATE ──
+let token = localStorage.getItem('token');
+let username = localStorage.getItem('username');
+let streak = 0;
+let currentDiff = 'easy';
+let currentStatTab = 'easy';
+let useTimer = false;
+let timerInterval = null;
+let timerSecondsLeft = 15;
+let map = null;
+let marker = null;
+let currentQ = null;
+let awaitingNext = false;
+let allStats = {};
+
+// ── INIT ──
+window.onload = () => {
+  if (token && username) showMenu();
+  document.getElementById('auth-password').addEventListener('keydown', e => { if(e.key==='Enter') submitAuth(); });
+  document.getElementById('auth-username').addEventListener('keydown', e => { if(e.key==='Enter') submitAuth(); });
+};
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function showMenu() {
+  showScreen('menu-screen');
+  document.getElementById('nav-username').textContent = username;
+  document.body.classList.remove('jeroen-mode');
+  loadAllStats();
+  loadLeaderboard(currentStatTab);
+}
+
+// ── AUTH ──
+function switchTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t,i) =>
+    t.classList.toggle('active', (i===0)===(tab==='login'))
+  );
+  hideAuthError();
+}
+function showAuthError(msg) { const e=document.getElementById('auth-error'); e.textContent=msg; e.classList.add('show'); }
+function hideAuthError() { document.getElementById('auth-error').classList.remove('show'); }
+function isLoginTab() { return document.querySelectorAll('.auth-tab')[0].classList.contains('active'); }
+
+async function submitAuth() {
+  const uname = document.getElementById('auth-username').value.trim();
+  const pass = document.getElementById('auth-password').value;
+  if (!uname || !pass) return showAuthError('Please fill in all fields');
+  try {
+    const res = await fetch(isLoginTab() ? '/api/login' : '/api/register', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({username:uname, password:pass})
+    });
+    const data = await res.json();
+    if (!res.ok) return showAuthError(data.error || 'Something went wrong');
+    token=data.token; username=data.username;
+    localStorage.setItem('token',token); localStorage.setItem('username',username);
+    showMenu();
+  } catch { showAuthError('Could not connect to server'); }
+}
+
+function logout() {
+  token=null; username=null;
+  localStorage.removeItem('token'); localStorage.removeItem('username');
+  showScreen('auth-screen');
+}
+
+// ── DIFFICULTY ──
+function selectDiff(diff) {
+  currentDiff = diff;
+  document.querySelectorAll('.diff-card').forEach(c => c.classList.toggle('selected', c.dataset.diff===diff));
+  document.getElementById('timer-toggle').classList.toggle('visible', diff==='jeroen');
+  const btn = document.getElementById('play-btn');
+  btn.className = 'play-btn' + (diff==='jeroen' ? ' jeroen-play' : '');
+}
+
+// ── STAT TABS ──
+function switchStatTab(diff) {
+  currentStatTab = diff;
+  document.querySelectorAll('.stats-tab').forEach((t,i) =>
+    t.classList.toggle('active', ['easy','medium','jeroen'][i]===diff)
+  );
+  const isJ = diff==='jeroen';
+  document.getElementById('stat-card-best').classList.toggle('jeroen-stat', isJ);
+  document.getElementById('stat-card-games').classList.toggle('jeroen-stat', isJ);
+  const s = allStats[diff] || {};
+  document.getElementById('stat-best').textContent = s.best_streak || '0';
+  document.getElementById('stat-games').textContent = s.games_played || '0';
+  loadLeaderboard(diff);
+}
+
+// ── STATS & LEADERBOARD ──
+async function loadAllStats() {
+  try {
+    const res = await fetch('/api/me/stats', {headers:{Authorization:'Bearer '+token}});
+    allStats = await res.json();
+    const s = allStats[currentStatTab] || {};
+    document.getElementById('stat-best').textContent = s.best_streak || '0';
+    document.getElementById('stat-games').textContent = s.games_played || '0';
+  } catch {}
+}
+
+async function loadLeaderboard(diff) {
+  const titles = {easy:'🌍 Easy Leaderboard', medium:'🗺️ Medium Leaderboard', jeroen:'💀 Jeroen Mode Leaderboard'};
+  document.getElementById('lb-title').textContent = titles[diff];
+  try {
+    const res = await fetch('/api/leaderboard?difficulty='+diff);
+    const data = await res.json();
+    const body = document.getElementById('leaderboard-body');
+    const isJ = diff==='jeroen';
+    if (!data.length) { body.innerHTML='<div class="lb-empty">No scores yet — be the first!</div>'; return; }
+    const medals = ['🥇','🥈','🥉'];
+    body.innerHTML = data.map((row,i) => `
+      <div class="leaderboard-row ${row.username===username ? (isJ?'lb-me jeroen-row':'lb-me') : ''}">
+        <div class="rank">${medals[i]||(i+1)}</div>
+        <div>${row.username}${row.username===username?' <span style="color:var(--text-muted);font-size:11px">(you)</span>':''}</div>
+        <div class="lb-streak ${isJ?'jeroen-streak':''}">${row.best_streak}</div>
+        <div class="lb-games">${row.games_played}g</div>
+      </div>`).join('');
+  } catch {}
+}
+
+// ── GAME ──
+function startGame() {
+  streak=0; awaitingNext=false;
+  useTimer = currentDiff==='jeroen' && document.getElementById('timer-switch').checked;
+  stopTimer(); updateStreakDisplay();
+  document.body.classList.toggle('jeroen-mode', currentDiff==='jeroen');
+  const cfg = DIFF_CONFIG[currentDiff];
+  const badge = document.getElementById('diff-badge');
+  badge.textContent = cfg.label; badge.className = 'diff-badge '+cfg.badge;
+  showScreen('game-screen');
+  nextQuestion();
+}
+
+function giveUp() { stopTimer(); endGame(); }
+function updateStreakDisplay() { document.getElementById('streak-count').textContent = streak; }
+
+function getRandom(arr, exclude=[]) {
+  const pool = arr.filter(x => !exclude.includes(x));
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+function getWrongAnswers(correct, field, pool, count=3) {
+  const others = pool.filter(c => c!==correct && c[field]!==correct[field]);
+  const wrong=[];
+  while (wrong.length<count && others.length>wrong.length) {
+    const pick = getRandom(others, wrong);
+    if (pick) wrong.push(pick);
+  }
+  return wrong;
+}
+function shuffle(arr) { return [...arr].sort(()=>Math.random()-0.5); }
+
+function nextQuestion() {
+  awaitingNext=false; stopTimer();
+  document.getElementById('feedback-bar').style.display='none';
+  const cfg = DIFF_CONFIG[currentDiff];
+  const type = cfg.questionTypes[Math.floor(Math.random()*cfg.questionTypes.length)];
+  const country = getRandom(cfg.countries);
+  currentQ = {type, country};
+  const badges = {capital:'🏛 Capital',flag:'🚩 Flag',map:'🗺 Map',continent:'🌍 Continent'};
+  document.getElementById('q-type-badge').textContent = badges[type];
+  const area = document.getElementById('answer-area');
+  area.innerHTML='';
+  if (type==='capital') buildCapitalQ(country, area, cfg.countries);
+  else if (type==='flag') buildFlagQ(country, area, cfg.countries);
+  else if (type==='continent') buildContinentQ(country, area, cfg.countries);
+  else if (type==='map') buildMapQ(country, area);
+  if (useTimer) startTimer();
+}
+
+// ── TIMER ──
+function startTimer() {
+  timerSecondsLeft = DIFF_CONFIG[currentDiff].timerSeconds;
+  document.getElementById('timer-wrap').style.display='flex';
+  updateTimerDisplay();
+  timerInterval = setInterval(()=>{
+    timerSecondsLeft--;
+    updateTimerDisplay();
+    if (timerSecondsLeft<=0) { stopTimer(); handleTimerExpired(); }
+  }, 1000);
+}
+function stopTimer() {
+  clearInterval(timerInterval); timerInterval=null;
+  document.getElementById('timer-wrap').style.display='none';
+}
+function updateTimerDisplay() {
+  const total = DIFF_CONFIG[currentDiff].timerSeconds;
+  const pct = (timerSecondsLeft/total)*100;
+  const cnt = document.getElementById('timer-count');
+  const bar = document.getElementById('timer-bar');
+  cnt.textContent = timerSecondsLeft;
+  cnt.className = 'timer-count'+(timerSecondsLeft<=5?' urgent':'');
+  bar.style.width = pct+'%';
+  bar.style.background = timerSecondsLeft<=5 ? 'var(--danger)' : 'var(--jeroen)';
+}
+function handleTimerExpired() {
+  if (awaitingNext) return;
+  document.querySelectorAll('.choice-btn').forEach(b=>b.disabled=true);
+  showFeedback(false, "⏱ Time's up!");
+}
+
+// ── QUESTIONS ──
+function buildCapitalQ(country, area, pool) {
+  document.getElementById('question-text').innerHTML = `What is the capital of <span>${country.name}</span>?`;
+  const wrongs = getWrongAnswers(country,'capital',pool);
+  buildChoices(shuffle([country,...wrongs]), area, c=>c.capital, c=>c===country, country.capital);
+}
+
+function buildFlagQ(country, area, pool) {
+  document.getElementById('question-text').innerHTML = `Which country does this flag belong to?`;
+  const flagDiv = document.createElement('div');
+  flagDiv.className='flag-display';
+  flagDiv.innerHTML=`<img class="flag-img" src="https://flagcdn.com/w320/${country.flag}.png" alt="flag">`;
+  area.appendChild(flagDiv);
+  const wrongs = getWrongAnswers(country,'name',pool);
+  buildChoices(shuffle([country,...wrongs]), area, c=>c.name, c=>c===country, country.name);
+}
+
+function buildContinentQ(country, area, pool) {
+  document.getElementById('question-text').innerHTML = `Which continent is <span>${country.name}</span> in?`;
+  const allConts = [...new Set(pool.map(c=>c.continent))];
+  const wrongs = shuffle(allConts.filter(c=>c!==country.continent)).slice(0,3);
+  const choices = shuffle([country.continent,...wrongs]);
+  const grid = document.createElement('div');
+  grid.className='choices-grid';
+  ['A','B','C','D'].forEach((letter,i)=>{
+    const btn=document.createElement('button');
+    btn.className='choice-btn';
+    btn.innerHTML=`<span class="choice-letter">${letter}</span>${choices[i]}`;
+    btn.onclick=()=>{
+      if(awaitingNext) return;
+      stopTimer();
+      grid.querySelectorAll('.choice-btn').forEach(b=>{
+        b.disabled=true;
+        if(b.textContent.trim().includes(country.continent)) b.classList.add('correct');
+      });
+      if(choices[i]!==country.continent) btn.classList.add('wrong');
+      showFeedback(choices[i]===country.continent,
+        choices[i]===country.continent ? 'Correct!' : `It's in ${country.continent}`);
+    };
+    grid.appendChild(btn);
+  });
+  area.appendChild(grid);
+}
+
+function buildChoices(items, area, labelFn, isCorrectFn, correctLabel) {
+  const grid=document.createElement('div');
+  grid.className='choices-grid';
+  ['A','B','C','D'].forEach((letter,i)=>{
+    if(!items[i]) return;
+    const btn=document.createElement('button');
+    btn.className='choice-btn';
+    btn.innerHTML=`<span class="choice-letter">${letter}</span>${labelFn(items[i])}`;
+    btn.onclick=()=>{
+      if(awaitingNext) return;
+      stopTimer();
+      const correct = isCorrectFn(items[i]);
+      grid.querySelectorAll('.choice-btn').forEach(b=>{
+        b.disabled=true;
+        if(b.textContent.trim().endsWith(correctLabel)) b.classList.add('correct');
+      });
+      if(!correct) btn.classList.add('wrong');
+      showFeedback(correct, correct?'Correct!':`The answer was: ${correctLabel}`);
+    };
+    grid.appendChild(btn);
+  });
+  area.appendChild(grid);
+}
+
+function buildMapQ(country, area) {
+  const cfg = DIFF_CONFIG[currentDiff];
+  document.getElementById('question-text').innerHTML =
+    `Click on <span>${country.name}</span> — within ${cfg.mapThreshold}km to score`;
+  const container=document.createElement('div'); container.id='map-container';
+  const mapDiv=document.createElement('div'); mapDiv.id='map';
+  const hint=document.createElement('div'); hint.className='map-hint'; hint.textContent='Click anywhere to place your pin';
+  const submitBtn=document.createElement('button'); submitBtn.id='map-submit'; submitBtn.textContent='Submit Pin'; submitBtn.onclick=submitMapAnswer;
+  const badge=document.createElement('div'); badge.className='distance-badge'; badge.id='distance-badge';
+  container.appendChild(mapDiv); container.appendChild(hint); container.appendChild(submitBtn); container.appendChild(badge);
+  area.appendChild(container);
+
+  setTimeout(()=>{
+    if(map){map.remove();map=null;}
+    map=L.map('map',{zoomControl:true,attributionControl:false}).setView([20,0],2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:9}).addTo(map);
+    marker=null;
+    map.on('click',e=>{
+      if(awaitingNext) return;
+      if(marker) map.removeLayer(marker);
+      marker=L.circleMarker([e.latlng.lat,e.latlng.lng],{
+        radius:8, fillColor:currentDiff==='jeroen'?'#a855f7':'#f0b429',
+        fillOpacity:1, color:'#fff', weight:2
+      }).addTo(map);
+      submitBtn.style.display='block';
+      hint.textContent='Confirm your pin or click elsewhere to move it';
+    });
+  },50);
+}
+
+function submitMapAnswer() {
+  if(!marker||awaitingNext) return;
+  stopTimer();
+  const {country}=currentQ;
+  const cfg=DIFF_CONFIG[currentDiff];
+  const g=marker.getLatLng();
+  const dist=haversine(g.lat,g.lng,country.lat,country.lng);
+  L.circleMarker([country.lat,country.lng],{radius:10,fillColor:'#22c55e',fillOpacity:1,color:'#fff',weight:2}).addTo(map);
+  L.polyline([[g.lat,g.lng],[country.lat,country.lng]],{color:'#f0b429',weight:2,dashArray:'5,4'}).addTo(map);
+  document.getElementById('map-submit').style.display='none';
+  const correct=dist<=cfg.mapThreshold;
+  const badge=document.getElementById('distance-badge');
+  badge.style.display='block';
+  badge.innerHTML=`
+    <div class="dist-value">${Math.round(dist)} km</div>
+    <div class="dist-label">from ${country.name}</div>
+    <div class="dist-verdict" style="color:${correct?'var(--success)':'var(--danger)'}">
+      ${correct?`✓ Within ${cfg.mapThreshold}km`:`✗ Limit: ${cfg.mapThreshold}km`}</div>`;
+  showFeedback(correct,
+    correct?`${Math.round(dist)}km — close enough!`:`${Math.round(dist)}km — too far`,
+    country.name);
+}
+
+function haversine(lat1,lng1,lat2,lng2) {
+  const R=6371,dL=(lat2-lat1)*Math.PI/180,dN=(lng2-lng1)*Math.PI/180;
+  const a=Math.sin(dL/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dN/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+// ── FEEDBACK & END ──
+function showFeedback(correct, message, sub='') {
+  awaitingNext=true;
+  if(correct){streak++;updateStreakDisplay();}
+  const bar=document.getElementById('feedback-bar');
+  bar.className=`feedback-bar ${correct?'correct-bar':'wrong-bar'}`;
+  bar.style.display='flex';
+  bar.innerHTML=`
+    <div>
+      <div class="feedback-text">${message}</div>
+      ${sub?`<div class="feedback-sub">${sub}</div>`:''}
+    </div>
+    <button class="next-btn" onclick="${correct?'nextQuestion()':'endGame()'}">${correct?'Next →':'See Results'}</button>`;
+}
+
+async function endGame() {
+  stopTimer();
+  try {
+    await fetch('/api/scores',{
+      method:'POST',
+      headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
+      body:JSON.stringify({streak,difficulty:currentDiff})
+    });
+  } catch {}
+  const isJ=currentDiff==='jeroen';
+  document.getElementById('final-streak').className='gameover-streak'+(isJ?' jeroen-score':'');
+  document.getElementById('final-streak').textContent=streak;
+  const diffLabels={easy:'🌍 Easy',medium:'🗺️ Medium',jeroen:'💀 Jeroen Mode'};
+  document.getElementById('gameover-diff').innerHTML=`<span class="diff-badge ${currentDiff}">${diffLabels[currentDiff]}</span>`;
+  const msgs=[
+    [0,"Welp. Even Jeroen would've done better. 😐"],
+    [3,"A start. A humble, humble start."],
+    [7,"Getting somewhere!"],
+    [10,"Solid geography knowledge! 🌍"],
+    [20,"Impressive — you really know your world."],
+    [30,"Geography wizard! 🧙"],
+    [50,"Are you literally a cartographer?? 🗺️"],
+  ];
+  document.getElementById('gameover-msg').textContent=msgs.filter(([n])=>streak>=n).pop()[1];
+  document.getElementById('play-again-btn').className='btn '+(isJ?'btn-jeroen':'btn-primary');
+  showScreen('gameover-screen');
+  document.body.classList.remove('jeroen-mode');
+}
+</script>
+</body>
+</html>

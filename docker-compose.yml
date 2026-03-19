@@ -1,0 +1,11 @@
+services:
+  app:
+    image: ghcr.io/baseijs/geostreak:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - JWT_SECRET=change-this-to-a-random-secret-string
