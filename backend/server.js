@@ -67,6 +67,7 @@ const DEFAULT_SETTINGS = {
   jeroen_timer: '12',
   jeroen_map_threshold: '400',
   jeroen_show_historical_label: '1',
+  jeroen_historical_flags: '1',
 };
 for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
   try {
@@ -142,6 +143,7 @@ app.get('/api/settings', (req, res) => {
     jeroen_timer: parseInt(getSetting('jeroen_timer')),
     jeroen_map_threshold: parseInt(getSetting('jeroen_map_threshold')),
     jeroen_show_historical_label: getSetting('jeroen_show_historical_label') === '1',
+    jeroen_historical_flags: getSetting('jeroen_historical_flags') === '1',
   });
 });
 
@@ -248,7 +250,7 @@ app.delete('/api/admin/scores/user/:id', auth, adminOnly, (req, res) => {
 
 // Update settings
 app.post('/api/admin/settings', auth, adminOnly, (req, res) => {
-  const allowed = ['easy_timer', 'medium_timer', 'jeroen_timer', 'jeroen_map_threshold', 'jeroen_show_historical_label'];
+  const allowed = ['easy_timer', 'medium_timer', 'jeroen_timer', 'jeroen_map_threshold', 'jeroen_show_historical_label', 'jeroen_historical_flags'];
   for (const key of allowed) {
     if (req.body[key] !== undefined) {
       db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(key, String(req.body[key]));

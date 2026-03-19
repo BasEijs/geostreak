@@ -489,6 +489,16 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
               <span class="slider"></span>
             </label>
           </div>
+          <div class="setting-row">
+            <div class="setting-label">
+              Include historical flags
+              <span>When enabled, old flags like the Soviet Union, Yugoslavia and East Germany appear in flag questions. Capital questions for these countries are never asked regardless of this setting.</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="setting-historical-flags" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
         </div>
       </div>
       <div class="settings-save">
@@ -697,6 +707,7 @@ let gameSettings = {
   jeroen_timer: 12,
   jeroen_map_threshold: 400,
   jeroen_show_historical_label: true,
+  jeroen_historical_flags: true,
 };
 
 function getDiffConfig(diff) {
@@ -720,7 +731,7 @@ function getDiffConfig(diff) {
     },
     jeroen: {
       label:"Jeroen Mode 💀", badge:"jeroen",
-      countries: [...jeroenCountries, ...HISTORICAL_FLAGS],
+      countries: [...jeroenCountries, ...(gameSettings.jeroen_historical_flags ? HISTORICAL_FLAGS : [])],
       questionTypes: ["capital","capital","flag","flag","map","map","capital-map","match-flags","match-capitals"],
       mapThreshold: gameSettings.jeroen_map_threshold,
       timerSeconds: gameSettings.jeroen_timer || null,
@@ -1212,10 +1223,11 @@ function nextQuestion() {
   document.getElementById('historical-note').style.display='none';
 
   const cfg = getDiffConfig(currentDiff);
-  // Filter out historical flags if not jeroen
   const pool = cfg.countries.filter(c => !c.historical || currentDiff==='jeroen');
+  const nonHistoricalPool = pool.filter(c => !c.historical);
   const type = cfg.questionTypes[Math.floor(Math.random()*cfg.questionTypes.length)];
-  const country = getRandom(pool);
+  // Historical countries only appear in flag questions
+  const country = getRandom(type === 'flag' ? pool : nonHistoricalPool);
   currentQ = {type, country};
 
   const badges = {capital:'🏛 Capital', flag:'🚩 Flag', map:'🗺 Map', continent:'🌍 Continent', 'match-flags':'🚩 Match Flags', 'match-capitals':'🏛 Match Capitals', 'capital-map':'🗺 Capital → Map'};
@@ -1228,12 +1240,12 @@ function nextQuestion() {
   submitContainer.innerHTML = '';
   submitContainer.classList.remove('visible');
 
-  if (type==='capital') buildCapitalQ(country, area, pool);
+  if (type==='capital') buildCapitalQ(country, area, nonHistoricalPool);
   else if (type==='flag') buildFlagQ(country, area, pool);
-  else if (type==='continent') buildContinentQ(country, area, pool);
+  else if (type==='continent') buildContinentQ(country, area, nonHistoricalPool);
   else if (type==='map') buildMapQ(country, area, false);
   else if (type==='match-flags') buildMatchQ('flag', pool, area);
-  else if (type==='match-capitals') buildMatchQ('capital', pool, area);
+  else if (type==='match-capitals') buildMatchQ('capital', nonHistoricalPool, area);
   else if (type==='capital-map') buildCapitalMapQ(country, area);
 
   if (useTimer) startTimer(type.startsWith('match') ? 6 : 1);
@@ -1768,6 +1780,7 @@ async function loadAdminSettings() {
     document.getElementById('setting-jeroen-timer').value = s.jeroen_timer;
     document.getElementById('setting-jeroen-map').value = s.jeroen_map_threshold;
     document.getElementById('setting-historical-label').checked = s.jeroen_show_historical_label;
+    document.getElementById('setting-historical-flags').checked = s.jeroen_historical_flags;
   } catch {}
 }
 
@@ -1778,6 +1791,7 @@ async function saveSettings() {
     jeroen_timer: parseInt(document.getElementById('setting-jeroen-timer').value) || 0,
     jeroen_map_threshold: parseInt(document.getElementById('setting-jeroen-map').value) || 400,
     jeroen_show_historical_label: document.getElementById('setting-historical-label').checked ? '1' : '0',
+    jeroen_historical_flags: document.getElementById('setting-historical-flags').checked ? '1' : '0',
   };
   try {
     await fetch('/api/admin/settings', {
