@@ -61,9 +61,22 @@
     align-items: center;
     justify-content: center;
     flex-direction: column;
-    gap: 32px;
+    gap: 20px;
     padding: 24px;
   }
+
+  .info-box {
+    background: rgba(240,180,41,0.06);
+    border: 1px solid rgba(240,180,41,0.2);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    width: 100%;
+    max-width: 380px;
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+  .info-box strong { color: var(--accent); }
 
   .logo { text-align: center; }
   .logo h1 {
@@ -186,31 +199,6 @@
   }
   .diff-desc { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
 
-  .timer-toggle {
-    display: none; align-items: center; gap: 14px;
-    background: var(--surface); border: 1px solid rgba(168,85,247,0.3);
-    border-radius: var(--radius); padding: 14px 18px; font-size: 14px;
-    max-width: 420px; width: 100%;
-  }
-  .timer-toggle.visible { display: flex; }
-  .timer-toggle label { cursor: pointer; flex: 1; }
-  .timer-toggle span { color: var(--text-muted); font-size: 12px; }
-
-  .switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
-  .switch input { opacity: 0; width: 0; height: 0; }
-  .slider {
-    position: absolute; cursor: pointer; inset: 0;
-    background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 24px; transition: 0.2s;
-  }
-  .slider:before {
-    content: ''; position: absolute;
-    height: 16px; width: 16px; left: 3px; bottom: 3px;
-    background: var(--text-muted); border-radius: 50%; transition: 0.2s;
-  }
-  input:checked + .slider { background: rgba(168,85,247,0.3); border-color: var(--jeroen); }
-  input:checked + .slider:before { transform: translateX(20px); background: var(--jeroen); }
-
   .play-btn {
     background: linear-gradient(135deg, var(--accent), var(--accent2));
     color: #000; font-family: 'Bebas Neue', sans-serif;
@@ -289,10 +277,16 @@
     margin: 0 auto;
     width: 100%;
   }
-  /* Keep nav full width with centered content */
   #menu-screen, #admin-screen { min-height: 100vh; }
 
-  /* App wrapper - centers everything */
+  /* Gameover vertical center */
+  #gameover-screen {
+    min-height: 100vh;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* App wrapper - centers everything horizontally */
   #app {
     max-width: 720px;
     margin: 0 auto;
@@ -301,6 +295,8 @@
     border-left: 1px solid var(--border);
     border-right: 1px solid var(--border);
     background: var(--bg);
+    display: flex;
+    flex-direction: column;
   }
 
   .game-header {
@@ -531,6 +527,9 @@
     </div>
     <button class="btn btn-primary" onclick="submitAuth()">Continue</button>
   </div>
+  <div class="info-box">
+    👋 <strong>New here?</strong> Register with just your <strong>first name</strong> as your username — that's what shows on the leaderboard. Your password can be anything simple, just don't forget it!
+  </div>
 </div>
 
 <!-- MENU -->
@@ -547,9 +546,9 @@
 
     <div class="difficulty-picker">
       <div class="diff-card selected" data-diff="easy" onclick="selectDiff('easy')">
-        <div class="diff-icon">🌍</div>
-        <div class="diff-name">Easy</div>
-        <div class="diff-desc">Well-known countries · No map · No timer</div>
+        <div class="diff-icon">🧠</div>
+        <div class="diff-name">Dumb Test</div>
+        <div class="diff-desc">Well-known countries · No map · 5 second timer</div>
       </div>
       <div class="diff-card" data-diff="medium" onclick="selectDiff('medium')">
         <div class="diff-icon">🗺️</div>
@@ -559,26 +558,15 @@
       <div class="diff-card jeroen-card" data-diff="jeroen" onclick="selectDiff('jeroen')">
         <div class="diff-icon">💀</div>
         <div class="diff-name">Jeroen Mode</div>
-        <div class="diff-desc">Disputed & autonomous territories · 400km map limit · Optional timer</div>
+        <div class="diff-desc">Disputed & autonomous territories · 400km map limit · 12 second timer</div>
       </div>
-    </div>
-
-    <div class="timer-toggle" id="timer-toggle">
-      <label for="timer-switch">
-        <strong>Enable 15-second timer</strong>
-        <div><span>Time runs out = streak ends. Pain is optional. Or is it?</span></div>
-      </label>
-      <label class="switch">
-        <input type="checkbox" id="timer-switch">
-        <span class="slider"></span>
-      </label>
     </div>
 
     <button class="play-btn" id="play-btn" onclick="startGame()">PLAY</button>
 
     <div class="stats-section">
       <div class="stats-tabs">
-        <button class="stats-tab active" onclick="switchStatTab('easy')">Easy</button>
+        <button class="stats-tab active" onclick="switchStatTab('easy')">Dumb Test</button>
         <button class="stats-tab" onclick="switchStatTab('medium')">Medium</button>
         <button class="stats-tab jeroen-tab" onclick="switchStatTab('jeroen')">Jeroen Mode</button>
       </div>
@@ -669,8 +657,8 @@
       <div class="admin-section-header">Clear Leaderboards</div>
       <div class="clear-scores-row">
         <div class="clear-scores-label">
-          🌍 Easy
-          <span>Delete all Easy scores for everyone</span>
+          🧠 Dumb Test
+          <span>Delete all Dumb Test scores for everyone</span>
         </div>
         <button class="btn btn-danger btn-xs" onclick="confirmClearAll('easy')">Clear All</button>
       </div>
@@ -824,11 +812,11 @@ const JEROEN_EXTRA = [
 
 const DIFF_CONFIG = {
   easy: {
-    label:"Easy", badge:"easy",
+    label:"Dumb Test", badge:"easy",
     countries: EASY_COUNTRIES,
     questionTypes: ["capital","flag","continent"],
     mapThreshold: 1000,
-    timerSeconds: null,
+    timerSeconds: 5,
   },
   medium: {
     label:"Medium", badge:"medium",
@@ -842,7 +830,7 @@ const DIFF_CONFIG = {
     countries: [...EASY_COUNTRIES, ...MEDIUM_EXTRA, ...JEROEN_EXTRA],
     questionTypes: ["capital","flag","continent","map"],
     mapThreshold: 400,
-    timerSeconds: 15,
+    timerSeconds: 12,
   },
 };
 
@@ -923,7 +911,6 @@ function logout() {
 function selectDiff(diff) {
   currentDiff = diff;
   document.querySelectorAll('.diff-card').forEach(c => c.classList.toggle('selected', c.dataset.diff===diff));
-  document.getElementById('timer-toggle').classList.toggle('visible', diff==='jeroen');
   const btn = document.getElementById('play-btn');
   btn.className = 'play-btn' + (diff==='jeroen' ? ' jeroen-play' : '');
 }
@@ -955,7 +942,7 @@ async function loadAllStats() {
 }
 
 async function loadLeaderboard(diff) {
-  const titles = {easy:'🌍 Easy Leaderboard', medium:'🗺️ Medium Leaderboard', jeroen:'💀 Jeroen Mode Leaderboard'};
+  const titles = {easy:'🧠 Dumb Test Leaderboard', medium:'🗺️ Medium Leaderboard', jeroen:'💀 Jeroen Mode Leaderboard'};
   document.getElementById('lb-title').textContent = titles[diff];
   try {
     const res = await fetch('/api/leaderboard?difficulty='+diff);
@@ -977,7 +964,7 @@ async function loadLeaderboard(diff) {
 // ── GAME ──
 function startGame() {
   streak=0; awaitingNext=false;
-  useTimer = currentDiff==='jeroen' && document.getElementById('timer-switch').checked;
+  useTimer = !!DIFF_CONFIG[currentDiff].timerSeconds;
   stopTimer(); updateStreakDisplay();
   document.body.classList.toggle('jeroen-mode', currentDiff==='jeroen');
   const cfg = DIFF_CONFIG[currentDiff];
@@ -1208,7 +1195,7 @@ async function endGame() {
   const isJ=currentDiff==='jeroen';
   document.getElementById('final-streak').className='gameover-streak'+(isJ?' jeroen-score':'');
   document.getElementById('final-streak').textContent=streak;
-  const diffLabels={easy:'🌍 Easy',medium:'🗺️ Medium',jeroen:'💀 Jeroen Mode'};
+  const diffLabels={easy:'🧠 Dumb Test',medium:'🗺️ Medium',jeroen:'💀 Jeroen Mode'};
   document.getElementById('gameover-diff').innerHTML=`<span class="diff-badge ${currentDiff}">${diffLabels[currentDiff]}</span>`;
   const msgs=[
     [0,"Welp. Even Jeroen would've done better. 😐"],
