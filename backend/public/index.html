@@ -260,6 +260,22 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
 .leaflet-container { background: #0d1520 !important; }
 .leaflet-tile { filter: brightness(0.65) saturate(0.5); }
 
+/* TYPED ANSWER */
+.typed-answer-area { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.typed-input-row { display: flex; gap: 10px; }
+.typed-input { flex: 1; padding: 14px 16px; background: var(--bg); border: 2px solid var(--border); border-radius: var(--radius); color: var(--text); font-family: 'DM Sans',sans-serif; font-size: 16px; outline: none; transition: border-color 0.2s; }
+.typed-input:focus { border-color: var(--accent); }
+.jeroen-mode .typed-input:focus { border-color: var(--jeroen); }
+.typed-input.correct { border-color: var(--success); background: rgba(34,197,94,0.08); }
+.typed-input.wrong { border-color: var(--danger); background: rgba(239,68,68,0.08); }
+.typed-submit { width: auto; padding: 14px 24px; background: linear-gradient(135deg,var(--jeroen),var(--jeroen2)); color: #fff; font-weight: 700; border: none; border-radius: var(--radius); cursor: pointer; font-family: 'DM Sans',sans-serif; font-size: 15px; white-space: nowrap; }
+.typed-hint { font-size: 12px; color: var(--text-muted); }
+
+/* LANGUAGE TOGGLE */
+.lang-toggle { display: flex; gap: 4px; background: var(--bg); border-radius: 8px; padding: 4px; border: 1px solid var(--border); }
+.lang-btn { padding: 6px 12px; border: none; background: none; color: var(--text-muted); font-family: 'DM Sans',sans-serif; font-size: 13px; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+.lang-btn.active { background: var(--surface2); color: var(--text); }
+
 @media (max-width: 600px) {
   .choices-grid { grid-template-columns: 1fr; }
   .flag-img { width: 150px; height: 100px; }
@@ -308,6 +324,10 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
     <div class="nav-logo">GeoStreak</div>
     <div class="nav-user">
       <strong id="nav-username"></strong>
+      <div class="lang-toggle">
+        <button class="lang-btn active" id="lang-en" onclick="setLanguage('en')">🇬🇧 EN</button>
+        <button class="lang-btn" id="lang-nl" onclick="setLanguage('nl')">🇳🇱 NL</button>
+      </div>
       <button class="btn btn-ghost btn-sm" id="admin-nav-btn" style="display:none" onclick="showAdmin()">⚙ Admin</button>
       <button class="btn btn-ghost btn-sm" onclick="logout()">Sign out</button>
     </div>
@@ -360,7 +380,7 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
   <div class="game-header">
     <div class="streak-display">
       <div class="streak-number" id="streak-count">0</div>
-      <div class="streak-label">streak</div>
+      <div class="streak-label" id="streak-label-el">streak</div>
     </div>
     <div class="timer-wrap" id="timer-wrap" style="display:none">
       <div class="timer-count" id="timer-count">15</div>
@@ -369,7 +389,7 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
     <div class="header-right">
       <div class="question-badge" id="q-type-badge">—</div>
       <div class="diff-badge" id="diff-badge">—</div>
-      <button class="btn btn-ghost btn-sm btn-danger" onclick="giveUp()">Quit</button>
+      <button class="btn btn-ghost btn-sm btn-danger" id="quit-btn" onclick="giveUp()">Quit</button>
     </div>
   </div>
   <div class="game-body">
@@ -385,14 +405,14 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
 <!-- GAMEOVER -->
 <div id="gameover-screen" class="screen">
   <div class="gameover-card">
-    <div class="gameover-title">Game Over</div>
+    <div class="gameover-title" id="gameover-title">Game Over</div>
     <div class="gameover-diff" id="gameover-diff"></div>
     <div class="gameover-streak" id="final-streak">0</div>
-    <div class="gameover-sub">correct answers in a row</div>
+    <div class="gameover-sub" id="gameover-sub">correct answers in a row</div>
     <div class="gameover-msg" id="gameover-msg"></div>
     <div class="gameover-actions">
       <button class="btn btn-primary" id="play-again-btn" onclick="startGame()">Play Again</button>
-      <button class="btn btn-ghost" onclick="showMenu()">Back to Menu</button>
+      <button class="btn btn-ghost" id="back-to-menu-btn" onclick="showMenu()">Back to Menu</button>
     </div>
   </div>
 </div>
@@ -709,6 +729,7 @@ function getDiffConfig(diff) {
 let token = localStorage.getItem('token');
 let username = localStorage.getItem('username');
 let isAdmin = localStorage.getItem('is_admin') === '1';
+let currentLang = localStorage.getItem('language') || 'en';
 let streak = 0;
 let currentDiff = 'easy';
 let currentStatTab = 'easy';
@@ -722,11 +743,197 @@ let awaitingNext = false;
 let allStats = {};
 
 // ════════════════════════════════════
+// TRANSLATIONS
+// ════════════════════════════════════
+
+const NL = {
+  // Country names
+  countries: {
+    "France":"Frankrijk","Germany":"Duitsland","United Kingdom":"Verenigd Koninkrijk",
+    "Italy":"Italië","Spain":"Spanje","Netherlands":"Nederland","Belgium":"België",
+    "Portugal":"Portugal","Sweden":"Zweden","Norway":"Noorwegen","Denmark":"Denemarken",
+    "Finland":"Finland","Poland":"Polen","Switzerland":"Zwitserland","Austria":"Oostenrijk",
+    "Greece":"Griekenland","Czech Republic":"Tsjechië","Romania":"Roemenië",
+    "Hungary":"Hongarije","Ireland":"Ierland","Ukraine":"Oekraïne",
+    "United States":"Verenigde Staten","Canada":"Canada","Mexico":"Mexico",
+    "Brazil":"Brazilië","Argentina":"Argentinië","China":"China","Japan":"Japan",
+    "India":"India","South Korea":"Zuid-Korea","Indonesia":"Indonesië",
+    "Turkey":"Turkije","Saudi Arabia":"Saoedi-Arabië","Israel":"Israël",
+    "Russia":"Rusland","Australia":"Australië","New Zealand":"Nieuw-Zeeland",
+    "South Africa":"Zuid-Afrika","Egypt":"Egypte","Nigeria":"Nigeria",
+    "Afghanistan":"Afghanistan","Albania":"Albanië","Algeria":"Algerije",
+    "Bangladesh":"Bangladesh","Bolivia":"Bolivia","Bulgaria":"Bulgarije",
+    "Cambodia":"Cambodja","Chile":"Chili","Colombia":"Colombia","Croatia":"Kroatië",
+    "Ecuador":"Ecuador","Ethiopia":"Ethiopië","Ghana":"Ghana","Iran":"Iran",
+    "Iraq":"Irak","Jordan":"Jordanië","Kazakhstan":"Kazachstan","Kenya":"Kenia",
+    "Malaysia":"Maleisië","Morocco":"Marokko","Mozambique":"Mozambique",
+    "Myanmar":"Myanmar","Nepal":"Nepal","North Korea":"Noord-Korea",
+    "Pakistan":"Pakistan","Peru":"Peru","Philippines":"Filipijnen","Serbia":"Servië",
+    "Sri Lanka":"Sri Lanka","Sudan":"Soedan","Syria":"Syrië","Tanzania":"Tanzania",
+    "Thailand":"Thailand","Uganda":"Oeganda","United Arab Emirates":"Verenigde Arabische Emiraten",
+    "Uzbekistan":"Oezbekistan","Venezuela":"Venezuela","Vietnam":"Vietnam",
+    "Yemen":"Jemen","Zimbabwe":"Zimbabwe","Slovakia":"Slowakije","Slovenia":"Slovenië",
+    "Lithuania":"Litouwen","Latvia":"Letland","Estonia":"Estland","Belarus":"Wit-Rusland",
+    "Moldova":"Moldavië","Georgia":"Georgië","Armenia":"Armenië","Azerbaijan":"Azerbeidzjan",
+    "Tunisia":"Tunesië","Libya":"Libië","Angola":"Angola","Zambia":"Zambia","Senegal":"Senegal",
+    "Kosovo":"Kosovo","Taiwan":"Taiwan","Palestine":"Palestina",
+    "Western Sahara":"Westelijke Sahara","Greenland":"Groenland","Faroe Islands":"Faeröer",
+    "Hong Kong":"Hongkong","Macau":"Macau","New Caledonia":"Nieuw-Caledonië",
+    "Puerto Rico":"Puerto Rico","Somaliland":"Somaliland","Transnistria":"Transnistrië",
+    "Abkhazia":"Abchazië","South Ossetia":"Zuid-Ossetië","Northern Cyprus":"Noord-Cyprus",
+    "Åland Islands":"Ålandseilanden","Gibraltar":"Gibraltar","Isle of Man":"Isle of Man",
+    "Guam":"Guam","Falkland Islands":"Falklandeilanden","Svalbard":"Spitsbergen",
+    "Cayman Islands":"Caymaneilanden","Bermuda":"Bermuda","French Polynesia":"Frans-Polynesië",
+    "Soviet Union":"Sovjet-Unie","Yugoslavia":"Joegoslavië","East Germany":"Oost-Duitsland",
+    "Czechoslovakia":"Tsjecho-Slowakije","Libya (old flag)":"Libië (oude vlag)",
+    "South Vietnam":"Zuid-Vietnam","Rhodesia":"Rhodesië",
+  },
+  // Continent names
+  continents: {
+    "Europe":"Europa","Asia":"Azië","Africa":"Afrika",
+    "North America":"Noord-Amerika","South America":"Zuid-Amerika","Oceania":"Oceanië",
+  },
+  // UI strings
+  ui: {
+    whatCapital: (c) => `Wat is de hoofdstad van <span>${c}</span>?`,
+    whichCountryFlag: "Van welk land is deze vlag?",
+    whichContinent: (c) => `Op welk continent ligt <span>${c}</span>?`,
+    clickCountry: (c, km) => `Klik op <span>${c}</span> — binnen ${km}km om te scoren`,
+    capitalMap: (c) => `<span>${c}</span> is de hoofdstad van welk land? Klik het op de kaart.`,
+    matchFlags: "Koppel elke <span>vlag</span> aan het juiste land",
+    matchCapitals: "Koppel elke <span>hoofdstad</span> aan het juiste land",
+    typeCountry: "Typ de naam van het land",
+    typeCapital: "Typ de hoofdstad",
+    submitAnswer: "Bevestigen",
+    typingHint: "Kleine typfouten worden vergeven",
+    correct: "Correct!",
+    wrong: (ans) => `Het antwoord was: ${ans}`,
+    timesUp: "⏱ Tijd is op!",
+    nextQuestion: "Volgende →",
+    seeResults: "Resultaten",
+    flags: "Vlaggen",
+    countries: "Landen",
+    capitals: "Hoofdsteden",
+    dragHint: (t) => `Sleep landnamen om ze te koppelen aan de ${t==='flag'?'vlaggen':'hoofdsteden'}`,
+    submitMatches: "Bevestig koppeling",
+    perfectMatch: "Perfecte koppeling! 🎯",
+    someWrong: "Sommige koppelingen klopten niet",
+    withinKm: (km) => `✓ Binnen ${km}km`,
+    tooFar: (km) => `✗ Limiet: ${km}km`,
+    closeEnough: (d) => `${d}km — goed genoeg!`,
+    tooFarDist: (d) => `${d}km — te ver`,
+    gameOver: "Game Over",
+    correctInARow: "vragen achter elkaar goed",
+    playAgain: "Opnieuw spelen",
+    backToMenu: "Terug naar menu",
+    quit: "Stop",
+    streak: "REEKS",
+    dumbTestDesc: (t,m) => `Bekende landen · Geen kaart${t?` · ${t}s timer`:' · Geen timer'}`,
+    mediumDesc: (t,m) => `Alle landen · Alle vraagtypen${t?` · ${t}s timer`:' · Geen timer'}`,
+    jeroenDesc: (t,m) => `Betwiste gebieden · ${m}km kaartlimiet${t?` · ${t}s timer`:' · Geen timer'}`,
+    historical: "⚠️ Dit is een historische vlag die niet meer in gebruik is",
+    pinHint: "Klik ergens om je pin te plaatsen",
+    confirmPin: "Bevestig je pin of klik ergens anders om te verplaatsen",
+    submitPin: "Pin bevestigen",
+  }
+};
+
+const EN = {
+  countries: {}, // empty = use original names
+  continents: {},
+  ui: {
+    whatCapital: (c) => `What is the capital of <span>${c}</span>?`,
+    whichCountryFlag: "Which country does this flag belong to?",
+    whichContinent: (c) => `Which continent is <span>${c}</span> in?`,
+    clickCountry: (c, km) => `Click on <span>${c}</span> — within ${km}km to score`,
+    capitalMap: (c) => `<span>${c}</span> is the capital of which country? Click it on the map.`,
+    matchFlags: "Match each <span>flag</span> to its country",
+    matchCapitals: "Match each <span>capital</span> to its country",
+    typeCountry: "Type the country name",
+    typeCapital: "Type the capital city",
+    submitAnswer: "Submit",
+    typingHint: "Small typos are forgiven",
+    correct: "Correct!",
+    wrong: (ans) => `The answer was: ${ans}`,
+    timesUp: "⏱ Time's up!",
+    nextQuestion: "Next →",
+    seeResults: "See Results",
+    flags: "Flags",
+    countries: "Countries",
+    capitals: "Capitals",
+    dragHint: (t) => `Drag country names to match them with the ${t==='flag'?'flags':'capitals'}`,
+    submitMatches: "Submit Matches",
+    perfectMatch: "Perfect match! 🎯",
+    someWrong: "Some matches were wrong",
+    withinKm: (km) => `✓ Within ${km}km`,
+    tooFar: (km) => `✗ Limit: ${km}km`,
+    closeEnough: (d) => `${d}km — close enough!`,
+    tooFarDist: (d) => `${d}km — too far`,
+    gameOver: "Game Over",
+    correctInARow: "correct answers in a row",
+    playAgain: "Play Again",
+    backToMenu: "Back to Menu",
+    quit: "Quit",
+    streak: "STREAK",
+    dumbTestDesc: (t,m) => `Well-known countries · No map${t?` · ${t}s timer`:' · No timer'}`,
+    mediumDesc: (t,m) => `All countries · All question types${t?` · ${t}s timer`:' · No timer'}`,
+    jeroenDesc: (t,m) => `Disputed territories · ${m}km map limit${t?` · ${t}s timer`:' · No timer'}`,
+    historical: "⚠️ This is a historical flag no longer in use",
+    pinHint: "Click anywhere to place your pin",
+    confirmPin: "Confirm your pin or click elsewhere to move it",
+    submitPin: "Submit Pin",
+  }
+};
+
+function t() { return currentLang === 'nl' ? NL : EN; }
+
+function localName(country) {
+  if (currentLang === 'nl' && NL.countries[country.name]) return NL.countries[country.name];
+  return country.name;
+}
+function localContinent(cont) {
+  if (currentLang === 'nl' && NL.continents[cont]) return NL.continents[cont];
+  return cont;
+}
+function localCapital(country) { return country.capital; } // capitals stay the same in both languages
+
+// ── FUZZY MATCH ──
+function normalize(str) {
+  return str.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // strip accents
+    .replace(/[^a-z0-9\s]/g, '') // strip punctuation
+    .replace(/\s+/g, ' ').trim();
+}
+function editDistance(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({length:m+1}, (_,i) => Array.from({length:n+1}, (_,j) => i===0?j:j===0?i:0));
+  for (let i=1;i<=m;i++) for (let j=1;j<=n;j++)
+    dp[i][j] = a[i-1]===b[j-1] ? dp[i-1][j-1] : 1+Math.min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1]);
+  return dp[m][n];
+}
+function fuzzyMatch(input, correct) {
+  const a = normalize(input);
+  const b = normalize(correct);
+  if (a === b) return true;
+  // Also check NL translation if applicable
+  const threshold = b.length <= 5 ? 1 : b.length <= 8 ? 2 : 3;
+  if (editDistance(a, b) <= threshold) return true;
+  // Check against both EN and NL versions
+  if (currentLang === 'nl') {
+    // check against English too
+    const enDist = editDistance(a, normalize(correct));
+    if (enDist <= threshold) return true;
+  }
+  return false;
+}
+
+// ════════════════════════════════════
 // INIT
 // ════════════════════════════════════
 
 window.onload = async () => {
   await fetchSettings();
+  applyLanguageUI();
   if (token && username) showMenu();
   document.getElementById('auth-password').addEventListener('keydown', e => { if(e.key==='Enter') submitAuth(); });
   document.getElementById('auth-username').addEventListener('keydown', e => { if(e.key==='Enter') submitAuth(); });
@@ -746,9 +953,16 @@ function updateDiffDescriptions() {
   const mt = gameSettings.medium_timer;
   const jt = gameSettings.jeroen_timer;
   const jm = gameSettings.jeroen_map_threshold;
-  document.getElementById('desc-easy').textContent = `Well-known countries · No map${et ? ` · ${et}s timer` : ' · No timer'}`;
-  document.getElementById('desc-medium').textContent = `All countries · All question types${mt ? ` · ${mt}s timer` : ' · No timer'}`;
-  document.getElementById('desc-jeroen').textContent = `Disputed territories · ${jm}km map limit${jt ? ` · ${jt}s timer` : ' · No timer'}`;
+  document.getElementById('desc-easy').textContent = t().ui.dumbTestDesc(et, jm);
+  document.getElementById('desc-medium').textContent = t().ui.mediumDesc(mt, jm);
+  document.getElementById('desc-jeroen').textContent = t().ui.jeroenDesc(jt, jm);
+}
+
+function applyLanguageUI() {
+  document.getElementById('lang-en').classList.toggle('active', currentLang==='en');
+  document.getElementById('lang-nl').classList.toggle('active', currentLang==='nl');
+  document.getElementById('streak-label-el').textContent = t().ui.streak;
+  updateDiffDescriptions();
 }
 
 // ════════════════════════════════════
@@ -795,9 +1009,12 @@ async function submitAuth() {
     const data = await res.json();
     if (!res.ok) return showAuthError(data.error || 'Something went wrong');
     token=data.token; username=data.username; isAdmin=!!data.is_admin;
+    currentLang = data.language || 'en';
     localStorage.setItem('token',token);
     localStorage.setItem('username',username);
     localStorage.setItem('is_admin', isAdmin?'1':'0');
+    localStorage.setItem('language', currentLang);
+    applyLanguageUI();
     if (data.must_change_password) {
       showScreen('auth-screen');
       document.getElementById('change-pw-modal').style.display = 'flex';
@@ -826,8 +1043,23 @@ async function submitNewPassword() {
 
 function logout() {
   token=null; username=null; isAdmin=false;
-  localStorage.removeItem('token'); localStorage.removeItem('username'); localStorage.removeItem('is_admin');
+  localStorage.removeItem('token'); localStorage.removeItem('username');
+  localStorage.removeItem('is_admin'); localStorage.removeItem('language');
   showScreen('auth-screen');
+}
+
+async function setLanguage(lang) {
+  currentLang = lang;
+  localStorage.setItem('language', lang);
+  applyLanguageUI();
+  if (token) {
+    try {
+      await fetch('/api/me/language', {
+        method:'POST', headers:{'Content-Type':'application/json', Authorization:'Bearer '+token},
+        body: JSON.stringify({language: lang})
+      });
+    } catch {}
+  }
 }
 
 // ════════════════════════════════════
@@ -907,6 +1139,8 @@ function startGame() {
   document.body.classList.toggle('jeroen-mode', currentDiff==='jeroen');
   const badge = document.getElementById('diff-badge');
   badge.textContent = cfg.label; badge.className = 'diff-badge '+cfg.badge;
+  document.getElementById('quit-btn').textContent = t().ui.quit;
+  document.getElementById('streak-label-el').textContent = t().ui.streak;
   showScreen('game-screen');
   nextQuestion();
 }
@@ -989,35 +1223,43 @@ function handleTimerExpired() {
   if (awaitingNext) return;
   document.querySelectorAll('.choice-btn').forEach(b=>b.disabled=true);
   document.querySelectorAll('.match-item').forEach(b=>b.draggable=false);
-  showFeedback(false, "⏱ Time's up!");
+  showFeedback(false, t().ui.timesUp);
 }
 
 // ── CAPITAL ──
 function buildCapitalQ(country, area, pool) {
-  document.getElementById('question-text').innerHTML = `What is the capital of <span>${country.name}</span>?`;
-  // For medium/jeroen pick geographically close wrong answers when possible
-  let wrongs = getWrongAnswers(country,'capital',pool);
-  buildChoices(shuffle([country,...wrongs]), area, c=>c.capital, c=>c===country, country.capital);
+  document.getElementById('question-text').innerHTML = t().ui.whatCapital(localName(country));
+  if (currentDiff === 'jeroen') {
+    buildTypedInput(area, country.capital, country.capital, t().ui.typeCapital);
+  } else {
+    let wrongs = getWrongAnswers(country,'capital',pool);
+    buildChoices(shuffle([country,...wrongs]), area, c=>c.capital, c=>c===country, country.capital);
+  }
 }
 
 // ── FLAG ──
 function buildFlagQ(country, area, pool) {
-  document.getElementById('question-text').innerHTML = `Which country does this flag belong to?`;
+  document.getElementById('question-text').innerHTML = t().ui.whichCountryFlag;
   if (country.historical && gameSettings.jeroen_show_historical_label) {
     document.getElementById('historical-note').style.display='block';
+    document.getElementById('historical-note').textContent = t().ui.historical;
   }
   const flagDiv = document.createElement('div');
   flagDiv.className='flag-display';
   const src = country.flagUrl || `https://flagcdn.com/w320/${country.flag}.png`;
   flagDiv.innerHTML=`<img class="flag-img" src="${src}" alt="flag">`;
   area.appendChild(flagDiv);
-  const wrongs = getWrongAnswers(country,'name',pool.filter(c=>!c.historical));
-  buildChoices(shuffle([country,...wrongs]), area, c=>c.name, c=>c===country, country.name);
+  if (currentDiff === 'jeroen') {
+    buildTypedInput(area, country.name, localName(country), t().ui.typeCountry);
+  } else {
+    const wrongs = getWrongAnswers(country,'name',pool.filter(c=>!c.historical));
+    buildChoices(shuffle([country,...wrongs]), area, c=>localName(c), c=>c===country, localName(country));
+  }
 }
 
 // ── CONTINENT ──
 function buildContinentQ(country, area, pool) {
-  document.getElementById('question-text').innerHTML = `Which continent is <span>${country.name}</span> in?`;
+  document.getElementById('question-text').innerHTML = t().ui.whichContinent(localName(country));
   const allConts = [...new Set(pool.map(c=>c.continent))];
   const wrongs = shuffle(allConts.filter(c=>c!==country.continent)).slice(0,3);
   const choices = shuffle([country.continent,...wrongs]);
@@ -1027,16 +1269,17 @@ function buildContinentQ(country, area, pool) {
     if (!choices[i]) return;
     const btn=document.createElement('button');
     btn.className='choice-btn';
-    btn.innerHTML=`<span class="choice-letter">${letter}</span>${choices[i]}`;
+    btn.innerHTML=`<span class="choice-letter">${letter}</span>${localContinent(choices[i])}`;
     btn.onclick=()=>{
       if(awaitingNext) return;
       stopTimer();
       grid.querySelectorAll('.choice-btn').forEach(b=>{
         b.disabled=true;
-        if(b.textContent.trim().includes(country.continent)) b.classList.add('correct');
+        if(b.textContent.trim().includes(localContinent(country.continent))) b.classList.add('correct');
       });
       if(choices[i]!==country.continent) btn.classList.add('wrong');
-      showFeedback(choices[i]===country.continent, choices[i]===country.continent?'Correct!':`It's in ${country.continent}`);
+      showFeedback(choices[i]===country.continent,
+        choices[i]===country.continent ? t().ui.correct : t().ui.wrong(localContinent(country.continent)));
     };
     grid.appendChild(btn);
   });
@@ -1061,11 +1304,64 @@ function buildChoices(items, area, labelFn, isCorrectFn, correctLabel) {
         if(b.textContent.trim().endsWith(correctLabel)) b.classList.add('correct');
       });
       if(!correct) btn.classList.add('wrong');
-      showFeedback(correct, correct?'Correct!':`The answer was: ${correctLabel}`);
+      showFeedback(correct, correct ? t().ui.correct : t().ui.wrong(correctLabel));
     };
     grid.appendChild(btn);
   });
   area.appendChild(grid);
+}
+
+// ── TYPED INPUT (Jeroen mode) ──
+function buildTypedInput(area, correctEnglish, correctLocal, placeholder) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'typed-answer-area';
+
+  const row = document.createElement('div');
+  row.className = 'typed-input-row';
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'typed-input';
+  input.placeholder = placeholder;
+  input.autocomplete = 'off';
+  input.autocorrect = 'off';
+  input.autocapitalize = 'off';
+  input.spellcheck = false;
+
+  const btn = document.createElement('button');
+  btn.className = 'typed-submit';
+  btn.textContent = t().ui.submitAnswer;
+
+  const hint = document.createElement('div');
+  hint.className = 'typed-hint';
+  hint.textContent = t().ui.typingHint;
+
+  const submit = () => {
+    if (awaitingNext || !input.value.trim()) return;
+    stopTimer();
+    // Check against English name, local name, and common alternatives
+    const correct = fuzzyMatch(input.value, correctEnglish) || fuzzyMatch(input.value, correctLocal);
+    input.disabled = true;
+    btn.disabled = true;
+    input.classList.add(correct ? 'correct' : 'wrong');
+    if (!correct) {
+      hint.textContent = `✓ ${correctLocal}`;
+      hint.style.color = 'var(--success)';
+    }
+    showFeedback(correct, correct ? t().ui.correct : t().ui.wrong(correctLocal));
+  };
+
+  btn.onclick = submit;
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+
+  row.appendChild(input);
+  row.appendChild(btn);
+  wrapper.appendChild(row);
+  wrapper.appendChild(hint);
+  area.appendChild(wrapper);
+
+  // Auto-focus after a short delay
+  setTimeout(() => input.focus(), 100);
 }
 
 // ── MATCH QUESTION ──
@@ -1079,9 +1375,9 @@ function buildMatchQ(type, pool, area) {
   }
 
   if (type === 'flag') {
-    document.getElementById('question-text').innerHTML = `Match each <span>flag</span> to its country`;
+    document.getElementById('question-text').innerHTML = t().ui.matchFlags;
   } else {
-    document.getElementById('question-text').innerHTML = `Match each <span>capital</span> to its country`;
+    document.getElementById('question-text').innerHTML = t().ui.matchCapitals;
   }
 
   // Left column: flags or capitals (fixed)
@@ -1100,7 +1396,7 @@ function buildMatchQ(type, pool, area) {
 
   const instructions = document.createElement('div');
   instructions.className = 'match-instructions';
-  instructions.textContent = 'Drag country names to match them with the ' + (type==='flag'?'flags':'capitals');
+  instructions.textContent = t().ui.dragHint(type);
   matchArea.appendChild(instructions);
 
   const cols = document.createElement('div');
@@ -1110,14 +1406,14 @@ function buildMatchQ(type, pool, area) {
   leftCol.className = 'match-col';
   const leftLabel = document.createElement('div');
   leftLabel.className = 'match-col-label';
-  leftLabel.textContent = type === 'flag' ? 'Flags' : 'Capitals';
+  leftLabel.textContent = type === 'flag' ? t().ui.flags : t().ui.capitals;
   leftCol.appendChild(leftLabel);
 
   const rightCol = document.createElement('div');
   rightCol.className = 'match-col';
   const rightLabel = document.createElement('div');
   rightLabel.className = 'match-col-label';
-  rightLabel.textContent = 'Countries';
+  rightLabel.textContent = t().ui.countries;
   rightCol.appendChild(rightLabel);
 
   // Create left slots
@@ -1171,7 +1467,7 @@ function buildMatchQ(type, pool, area) {
   rightItems.forEach((country) => {
     const item = document.createElement('div');
     item.className = 'match-item';
-    item.textContent = country.name;
+    item.textContent = localName(country);
     item.draggable = true;
     country._el = item;
 
@@ -1211,7 +1507,7 @@ function buildMatchQ(type, pool, area) {
 
   const submitBtn = document.createElement('button');
   submitBtn.className = 'btn btn-primary match-submit';
-  submitBtn.textContent = 'Submit Matches';
+  submitBtn.textContent = t().ui.submitMatches;
   submitBtn.disabled = true;
   submitBtn.onclick = () => submitMatch(picks, assignments, leftSlots, rightItems);
 
@@ -1245,24 +1541,22 @@ function submitMatch(picks, assignments, leftSlots, rightItems) {
     }
   });
   rightItems.forEach(r => { r._el.draggable=false; r._el.style.opacity='1'; r._el.style.pointerEvents='none'; });
-  showFeedback(allCorrect, allCorrect ? 'Perfect match! 🎯' : 'Some matches were wrong');
+  showFeedback(allCorrect, allCorrect ? t().ui.perfectMatch : t().ui.someWrong);
 }
 
 // ── MAP ──
 function buildMapQ(country, area, isCapitalMap) {
   const cfg = getDiffConfig(currentDiff);
   if (isCapitalMap) {
-    document.getElementById('question-text').innerHTML =
-      `<span>${country.capital}</span> is the capital of which country? Click it on the map.`;
+    document.getElementById('question-text').innerHTML = t().ui.capitalMap(country.capital);
   } else {
-    document.getElementById('question-text').innerHTML =
-      `Click on <span>${country.name}</span> — within ${cfg.mapThreshold}km to score`;
+    document.getElementById('question-text').innerHTML = t().ui.clickCountry(localName(country), cfg.mapThreshold);
   }
 
   const container=document.createElement('div'); container.id='map-container';
   const mapDiv=document.createElement('div'); mapDiv.id='map';
-  const hint=document.createElement('div'); hint.className='map-hint'; hint.textContent='Click anywhere to place your pin';
-  const submitBtn=document.createElement('button'); submitBtn.id='map-submit'; submitBtn.textContent='Submit Pin'; submitBtn.onclick=()=>submitMapAnswer(isCapitalMap);
+  const hint=document.createElement('div'); hint.className='map-hint'; hint.textContent=t().ui.pinHint;
+  const submitBtn=document.createElement('button'); submitBtn.id='map-submit'; submitBtn.textContent=t().ui.submitPin; submitBtn.onclick=()=>submitMapAnswer(isCapitalMap);
   const badge=document.createElement('div'); badge.className='distance-badge'; badge.id='distance-badge';
   container.appendChild(mapDiv); container.appendChild(hint); container.appendChild(submitBtn); container.appendChild(badge);
   area.classList.add('map-mode');
@@ -1281,7 +1575,7 @@ function buildMapQ(country, area, isCapitalMap) {
         fillOpacity:1, color:'#fff', weight:2
       }).addTo(map);
       submitBtn.style.display='block';
-      hint.textContent='Confirm your pin or click elsewhere to move it';
+      hint.textContent=t().ui.confirmPin;
     });
   },50);
 }
@@ -1306,12 +1600,12 @@ function submitMapAnswer(isCapitalMap) {
   badge.style.display='block';
   badge.innerHTML=`
     <div class="dist-value">${Math.round(dist)} km</div>
-    <div class="dist-label">from ${country.name}</div>
+    <div class="dist-label">from ${localName(country)}</div>
     <div class="dist-verdict" style="color:${correct?'var(--success)':'var(--danger)'}">
-      ${correct?`✓ Within ${cfg.mapThreshold}km`:`✗ Limit: ${cfg.mapThreshold}km`}</div>`;
+      ${correct ? t().ui.withinKm(cfg.mapThreshold) : t().ui.tooFar(cfg.mapThreshold)}</div>`;
   showFeedback(correct,
-    correct?`${Math.round(dist)}km — close enough!`:`${Math.round(dist)}km — too far`,
-    country.name);
+    correct ? t().ui.closeEnough(Math.round(dist)) : t().ui.tooFarDist(Math.round(dist)),
+    localName(country));
 }
 
 function haversine(lat1,lng1,lat2,lng2) {
@@ -1332,7 +1626,7 @@ function showFeedback(correct, message, sub='') {
       <div class="feedback-text">${message}</div>
       ${sub?`<div class="feedback-sub">${sub}</div>`:''}
     </div>
-    <button class="next-btn" onclick="${correct?'nextQuestion()':'endGame()'}">${correct?'Next →':'See Results'}</button>`;
+    <button class="next-btn" onclick="${correct?'nextQuestion()':'endGame()'}">${correct ? t().ui.nextQuestion : t().ui.seeResults}</button>`;
 }
 
 async function endGame() {
@@ -1349,7 +1643,18 @@ async function endGame() {
   document.getElementById('final-streak').textContent=streak;
   const diffLabels={easy:'🧠 Dumb Test',medium:'🗺️ Medium',jeroen:'💀 Jeroen Mode'};
   document.getElementById('gameover-diff').innerHTML=`<span class="diff-badge ${currentDiff}">${diffLabels[currentDiff]}</span>`;
-  const msgs=[
+  document.getElementById('gameover-title').textContent = t().ui.gameOver;
+  document.getElementById('play-again-btn').textContent = t().ui.playAgain;
+  document.getElementById('back-to-menu-btn').textContent = t().ui.backToMenu;
+  const msgs = currentLang === 'nl' ? [
+    [0,"Zelfs Jeroen had het beter gedaan. 😐"],
+    [3,"Een begin. Een bescheiden begin."],
+    [7,"Op weg!"],
+    [10,"Goede aardrijkskennis! 🌍"],
+    [20,"Indrukwekkend — je kent je wereld."],
+    [30,"Aardrijkskunde-tovenaar! 🧙"],
+    [50,"Ben jij soms cartograaf?? 🗺️"],
+  ] : [
     [0,"Welp. Even Jeroen would've done better. 😐"],
     [3,"A start. A humble, humble start."],
     [7,"Getting somewhere!"],

@@ -40,6 +40,7 @@ db.exec(`
 // Migrations
 try { db.exec(`ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0`); } catch {}
 try { db.exec(`ALTER TABLE users ADD COLUMN temp_password TEXT`); } catch {}
+try { db.exec(`ALTER TABLE users ADD COLUMN language TEXT NOT NULL DEFAULT 'en'`); } catch {}
 
 // Default settings
 const DEFAULT_SETTINGS = {
@@ -86,7 +87,7 @@ app.post('/api/register', (req, res) => {
   try {
     const result = db.prepare('INSERT INTO users (username, password_hash) VALUES (?, ?)').run(username.trim(), hash);
     const token = jwt.sign({ id: result.lastInsertRowid, username: username.trim() }, JWT_SECRET, { expiresIn: '30d' });
-    res.json({ token, username: username.trim(), is_admin: 0 });
+    res.json({ token, username: username.trim(), is_admin: 0, language: 'en' });
   } catch (e) {
     if (e.message.includes('UNIQUE')) return res.status(409).json({ error: 'Username already taken' });
     res.status(500).json({ error: 'Server error' });
@@ -105,7 +106,7 @@ app.post('/api/login', (req, res) => {
     db.prepare('UPDATE users SET temp_password = NULL WHERE id = ?').run(user.id);
   }
   const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: '30d' });
-  res.json({ token, username: user.username, is_admin: user.is_admin, must_change_password: tmpMatch ? 1 : 0 });
+  res.json({ token, username: user.username, is_admin: user.is_admin, must_change_password: tmpMatch ? 1 : 0, language: user.language || 'en' });
 });
 
 const VALID_DIFFICULTIES = ['easy', 'medium', 'jeroen'];
@@ -160,6 +161,14 @@ app.post('/api/me/change-password', auth, (req, res) => {
   if (!password || password.length < 4) return res.status(400).json({ error: 'Password must be at least 4 characters' });
   const hash = bcrypt.hashSync(password, 10);
   db.prepare('UPDATE users SET password_hash = ?, temp_password = NULL WHERE id = ?').run(hash, req.user.id);
+  res.json({ ok: true });
+});
+
+// Save language preference
+app.post('/api/me/language', auth, (req, res) => {
+  const { language } = req.body;
+  if (!['en', 'nl'].includes(language)) return res.status(400).json({ error: 'Invalid language' });
+  db.prepare('UPDATE users SET language = ? WHERE id = ?').run(language, req.user.id);
   res.json({ ok: true });
 });
 
