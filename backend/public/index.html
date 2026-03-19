@@ -135,7 +135,8 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .question-text span { color: var(--accent); font-weight: 600; }
 .jeroen-mode .question-text span { color: var(--jeroen); }
 .historical-note { font-size: 11px; color: var(--jeroen); margin-top: 4px; }
-.answer-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; min-height: 0; }
+.answer-area { display: flex; flex-direction: column; overflow: hidden; position: relative; min-height: 0; }
+.answer-area.map-mode { flex: 1; }
 #map-container { flex: 1; position: relative; min-height: 0; }
 #map { width: 100%; height: 100%; }
 .map-hint { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); background: rgba(10,14,26,0.88); border: 1px solid var(--border); border-radius: 20px; padding: 6px 16px; font-size: 12px; color: var(--text-muted); z-index: 1000; pointer-events: none; white-space: nowrap; }
@@ -145,7 +146,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .distance-badge .dist-value { font-family: 'Bebas Neue',sans-serif; font-size: 26px; color: var(--accent); }
 .distance-badge .dist-label { font-size: 10px; color: var(--text-muted); }
 .distance-badge .dist-verdict { margin-top: 3px; font-size: 11px; font-weight: 600; }
-.choices-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px 16px; flex: 1; align-content: start; }
+.choices-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px 16px; align-content: start; }
 .choice-btn { padding: 14px 13px; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); color: var(--text); font-family: 'DM Sans',sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s; text-align: left; display: flex; align-items: center; gap: 10px; }
 .choice-btn:hover:not(:disabled) { border-color: var(--accent); background: var(--surface2); }
 .jeroen-mode .choice-btn:hover:not(:disabled) { border-color: var(--jeroen); }
@@ -168,17 +169,18 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 
 /* MATCHING QUESTION */
 .match-area { flex: 1; display: flex; flex-direction: column; padding: 12px 16px; gap: 10px; overflow-y: auto; }
+.answer-area.match-mode { flex: 1; }
 .match-instructions { font-size: 12px; color: var(--text-muted); text-align: center; }
-.match-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex: 1; }
+.match-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex: 1; align-items: start; }
 .match-col { display: flex; flex-direction: column; gap: 8px; }
 .match-col-label { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); text-align: center; margin-bottom: 4px; }
 .match-item {
-  padding: 10px 12px; border-radius: 10px; border: 1.5px solid var(--border);
+  height: 64px;
+  padding: 8px 12px; border-radius: 10px; border: 1.5px solid var(--border);
   background: var(--surface); cursor: grab; user-select: none;
   font-size: 13px; font-weight: 500; text-align: center;
   transition: all 0.15s; position: relative;
   display: flex; align-items: center; justify-content: center; gap: 8px;
-  min-height: 52px;
 }
 .match-item:active { cursor: grabbing; }
 .match-item.dragging { opacity: 0.4; border-color: var(--accent); }
@@ -944,6 +946,7 @@ function nextQuestion() {
 
   const area = document.getElementById('answer-area');
   area.innerHTML='';
+  area.classList.remove('map-mode','match-mode');
 
   if (type==='capital') buildCapitalQ(country, area, pool);
   else if (type==='flag') buildFlagQ(country, area, pool);
@@ -1093,6 +1096,7 @@ function buildMatchQ(type, pool, area) {
 
   const matchArea = document.createElement('div');
   matchArea.className = 'match-area';
+  area.classList.add('match-mode');
 
   const instructions = document.createElement('div');
   instructions.className = 'match-instructions';
@@ -1261,6 +1265,7 @@ function buildMapQ(country, area, isCapitalMap) {
   const submitBtn=document.createElement('button'); submitBtn.id='map-submit'; submitBtn.textContent='Submit Pin'; submitBtn.onclick=()=>submitMapAnswer(isCapitalMap);
   const badge=document.createElement('div'); badge.className='distance-badge'; badge.id='distance-badge';
   container.appendChild(mapDiv); container.appendChild(hint); container.appendChild(submitBtn); container.appendChild(badge);
+  area.classList.add('map-mode');
   area.appendChild(container);
 
   setTimeout(()=>{
