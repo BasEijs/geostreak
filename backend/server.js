@@ -4,16 +4,15 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 
-// Ensure data directory exists
 const dataDir = '/app/data';
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
-// Database setup
 const db = new Database(path.join(dataDir, 'geogame.db'));
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
@@ -21,6 +20,7 @@ db.exec(`
     username TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     is_admin INTEGER NOT NULL DEFAULT 0,
+    temp_password TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
   CREATE TABLE IF NOT EXISTS scores (
@@ -31,27 +31,45 @@ db.exec(`
     played_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
+  CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  );
 `);
 
-// Migrate: add is_admin column if it doesn't exist yet (for existing databases)
+// Migrations
 try { db.exec(`ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0`); } catch {}
+try { db.exec(`ALTER TABLE users ADD COLUMN temp_password TEXT`); } catch {}
+
+// Default settings
+const DEFAULT_SETTINGS = {
+  easy_timer: '5',
+  medium_timer: '0',
+  jeroen_timer: '12',
+  jeroen_map_threshold: '400',
+  jeroen_show_historical_label: '1',
+};
+for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
+  try {
+    db.prepare('INSERT INTO settings (key, value) VALUES (?, ?)').run(key, value);
+  } catch {}
+}
+
+function getSetting(key) {
+  const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(key);
+  return row ? row.value : DEFAULT_SETTINGS[key];
+}
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Auth middleware
 function auth(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'No token' });
-  try {
-    req.user = jwt.verify(token, JWT_SECRET);
-    next();
-  } catch {
-    res.status(401).json({ error: 'Invalid token' });
-  }
+  try { req.user = jwt.verify(token, JWT_SECRET); next(); }
+  catch { res.status(401).json({ error: 'Invalid token' }); }
 }
 
-// Admin middleware
 function adminOnly(req, res, next) {
   const user = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.id);
   if (!user?.is_admin) return res.status(403).json({ error: 'Admin access required' });
@@ -64,11 +82,9 @@ app.post('/api/register', (req, res) => {
   if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
   if (username.length < 2 || username.length > 20) return res.status(400).json({ error: 'Username must be 2-20 characters' });
   if (password.length < 4) return res.status(400).json({ error: 'Password must be at least 4 characters' });
-
   const hash = bcrypt.hashSync(password, 10);
   try {
-    const stmt = db.prepare('INSERT INTO users (username, password_hash) VALUES (?, ?)');
-    const result = stmt.run(username.trim(), hash);
+    const result = db.prepare('INSERT INTO users (username, password_hash) VALUES (?, ?)').run(username.trim(), hash);
     const token = jwt.sign({ id: result.lastInsertRowid, username: username.trim() }, JWT_SECRET, { expiresIn: '30d' });
     res.json({ token, username: username.trim(), is_admin: 0 });
   } catch (e) {
@@ -81,14 +97,29 @@ app.post('/api/register', (req, res) => {
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
   const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username?.trim());
-  if (!user || !bcrypt.compareSync(password, user.password_hash)) {
-    return res.status(401).json({ error: 'Invalid username or password' });
+  if (!user) return res.status(401).json({ error: 'Invalid username or password' });
+  const pwMatch = bcrypt.compareSync(password, user.password_hash);
+  const tmpMatch = user.temp_password && user.temp_password === password;
+  if (!pwMatch && !tmpMatch) return res.status(401).json({ error: 'Invalid username or password' });
+  if (tmpMatch) {
+    db.prepare('UPDATE users SET temp_password = NULL WHERE id = ?').run(user.id);
   }
   const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: '30d' });
-  res.json({ token, username: user.username, is_admin: user.is_admin });
+  res.json({ token, username: user.username, is_admin: user.is_admin, must_change_password: tmpMatch ? 1 : 0 });
 });
 
 const VALID_DIFFICULTIES = ['easy', 'medium', 'jeroen'];
+
+// Game settings (public)
+app.get('/api/settings', (req, res) => {
+  res.json({
+    easy_timer: parseInt(getSetting('easy_timer')),
+    medium_timer: parseInt(getSetting('medium_timer')),
+    jeroen_timer: parseInt(getSetting('jeroen_timer')),
+    jeroen_map_threshold: parseInt(getSetting('jeroen_map_threshold')),
+    jeroen_show_historical_label: getSetting('jeroen_show_historical_label') === '1',
+  });
+});
 
 // Submit score
 app.post('/api/scores', auth, (req, res) => {
@@ -105,17 +136,14 @@ app.get('/api/leaderboard', (req, res) => {
   if (!VALID_DIFFICULTIES.includes(difficulty)) return res.status(400).json({ error: 'Invalid difficulty' });
   const rows = db.prepare(`
     SELECT u.username, MAX(s.streak) as best_streak, COUNT(s.id) as games_played
-    FROM users u
-    JOIN scores s ON s.user_id = u.id
+    FROM users u JOIN scores s ON s.user_id = u.id
     WHERE s.difficulty = ?
-    GROUP BY u.id
-    ORDER BY best_streak DESC
-    LIMIT 20
+    GROUP BY u.id ORDER BY best_streak DESC LIMIT 20
   `).all(difficulty);
   res.json(rows);
 });
 
-// My stats per difficulty
+// My stats
 app.get('/api/me/stats', auth, (req, res) => {
   const stats = {};
   for (const diff of VALID_DIFFICULTIES) {
@@ -126,43 +154,51 @@ app.get('/api/me/stats', auth, (req, res) => {
   res.json(stats);
 });
 
-// ── ADMIN ROUTES ──
+// Change own password
+app.post('/api/me/change-password', auth, (req, res) => {
+  const { password } = req.body;
+  if (!password || password.length < 4) return res.status(400).json({ error: 'Password must be at least 4 characters' });
+  const hash = bcrypt.hashSync(password, 10);
+  db.prepare('UPDATE users SET password_hash = ?, temp_password = NULL WHERE id = ?').run(hash, req.user.id);
+  res.json({ ok: true });
+});
 
-// List all users
+// ── ADMIN ──
+
 app.get('/api/admin/users', auth, adminOnly, (req, res) => {
   const users = db.prepare(`
-    SELECT u.id, u.username, u.is_admin, u.created_at,
+    SELECT u.id, u.username, u.is_admin, u.created_at, u.temp_password,
       COUNT(s.id) as games_played
-    FROM users u
-    LEFT JOIN scores s ON s.user_id = u.id
-    GROUP BY u.id
-    ORDER BY u.created_at ASC
+    FROM users u LEFT JOIN scores s ON s.user_id = u.id
+    GROUP BY u.id ORDER BY u.created_at ASC
   `).all();
   res.json(users);
 });
 
-// Promote/demote admin
 app.post('/api/admin/users/:id/set-admin', auth, adminOnly, (req, res) => {
   const { is_admin } = req.body;
   if (typeof is_admin !== 'number') return res.status(400).json({ error: 'Invalid value' });
-  if (parseInt(req.params.id) === req.user.id && !is_admin) {
+  if (parseInt(req.params.id) === req.user.id && !is_admin)
     return res.status(400).json({ error: 'Cannot remove your own admin status' });
-  }
   db.prepare('UPDATE users SET is_admin = ? WHERE id = ?').run(is_admin, req.params.id);
   res.json({ ok: true });
 });
 
-// Delete user
 app.delete('/api/admin/users/:id', auth, adminOnly, (req, res) => {
-  if (parseInt(req.params.id) === req.user.id) {
+  if (parseInt(req.params.id) === req.user.id)
     return res.status(400).json({ error: 'Cannot delete yourself' });
-  }
   db.prepare('DELETE FROM scores WHERE user_id = ?').run(req.params.id);
   db.prepare('DELETE FROM users WHERE id = ?').run(req.params.id);
   res.json({ ok: true });
 });
 
-// Clear all scores for a difficulty
+// Generate temp password
+app.post('/api/admin/users/:id/reset-password', auth, adminOnly, (req, res) => {
+  const temp = crypto.randomBytes(3).toString('hex').toUpperCase(); // e.g. A3F2C1
+  db.prepare('UPDATE users SET temp_password = ? WHERE id = ?').run(temp, req.params.id);
+  res.json({ temp_password: temp });
+});
+
 app.delete('/api/admin/scores', auth, adminOnly, (req, res) => {
   const { difficulty } = req.query;
   if (!VALID_DIFFICULTIES.includes(difficulty)) return res.status(400).json({ error: 'Invalid difficulty' });
@@ -170,19 +206,25 @@ app.delete('/api/admin/scores', auth, adminOnly, (req, res) => {
   res.json({ ok: true });
 });
 
-// Clear scores for a specific user on a specific difficulty
 app.delete('/api/admin/scores/user/:id', auth, adminOnly, (req, res) => {
   const { difficulty } = req.query;
   if (difficulty && !VALID_DIFFICULTIES.includes(difficulty)) return res.status(400).json({ error: 'Invalid difficulty' });
-  if (difficulty) {
-    db.prepare('DELETE FROM scores WHERE user_id = ? AND difficulty = ?').run(req.params.id, difficulty);
-  } else {
-    db.prepare('DELETE FROM scores WHERE user_id = ?').run(req.params.id);
+  if (difficulty) db.prepare('DELETE FROM scores WHERE user_id = ? AND difficulty = ?').run(req.params.id, difficulty);
+  else db.prepare('DELETE FROM scores WHERE user_id = ?').run(req.params.id);
+  res.json({ ok: true });
+});
+
+// Update settings
+app.post('/api/admin/settings', auth, adminOnly, (req, res) => {
+  const allowed = ['easy_timer', 'medium_timer', 'jeroen_timer', 'jeroen_map_threshold', 'jeroen_show_historical_label'];
+  for (const key of allowed) {
+    if (req.body[key] !== undefined) {
+      db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(key, String(req.body[key]));
+    }
   }
   res.json({ ok: true });
 });
 
-// Catch-all: serve frontend
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
