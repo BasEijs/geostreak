@@ -146,7 +146,9 @@
   .error-msg.show { display: block; }
 
   /* MENU */
-  #menu-screen { min-height: 100vh; flex-direction: column; }
+  #menu-screen { min-height: 100vh; flex-direction: column; align-items: center; }
+  #menu-screen > nav { width: 100%; max-width: 100%; }
+  .menu-content { width: 100%; max-width: 720px; }
 
   nav {
     display: flex; align-items: center; justify-content: space-between;
@@ -281,6 +283,26 @@
   /* GAME */
   #game-screen { min-height: 100vh; flex-direction: column; }
 
+  /* Global layout constraint */
+  #auth-screen, #menu-screen, #gameover-screen, #admin-screen {
+    max-width: 720px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  /* Keep nav full width with centered content */
+  #menu-screen, #admin-screen { min-height: 100vh; }
+
+  /* App wrapper - centers everything */
+  #app {
+    max-width: 720px;
+    margin: 0 auto;
+    min-height: 100vh;
+    position: relative;
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    background: var(--bg);
+  }
+
   .game-header {
     display: flex; align-items: center; justify-content: space-between;
     padding: 12px 18px; background: var(--surface);
@@ -319,7 +341,7 @@
   .diff-badge.medium { background: rgba(240,180,41,0.12); color: var(--accent); border: 1px solid rgba(240,180,41,0.25); }
   .diff-badge.jeroen { background: rgba(168,85,247,0.15); color: var(--jeroen); border: 1px solid rgba(168,85,247,0.3); }
 
-  .game-body { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .game-body { flex: 1; display: flex; flex-direction: column; overflow: hidden; width: 100%; max-width: 720px; }
 
   .question-area {
     background: var(--surface); border-bottom: 1px solid var(--border);
@@ -427,7 +449,8 @@
   .leaflet-tile { filter: brightness(0.65) saturate(0.5); }
 
   /* ADMIN */
-  #admin-screen { min-height: 100vh; flex-direction: column; }
+  #admin-screen { min-height: 100vh; flex-direction: column; align-items: center; }
+  #admin-screen > nav { width: 100%; }
   .admin-content {
     flex: 1; padding: 32px 24px; max-width: 700px;
     width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 24px;
@@ -483,6 +506,8 @@
 </style>
 </head>
 <body>
+
+<div id="app">
 
 <!-- AUTH -->
 <div id="auth-screen" class="screen active">
@@ -678,6 +703,7 @@
     </div>
   </div>
 </div>
+</div> <!-- end #app -->
 
 <script>
 // ── DATA ──
