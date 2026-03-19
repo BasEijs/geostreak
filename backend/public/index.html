@@ -244,8 +244,9 @@
     border-radius: var(--radius); overflow: hidden;
   }
   .leaderboard-header {
-    padding: 13px 20px; border-bottom: 1px solid var(--border);
-    font-size: 12px; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); font-weight: 600;
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    font-size: 14px; font-weight: 700; color: var(--text);
+    letter-spacing: 1px;
   }
   .leaderboard-cols {
     display: grid; grid-template-columns: 32px 1fr 70px 60px;
@@ -913,6 +914,7 @@ function selectDiff(diff) {
   document.querySelectorAll('.diff-card').forEach(c => c.classList.toggle('selected', c.dataset.diff===diff));
   const btn = document.getElementById('play-btn');
   btn.className = 'play-btn' + (diff==='jeroen' ? ' jeroen-play' : '');
+  switchStatTab(diff);
 }
 
 // ── STAT TABS ──
