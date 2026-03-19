@@ -170,7 +170,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 
 /* MATCHING QUESTION */
 .match-area { display: flex; flex-direction: column; padding: 12px 16px 0; gap: 8px; min-height: 0; overflow: hidden; }
-.answer-area.match-mode { flex: 1; overflow: hidden; min-height: 0; }
+.answer-area.match-mode { flex: 0 1 auto; overflow-y: auto; min-height: 0; }
 .match-instructions { font-size: 12px; color: var(--text-muted); text-align: center; flex-shrink: 0; }
 .match-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex: 1; align-content: start; overflow-y: auto; min-height: 0; }
 .match-col { display: flex; flex-direction: column; gap: 8px; }
