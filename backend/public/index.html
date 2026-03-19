@@ -168,10 +168,10 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .next-btn:hover { border-color: var(--accent); }
 
 /* MATCHING QUESTION */
-.match-area { flex: 1; display: flex; flex-direction: column; padding: 12px 16px; gap: 10px; overflow-y: auto; }
-.answer-area.match-mode { flex: 1; }
-.match-instructions { font-size: 12px; color: var(--text-muted); text-align: center; }
-.match-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex: 1; align-items: start; }
+.match-area { display: flex; flex-direction: column; padding: 12px 16px; gap: 10px; overflow: hidden; height: 100%; }
+.answer-area.match-mode { flex: 1; overflow: hidden; }
+.match-instructions { font-size: 12px; color: var(--text-muted); text-align: center; flex-shrink: 0; }
+.match-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex: 1; align-items: start; overflow-y: auto; min-height: 0; }
 .match-col { display: flex; flex-direction: column; gap: 8px; }
 .match-col-label { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); text-align: center; margin-bottom: 4px; }
 .match-item {
@@ -190,7 +190,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .match-item.unmatched-reveal { border-color: var(--success); background: rgba(34,197,94,0.08); opacity: 0.7; }
 .match-flag { width: 48px; height: 32px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border); flex-shrink: 0; }
 .match-connected { position: absolute; right: -6px; top: 50%; transform: translateY(-50%); width: 12px; height: 12px; background: var(--success); border-radius: 50%; border: 2px solid var(--bg); }
-.match-submit { margin-top: 8px; }
+.match-submit { margin-top: 4px; flex-shrink: 0; }
 
 /* GAMEOVER */
 #gameover-screen { min-height: 100vh; flex-direction: column; align-items: center; justify-content: center; padding: 40px 24px; gap: 24px; }
@@ -835,6 +835,7 @@ const NL = {
     pinHint: "Klik ergens om je pin te plaatsen",
     confirmPin: "Bevestig je pin of klik ergens anders om te verplaatsen",
     submitPin: "Pin bevestigen",
+    you: "jij",
   }
 };
 
@@ -882,6 +883,7 @@ const EN = {
     pinHint: "Click anywhere to place your pin",
     confirmPin: "Confirm your pin or click elsewhere to move it",
     submitPin: "Submit Pin",
+    you: "you",
   }
 };
 
@@ -895,7 +897,42 @@ function localContinent(cont) {
   if (currentLang === 'nl' && NL.continents[cont]) return NL.continents[cont];
   return cont;
 }
-function localCapital(country) { return country.capital; } // capitals stay the same in both languages
+const NL_CAPITALS = {
+  "Paris":"Parijs","Athens":"Athene","Brussels":"Brussel","Moscow":"Moskou",
+  "Rome":"Rome","Lisbon":"Lissabon","Warsaw":"Warschau","Vienna":"Wenen",
+  "Copenhagen":"Kopenhagen","Stockholm":"Stockholm","Oslo":"Oslo",
+  "Helsinki":"Helsinki","Prague":"Praag","Bucharest":"Boekarest",
+  "Budapest":"Boedapest","Dublin":"Dublin","Kyiv":"Kiev",
+  "Washington D.C.":"Washington D.C.","Ottawa":"Ottawa",
+  "Mexico City":"Mexico-Stad","Brasília":"Brasilia",
+  "Buenos Aires":"Buenos Aires","Beijing":"Peking","Tokyo":"Tokio",
+  "New Delhi":"New Delhi","Seoul":"Seoel","Jakarta":"Jakarta",
+  "Ankara":"Ankara","Riyadh":"Riyad","Jerusalem":"Jeruzalem",
+  "Canberra":"Canberra","Wellington":"Wellington","Pretoria":"Pretoria",
+  "Cairo":"Caïro","Abuja":"Abuja","Kabul":"Kabul","Tirana":"Tirana",
+  "Algiers":"Algiers","Dhaka":"Dhaka","Sucre":"Sucre","Sofia":"Sofia",
+  "Phnom Penh":"Phnom-Penh","Santiago":"Santiago","Bogotá":"Bogotá",
+  "Zagreb":"Zagreb","Quito":"Quito","Addis Ababa":"Addis Abeba",
+  "Accra":"Accra","Tehran":"Teheran","Baghdad":"Bagdad","Amman":"Amman",
+  "Astana":"Astana","Nairobi":"Nairobi","Kuala Lumpur":"Kuala Lumpur",
+  "Rabat":"Rabat","Maputo":"Maputo","Naypyidaw":"Naypyidaw",
+  "Kathmandu":"Kathmandu","Pyongyang":"Pyongyang","Islamabad":"Islamabad",
+  "Lima":"Lima","Manila":"Manilla","Belgrade":"Belgrado","Colombo":"Colombo",
+  "Khartoum":"Khartoem","Damascus":"Damascus","Dodoma":"Dodoma",
+  "Bangkok":"Bangkok","Kampala":"Kampala","Abu Dhabi":"Abu Dhabi",
+  "Tashkent":"Tasjkent","Caracas":"Caracas","Hanoi":"Hanoi",
+  "Sana'a":"Sanaa","Harare":"Harare","Bratislava":"Bratislava",
+  "Ljubljana":"Ljubljana","Vilnius":"Vilnius","Riga":"Riga",
+  "Tallinn":"Tallinn","Minsk":"Minsk","Chișinău":"Chișinău",
+  "Tbilisi":"Tbilisi","Yerevan":"Jeravan","Baku":"Bakoe",
+  "Tunis":"Tunis","Tripoli":"Tripoli","Luanda":"Luanda",
+  "Lusaka":"Lusaka","Dakar":"Dakar",
+};
+
+function localCapital(country) {
+  if (currentLang === 'nl' && NL_CAPITALS[country.capital]) return NL_CAPITALS[country.capital];
+  return country.capital;
+}
 
 // ── FUZZY MATCH ──
 function normalize(str) {
@@ -1120,7 +1157,7 @@ async function loadLeaderboard(diff) {
     body.innerHTML = data.map((row,i) => `
       <div class="leaderboard-row ${row.username===username?(isJ?'lb-me jeroen-row':'lb-me'):''}">
         <div class="rank">${medals[i]||(i+1)}</div>
-        <div>${row.username}${row.username===username?' <span style="color:var(--text-muted);font-size:11px">(you)</span>':''}</div>
+        <div>${row.username}${row.username===username?` <span style="color:var(--text-muted);font-size:11px">(${t().ui.you})</span>`:''}</div>
         <div class="lb-streak ${isJ?'jeroen-streak':''}">${row.best_streak}</div>
         <div class="lb-games">${row.games_played}g</div>
       </div>`).join('');
@@ -1230,10 +1267,10 @@ function handleTimerExpired() {
 function buildCapitalQ(country, area, pool) {
   document.getElementById('question-text').innerHTML = t().ui.whatCapital(localName(country));
   if (currentDiff === 'jeroen') {
-    buildTypedInput(area, country.capital, country.capital, t().ui.typeCapital);
+    buildTypedInput(area, country.capital, localCapital(country), t().ui.typeCapital);
   } else {
     let wrongs = getWrongAnswers(country,'capital',pool);
-    buildChoices(shuffle([country,...wrongs]), area, c=>c.capital, c=>c===country, country.capital);
+    buildChoices(shuffle([country,...wrongs]), area, c=>localCapital(c), c=>c===country, localCapital(country));
   }
 }
 
@@ -1424,7 +1461,7 @@ function buildMatchQ(type, pool, area) {
     if (type === 'flag') {
       slot.innerHTML = `<img class="match-flag" src="https://flagcdn.com/w160/${country.flag}.png" alt="flag">`;
     } else {
-      slot.textContent = country.capital;
+      slot.textContent = localCapital(country);
     }
     // Drop target
     slot.addEventListener('dragover', e => { e.preventDefault(); slot.classList.add('drag-over'); });
@@ -1449,7 +1486,7 @@ function buildMatchQ(type, pool, area) {
       const lbl = document.createElement('span');
       lbl.className = 'match-label';
       lbl.style.cssText = 'font-size:12px;color:var(--text-muted);margin-left:6px;';
-      lbl.textContent = '→ ' + draggedItem.name;
+      lbl.textContent = '→ ' + localName(draggedItem);
       slot.appendChild(lbl);
       // Hide dragged item from right
       draggedItem._el.style.opacity = '0.3';
@@ -1536,7 +1573,7 @@ function submitMatch(picks, assignments, leftSlots, rightItems) {
     if (!correct) {
       const correctEl = document.createElement('div');
       correctEl.style.cssText = 'font-size:11px;color:var(--success);margin-top:4px;';
-      correctEl.textContent = '✓ ' + country.name;
+      correctEl.textContent = '✓ ' + localName(country);
       leftSlots[i].appendChild(correctEl);
     }
   });
@@ -1725,7 +1762,7 @@ async function loadAdminUsers() {
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
             ${u.username}
             ${u.is_admin?'<span class="admin-badge">Admin</span>':''}
-            ${u.username===username?'<span style="font-size:11px;color:var(--text-muted)">(you)</span>':''}
+            ${u.username===username?`<span style="font-size:11px;color:var(--text-muted)">(${t().ui.you})</span>`:''}
           </div>
           <div class="admin-user-meta">${u.games_played} games · joined ${new Date(u.created_at).toLocaleDateString()}</div>
           ${u.temp_password?`<div class="temp-pw-display">Temp password: ${u.temp_password}</div>`:''}
