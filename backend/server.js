@@ -5,10 +5,28 @@ const jwt = require('jsonwebtoken');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
+const rateLimit = require('express-rate-limit');
 
 const app = express();
 const PORT = 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
+
+// Rate limiters
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // max 20 attempts per IP per window
+  message: { error: 'Too many attempts, please try again later' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 120, // max 120 requests per IP per minute (generous for gameplay)
+  message: { error: 'Too many requests' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 const dataDir = '/app/data';
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
@@ -63,6 +81,11 @@ function getSetting(key) {
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Apply rate limiting
+app.use('/api/login', authLimiter);
+app.use('/api/register', authLimiter);
+app.use('/api/', apiLimiter);
 
 function auth(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
