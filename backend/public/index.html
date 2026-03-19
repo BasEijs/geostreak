@@ -1124,7 +1124,7 @@ function buildMapQ(country, area) {
   setTimeout(()=>{
     if(map){map.remove();map=null;}
     map=L.map('map',{zoomControl:true,attributionControl:false}).setView([20,0],2);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:9}).addTo(map);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}',{maxZoom:9, attribution:''}).addTo(map);
     marker=null;
     map.on('click',e=>{
       if(awaitingNext) return;
