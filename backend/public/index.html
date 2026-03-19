@@ -169,7 +169,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .next-btn:hover { border-color: var(--accent); }
 
 /* MATCHING QUESTION */
-.match-area { display: flex; flex-direction: column; padding: 12px 16px; gap: 8px; flex: 1; min-height: 0; overflow: hidden; }
+.match-area { display: flex; flex-direction: column; padding: 12px 16px 0; gap: 8px; min-height: 0; overflow: hidden; }
 .answer-area.match-mode { flex: 1; overflow: hidden; min-height: 0; }
 .match-instructions { font-size: 12px; color: var(--text-muted); text-align: center; flex-shrink: 0; }
 .match-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex: 1; align-content: start; overflow-y: auto; min-height: 0; }
@@ -191,7 +191,11 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .match-item.unmatched-reveal { border-color: var(--success); background: rgba(34,197,94,0.08); opacity: 0.7; }
 .match-flag { width: 48px; height: 32px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border); flex-shrink: 0; }
 .match-connected { position: absolute; right: -6px; top: 50%; transform: translateY(-50%); width: 12px; height: 12px; background: var(--success); border-radius: 50%; border: 2px solid var(--bg); }
-.match-submit { flex-shrink: 0; margin-top: 4px; }
+.match-submit { flex-shrink: 0; }
+#match-submit-container { flex-shrink: 0; padding: 0 16px 10px; display: none; gap: 10px; }
+#match-submit-container.visible { display: flex; }
+#match-submit-container .btn-primary { flex: 1; }
+#match-reset-btn { width: auto; padding: 13px 20px; }
 
 /* GAMEOVER */
 #gameover-screen { min-height: 100vh; flex-direction: column; align-items: center; justify-content: center; padding: 40px 24px; gap: 24px; }
@@ -399,6 +403,7 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
       <div class="historical-note" id="historical-note" style="display:none">⚠️ This is a historical flag no longer in use</div>
     </div>
     <div class="answer-area" id="answer-area"></div>
+    <div id="match-submit-container"></div>
     <div id="feedback-bar" style="display:none"></div>
   </div>
 </div>
@@ -702,21 +707,21 @@ function getDiffConfig(diff) {
     easy: {
       label:"Dumb Test", badge:"easy",
       countries: easyCountries,
-      questionTypes: ["capital","flag","continent","match-flags","match-capitals"],
+      questionTypes: ["capital","capital","flag","flag","continent","match-flags","match-capitals"],
       mapThreshold: 1000,
       timerSeconds: gameSettings.easy_timer || null,
     },
     medium: {
       label:"Medium", badge:"medium",
       countries: medCountries,
-      questionTypes: ["capital","flag","map","match-flags","match-capitals"],
+      questionTypes: ["capital","capital","flag","flag","map","map","match-flags","match-capitals"],
       mapThreshold: 800,
       timerSeconds: gameSettings.medium_timer || null,
     },
     jeroen: {
       label:"Jeroen Mode 💀", badge:"jeroen",
       countries: [...jeroenCountries, ...HISTORICAL_FLAGS],
-      questionTypes: ["capital","flag","map","match-flags","match-capitals","capital-map"],
+      questionTypes: ["capital","capital","flag","flag","map","map","capital-map","match-flags","match-capitals"],
       mapThreshold: gameSettings.jeroen_map_threshold,
       timerSeconds: gameSettings.jeroen_timer || null,
     },
@@ -1219,6 +1224,9 @@ function nextQuestion() {
   const area = document.getElementById('answer-area');
   area.innerHTML='';
   area.classList.remove('map-mode','match-mode');
+  const submitContainer = document.getElementById('match-submit-container');
+  submitContainer.innerHTML = '';
+  submitContainer.classList.remove('visible');
 
   if (type==='capital') buildCapitalQ(country, area, pool);
   else if (type==='flag') buildFlagQ(country, area, pool);
@@ -1492,11 +1500,11 @@ function buildMatchQ(type, pool, area) {
       lbl.style.cssText = 'font-size:12px;color:var(--text-muted);margin-left:6px;';
       lbl.textContent = '→ ' + localName(draggedItem);
       slot.appendChild(lbl);
-      // Hide dragged item from right
-      draggedItem._el.style.opacity = '0.3';
-      draggedItem._el.style.pointerEvents = 'none';
+      // Hide dragged item from right (dim but keep draggable)
+      draggedItem._el.style.opacity = '0.35';
+      draggedItem._el.style.color = 'var(--text-muted)';
       // Restore old if existed
-      if (old) { old._el.style.opacity='1'; old._el.style.pointerEvents='auto'; }
+      if (old) { old._el.style.opacity='1'; old._el.style.color='var(--text)'; }
       draggedItem = null; draggedFromLeft = null;
       checkAllAssigned();
     });
@@ -1560,8 +1568,34 @@ function buildMatchQ(type, pool, area) {
   cols.appendChild(leftCol);
   cols.appendChild(rightCol);
   matchArea.appendChild(cols);
-  matchArea.appendChild(submitBtn);
   area.appendChild(matchArea);
+
+  // Place submit + reset buttons OUTSIDE answer-area so they're always visible
+  const submitContainer = document.getElementById('match-submit-container');
+  submitContainer.innerHTML = '';
+
+  const resetBtn = document.createElement('button');
+  resetBtn.id = 'match-reset-btn';
+  resetBtn.className = 'btn btn-ghost';
+  resetBtn.textContent = currentLang === 'nl' ? '↺ Reset' : '↺ Reset';
+  resetBtn.onclick = () => {
+    // Clear all assignments
+    picks.forEach((_, i) => { assignments[i] = null; });
+    // Restore all right items
+    rightItems.forEach(r => {
+      r._el.style.opacity = '1';
+      r._el.style.color = 'var(--text)';
+    });
+    // Clear labels from left slots
+    leftSlots.forEach(slot => {
+      slot.querySelector('.match-label')?.remove();
+    });
+    submitBtn.disabled = true;
+  };
+
+  submitContainer.appendChild(resetBtn);
+  submitContainer.appendChild(submitBtn);
+  submitContainer.classList.add('visible');
 }
 
 function submitMatch(picks, assignments, leftSlots, rightItems) {
@@ -1673,6 +1707,9 @@ function showFeedback(correct, message, sub='') {
 
 async function endGame() {
   stopTimer();
+  const submitContainer = document.getElementById('match-submit-container');
+  submitContainer.innerHTML = '';
+  submitContainer.classList.remove('visible');
   try {
     await fetch('/api/scores',{
       method:'POST',
