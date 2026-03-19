@@ -214,11 +214,26 @@
   .play-btn.jeroen-play:hover { box-shadow: 0 12px 40px rgba(168,85,247,0.4); }
 
   /* Stats & Leaderboard */
-  .stats-section { width: 100%; max-width: 540px; }
+  .lb-section {
+    width: 100%;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .lb-section-divider {
+    display: flex; align-items: center; gap: 16px; width: 100%;
+  }
+  .lb-section-line { flex: 1; height: 1px; background: var(--border); }
+  .lb-section-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    letter-spacing: 3px;
+    color: var(--text);
+    white-space: nowrap;
+  }
+
   .stats-tabs {
     display: flex; gap: 4px;
     background: var(--surface); border: 1px solid var(--border);
-    border-radius: 8px; padding: 4px; margin-bottom: 14px;
+    border-radius: 8px; padding: 4px;
   }
   .stats-tab {
     flex: 1; padding: 7px; border: none; background: none;
@@ -228,7 +243,7 @@
   .stats-tab.active { background: var(--surface2); color: var(--text); }
   .stats-tab.jeroen-tab.active { background: rgba(168,85,247,0.15); color: var(--jeroen); }
 
-  .stats-row { display: flex; gap: 12px; margin-bottom: 14px; }
+  .stats-row { display: flex; gap: 12px; }
   .stat-card {
     background: var(--surface); border: 1px solid var(--border);
     border-radius: var(--radius); padding: 14px 20px; text-align: center; flex: 1;
@@ -565,7 +580,13 @@
 
     <button class="play-btn" id="play-btn" onclick="startGame()">PLAY</button>
 
-    <div class="stats-section">
+    <!-- Leaderboard section -->
+    <div class="lb-section">
+      <div class="lb-section-divider">
+        <div class="lb-section-line"></div>
+        <span class="lb-section-label">🏆 LEADERBOARD</span>
+        <div class="lb-section-line"></div>
+      </div>
       <div class="stats-tabs">
         <button class="stats-tab active" onclick="switchStatTab('easy')">Dumb Test</button>
         <button class="stats-tab" onclick="switchStatTab('medium')">Medium</button>
@@ -574,7 +595,7 @@
       <div class="stats-row">
         <div class="stat-card" id="stat-card-best">
           <div class="value" id="stat-best">—</div>
-          <div class="label">Best Streak</div>
+          <div class="label">Your Best</div>
         </div>
         <div class="stat-card" id="stat-card-games">
           <div class="value" id="stat-games">—</div>
@@ -582,7 +603,7 @@
         </div>
       </div>
       <div class="leaderboard">
-        <div class="leaderboard-header" id="lb-title">🏆 Easy Leaderboard</div>
+        <div class="leaderboard-header" id="lb-title">🧠 Dumb Test Leaderboard</div>
         <div class="leaderboard-cols">
           <div>#</div><div>Player</div><div style="text-align:right">Best</div><div style="text-align:right">Games</div>
         </div>
