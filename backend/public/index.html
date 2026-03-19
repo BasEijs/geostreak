@@ -1227,13 +1227,15 @@ function nextQuestion() {
   else if (type==='match-capitals') buildMatchQ('capital', pool, area);
   else if (type==='capital-map') buildCapitalMapQ(country, area);
 
-  if (useTimer) startTimer();
+  if (useTimer) startTimer(type.startsWith('match') ? 6 : 1);
 }
 
 // ── TIMER ──
-function startTimer() {
+let timerMultiplier = 1;
+function startTimer(multiplier = 1) {
   const cfg = getDiffConfig(currentDiff);
-  timerSecondsLeft = cfg.timerSeconds;
+  timerMultiplier = multiplier;
+  timerSecondsLeft = cfg.timerSeconds * multiplier;
   document.getElementById('timer-wrap').style.display='flex';
   updateTimerDisplay();
   timerInterval = setInterval(()=>{
@@ -1248,7 +1250,8 @@ function stopTimer() {
 }
 function updateTimerDisplay() {
   const cfg = getDiffConfig(currentDiff);
-  const pct = (timerSecondsLeft/cfg.timerSeconds)*100;
+  const total = cfg.timerSeconds * timerMultiplier;
+  const pct = (timerSecondsLeft / total) * 100;
   const cnt = document.getElementById('timer-count');
   const bar = document.getElementById('timer-bar');
   cnt.textContent = timerSecondsLeft;
