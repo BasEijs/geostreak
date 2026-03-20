@@ -873,6 +873,7 @@ let mapPin = null;
 let mapGeoJson = null;
 let mapTransform = {k:1, x:0, y:0};
 let marker = null; // {lat, lng} of current pin
+let lastMatchCountries = []; // prevent duplicate match questions
 let currentQ = null;
 let awaitingNext = false;
 let allStats = {};
@@ -1568,12 +1569,15 @@ function buildTypedInput(area, correctEnglish, correctLocal, placeholder) {
 // ── MATCH QUESTION ──
 function buildMatchQ(type, pool, area) {
   const regularPool = pool.filter(c => !c.historical);
-  // Pick 4 random countries
+  // Pick 4 random countries, avoiding last match's countries
+  const freshPool = regularPool.filter(c => !lastMatchCountries.includes(c.name));
+  const pickPool = freshPool.length >= 4 ? freshPool : regularPool;
   const picks = [];
   while (picks.length < 4) {
-    const c = getRandom(regularPool, picks);
+    const c = getRandom(pickPool, picks);
     if (c) picks.push(c);
   }
+  lastMatchCountries = picks.map(c => c.name);
 
   if (type === 'flag') {
     document.getElementById('question-text').innerHTML = t().ui.matchFlags;
@@ -1861,6 +1865,11 @@ async function initD3Map(container, hint, submitBtn) {
       const minStroke = 0.3;
       const stroke = Math.max(minStroke, baseStroke / Math.sqrt(event.transform.k));
       g.selectAll('.country-path').attr('stroke-width', stroke + 'px');
+      // Rescale pin marker so it stays same visual size
+      const pinR = Math.max(4, 8 / Math.sqrt(event.transform.k));
+      const pinStroke = Math.max(1, 2 / Math.sqrt(event.transform.k));
+      g.selectAll('.pin-marker').attr('r', pinR).attr('stroke-width', pinStroke);
+      g.selectAll('.correct-marker').attr('r', Math.max(5, 10 / Math.sqrt(event.transform.k))).attr('stroke-width', pinStroke);
     });
 
   svg.call(zoom);
@@ -1926,6 +1935,30 @@ function submitMapAnswer(isCapitalMap) {
   const {country} = currentQ;
   const cfg = getDiffConfig(currentDiff);
   const dist = haversine(marker.lat, marker.lng, country.lat, country.lng);
+  const clickCoords = [marker.lng, marker.lat];
+
+  // Try border detection first using d3.geoContains on the loaded GeoJSON
+  let insideBorder = false;
+  if (geoJsonCache) {
+    const features = geoJsonCache.features || geoJsonCache;
+    // Find the feature whose centroid is closest to the country's lat/lng
+    // then check if the click is inside it
+    let bestFeature = null, bestDist = Infinity;
+    for (const f of features) {
+      try {
+        const centroid = d3.geoCentroid(f);
+        const d = haversine(centroid[1], centroid[0], country.lat, country.lng);
+        if (d < bestDist) { bestDist = d; bestFeature = f; }
+      } catch {}
+    }
+    // Only use border check if centroid is reasonably close (within 800km)
+    if (bestFeature && bestDist < 800) {
+      try { insideBorder = d3.geoContains(bestFeature, clickCoords); } catch {}
+    }
+  }
+
+  const effectiveThreshold = Math.max(cfg.mapThreshold, country.extraRadius || 0);
+  const correct = insideBorder || dist <= effectiveThreshold;
 
   // Show correct location on map
   const g = d3.select('#map-g');
@@ -1933,12 +1966,14 @@ function submitMapAnswer(isCapitalMap) {
   const transform = mapTransform;
   const r = Math.max(5, 10 / Math.sqrt(transform.k));
 
-  // Line from pin to correct
-  const [px, py] = mapProjection([marker.lng, marker.lat]);
-  g.append('line')
-    .attr('class', 'distance-line')
-    .attr('x1', px).attr('y1', py)
-    .attr('x2', cx).attr('y2', cy);
+  // Line from pin to correct (only show if outside borders)
+  if (!insideBorder) {
+    const [px, py] = mapProjection([marker.lng, marker.lat]);
+    g.append('line')
+      .attr('class', 'distance-line')
+      .attr('x1', px).attr('y1', py)
+      .attr('x2', cx).attr('y2', cy);
+  }
 
   g.append('circle')
     .attr('class', 'correct-marker')
@@ -1950,18 +1985,21 @@ function submitMapAnswer(isCapitalMap) {
 
   document.getElementById('map-submit').style.display = 'none';
 
-  const effectiveThreshold = Math.max(cfg.mapThreshold, country.extraRadius || 0);
-  const correct = dist <= effectiveThreshold;
   const badge = document.getElementById('distance-badge');
   badge.style.display = 'block';
+  const distDisplay = Math.round(dist);
+  const verdictText = insideBorder
+    ? `✓ Binnen de grenzen`
+    : (correct ? t().ui.withinKm(effectiveThreshold) : t().ui.tooFar(effectiveThreshold));
   badge.innerHTML = `
-    <div class="dist-value">${Math.round(dist)} km</div>
+    <div class="dist-value">${distDisplay} km</div>
     <div class="dist-label">from ${localName(country)}</div>
     <div class="dist-verdict" style="color:${correct ? 'var(--success)' : 'var(--danger)'}">
-      ${correct ? t().ui.withinKm(effectiveThreshold) : t().ui.tooFar(effectiveThreshold)}</div>`;
-  showFeedback(correct,
-    correct ? t().ui.closeEnough(Math.round(dist)) : t().ui.tooFarDist(Math.round(dist)),
-    localName(country));
+      ${verdictText}</div>`;
+  const feedbackMsg = insideBorder
+    ? `✓ Binnen de grenzen van ${localName(country)}!`
+    : (correct ? t().ui.closeEnough(distDisplay) : t().ui.tooFarDist(distDisplay));
+  showFeedback(correct, feedbackMsg, insideBorder ? '' : localName(country));
 }
 
 // ── SECOND CITY ──
@@ -2058,23 +2096,27 @@ function buildMatchPopulationQ(pool, area) {
   const eligiblePool = pool.filter(c => COUNTRY_EXTRA[c.name]);
   if (eligiblePool.length < 4) { nextQuestion(); return; }
 
+  // Avoid repeating last match's countries
+  const freshPool = eligiblePool.filter(c => !lastMatchCountries.includes(c.name));
+  const pickPool = freshPool.length >= 4 ? freshPool : eligiblePool;
+
   // Pick 4 countries with well-spread populations
-  // Sort by population and sample spread-out countries to avoid similar values
-  const sorted = shuffle(eligiblePool)
+  const sorted = shuffle(pickPool)
     .sort((a,b) => COUNTRY_EXTRA[a.name].pop - COUNTRY_EXTRA[b.name].pop);
 
-  // Pick 4 with at least 30% population difference between adjacent picks
+  // Pick 4 with at least 50% population difference between adjacent picks
   let picks = [];
   for (const c of sorted) {
     if (picks.length === 0) { picks.push(c); continue; }
     const lastPop = COUNTRY_EXTRA[picks[picks.length-1].name].pop;
     const thisPop = COUNTRY_EXTRA[c.name].pop;
     const ratio = Math.max(lastPop, thisPop) / Math.min(lastPop, thisPop);
-    if (ratio >= 1.5) picks.push(c); // at least 50% difference
+    if (ratio >= 1.5) picks.push(c);
     if (picks.length === 4) break;
   }
   // Fallback if not enough spread
   if (picks.length < 4) picks = sorted.slice(0, 4);
+  lastMatchCountries = picks.map(c => c.name);
 
   document.getElementById('question-text').innerHTML =
     `Koppel elk land aan het juiste <span>aantal inwoners</span> (in miljoenen)`;
