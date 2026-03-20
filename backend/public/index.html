@@ -868,6 +868,7 @@ let leafletMarker = null;
 let leafletCorrectMarker = null;
 let leafletLine = null;
 let geoJsonCache = null;
+let topoCache = null;
 let marker = null; // {lat, lng} of current pin
 let lastMatchCountries = []; // prevent duplicate match questions
 let currentQ = null;
@@ -1832,19 +1833,13 @@ function buildMapQ(country, area, isCapitalMap) {
       fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
         .then(r => r.json())
         .then(topo => {
+          topoCache = topo;
           geoJsonCache = topojson.feature(topo, topo.objects.countries);
-          L.geoJSON(geoJsonCache, {
-            style: { color: '#f0b429', weight: 0.8, fillOpacity: 0, opacity: 0.7 },
-            filter: f => f.geometry && f.geometry.type !== 'LineString' && f.geometry.type !== 'MultiLineString'
-          }).addTo(map);
+          addMapOverlay(map, topo);
         })
         .catch(() => {});
     } else {
-      L.geoJSON(geoJsonCache, {
-        style: { color: '#f0b429', weight: 0.8, fillOpacity: 0, opacity: 0.7 },
-        filter: f => f.geometry && f.geometry.type !== 'LineString' && f.geometry.type !== 'MultiLineString'
-      }).addTo(map);
-    }
+      addMapOverlay(map, topoCache);
 
     map.on('click', e => {
       if (awaitingNext) return;
@@ -1859,6 +1854,20 @@ function buildMapQ(country, area, isCapitalMap) {
       hint.textContent = t().ui.confirmPin;
     });
   }, 50);
+}
+
+function addMapOverlay(map, topo) {
+  if (!topo) return;
+  // Land fill
+  const land = topojson.feature(topo, topo.objects.land);
+  L.geoJSON(land, {
+    style: { color: 'transparent', fillColor: '#1e2a3a', fillOpacity: 1, weight: 0 }
+  }).addTo(map);
+  // Country borders as mesh — avoids antimeridian line artifacts
+  const borders = topojson.mesh(topo, topo.objects.countries, (a, b) => a !== b);
+  L.geoJSON(borders, {
+    style: { color: '#f0b429', weight: 0.8, opacity: 0.8, fill: false }
+  }).addTo(map);
 }
 
 // ── CAPITAL → MAP ──
