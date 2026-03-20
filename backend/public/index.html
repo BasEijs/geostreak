@@ -7,8 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3-geo/3.1.0/d3-geo.min.js"></script>
-<script src="https://unpkg.com/topojson@3/dist/topojson.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
 <style>
 :root {
   --bg: #0a0e1a; --surface: #111827; --surface2: #1a2235; --border: #1e2d45;
@@ -1102,7 +1101,6 @@ function fuzzyMatch(input, correct) {
 // ════════════════════════════════════
 
 window.onload = async () => {
-  console.log('d3-geo check:', typeof d3?.geoCentroid, typeof window.d3geo?.geoCentroid);
   await fetchSettings();
   applyLanguageUI();
   if (token && username) showMenu();
@@ -2176,6 +2174,58 @@ function buildMatchPopulationQ(pool, area) {
   submitContainer.appendChild(resetBtn); submitContainer.appendChild(submitBtn);
   submitContainer.classList.add('visible');
 }
+
+// ── GEO UTILS (inline, no external dependency) ──
+const d3 = {
+  geoCentroid(feature) {
+    // Simple centroid: average of all coordinate pairs
+    let x = 0, y = 0, n = 0;
+    function processCoords(coords) {
+      if (typeof coords[0] === 'number') { x += coords[0]; y += coords[1]; n++; return; }
+      coords.forEach(processCoords);
+    }
+    const geom = feature.geometry;
+    if (!geom) return [0, 0];
+    if (geom.type === 'Point') return geom.coordinates;
+    processCoords(geom.coordinates);
+    return n ? [x/n, y/n] : [0, 0];
+  },
+  geoContains(feature, point) {
+    // Ray casting algorithm for point-in-polygon
+    const [px, py] = point;
+    function pointInRing(ring) {
+      let inside = false;
+      for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+        const [xi, yi] = ring[i], [xj, yj] = ring[j];
+        if (((yi > py) !== (yj > py)) && (px < (xj - xi) * (py - yi) / (yj - yi) + xi)) {
+          inside = !inside;
+        }
+      }
+      return inside;
+    }
+    function testGeometry(geom) {
+      if (!geom) return false;
+      if (geom.type === 'Polygon') {
+        if (!pointInRing(geom.coordinates[0])) return false;
+        for (let i = 1; i < geom.coordinates.length; i++) {
+          if (pointInRing(geom.coordinates[i])) return false; // hole
+        }
+        return true;
+      }
+      if (geom.type === 'MultiPolygon') {
+        return geom.coordinates.some(poly => {
+          if (!pointInRing(poly[0])) return false;
+          for (let i = 1; i < poly.length; i++) {
+            if (pointInRing(poly[i])) return false;
+          }
+          return true;
+        });
+      }
+      return false;
+    }
+    return testGeometry(feature.geometry);
+  }
+};
 
 function haversine(lat1,lng1,lat2,lng2) {
   const R=6371,dL=(lat2-lat1)*Math.PI/180,dN=(lng2-lng1)*Math.PI/180;
