@@ -748,49 +748,49 @@ const HISTORICAL_FLAGS = [
 // ════════════════════════════════════
 
 const COUNTRY_EXTRA = {
-  // name → { secondCity, pop (millions, 2024 est.) }
-  "France":           { secondCity: "Marseille",     pop: 68.4  },
-  "Germany":          { secondCity: "Hamburg",        pop: 84.4  },
-  "United Kingdom":   { secondCity: "Birmingham",     pop: 67.7  },
-  "Italy":            { secondCity: "Milan",          pop: 58.9  },
-  "Spain":            { secondCity: "Barcelona",      pop: 47.4  },
-  "Netherlands":      { secondCity: "Rotterdam",      pop: 17.9  },
-  "Belgium":          { secondCity: "Antwerp",        pop: 11.7  },
-  "Portugal":         { secondCity: "Porto",          pop: 10.2  },
-  "Sweden":           { secondCity: "Gothenburg",     pop: 10.5  },
-  "Norway":           { secondCity: "Bergen",         pop: 5.5   },
-  "Poland":           { secondCity: "Kraków",         pop: 37.6  },
-  "Greece":           { secondCity: "Thessaloniki",   pop: 10.4  },
-  "Ukraine":          { secondCity: "Kharkiv",        pop: 37.0  },
-  "Russia":           { secondCity: "St. Petersburg", pop: 144.4 },
-  "United States":    { secondCity: "Los Angeles",    pop: 335.0 },
-  "Canada":           { secondCity: "Montreal",       pop: 38.6  },
-  "Mexico":           { secondCity: "Guadalajara",    pop: 130.9 },
-  "Brazil":           { secondCity: "São Paulo",      pop: 216.4 },
-  "Argentina":        { secondCity: "Córdoba",        pop: 45.8  },
-  "China":            { secondCity: "Shanghai",       pop: 1419.0},
-  "Japan":            { secondCity: "Osaka",          pop: 124.5 },
-  "India":            { secondCity: "Mumbai",         pop: 1441.0},
-  "South Korea":      { secondCity: "Busan",          pop: 51.7  },
-  "Indonesia":        { secondCity: "Surabaya",       pop: 279.0 },
-  "Turkey":           { secondCity: "Istanbul",       pop: 85.3  },
-  "Saudi Arabia":     { secondCity: "Jeddah",         pop: 36.9  },
-  "Australia":        { secondCity: "Melbourne",      pop: 26.5  },
-  "South Africa":     { secondCity: "Cape Town",      pop: 60.4  },
-  "Egypt":            { secondCity: "Alexandria",     pop: 107.0 },
-  "Nigeria":          { secondCity: "Lagos",          pop: 224.0 },
-  "Iran":             { secondCity: "Mashhad",        pop: 90.3  },
-  "Pakistan":         { secondCity: "Lahore",         pop: 245.0 },
-  "Bangladesh":       { secondCity: "Chittagong",     pop: 173.0 },
-  "Vietnam":          { secondCity: "Ho Chi Minh City", pop: 98.2},
-  "Thailand":         { secondCity: "Chiang Mai",     pop: 71.8  },
-  "Colombia":         { secondCity: "Medellín",       pop: 52.2  },
-  "Algeria":          { secondCity: "Oran",           pop: 45.6  },
-  "Sudan":            { secondCity: "Omdurman",       pop: 46.9  },
-  "Kazakhstan":       { secondCity: "Almaty",         pop: 19.6  },
-  "Romania":          { secondCity: "Cluj-Napoca",    pop: 19.0  },
-  "Peru":             { secondCity: "Arequipa",       pop: 33.4  },
-  "Venezuela":        { secondCity: "Maracaibo",      pop: 28.2  },
+  // name → { secondCity, pop (millions, 2024 est.), cities (for wrong answers in capital questions) }
+  "France":           { secondCity: "Marseille",       pop: 68.4,   cities: ["Marseille","Lyon","Toulouse","Nice","Nantes","Strasbourg","Bordeaux","Lille"] },
+  "Germany":          { secondCity: "Hamburg",          pop: 84.4,   cities: ["Hamburg","Munich","Cologne","Frankfurt","Stuttgart","Düsseldorf","Leipzig","Dortmund"] },
+  "United Kingdom":   { secondCity: "Birmingham",       pop: 67.7,   cities: ["Birmingham","Manchester","Liverpool","Leeds","Sheffield","Bristol","Glasgow","Edinburgh"] },
+  "Italy":            { secondCity: "Milan",            pop: 58.9,   cities: ["Milan","Naples","Turin","Palermo","Genoa","Bologna","Florence","Bari"] },
+  "Spain":            { secondCity: "Barcelona",        pop: 47.4,   cities: ["Barcelona","Valencia","Seville","Zaragoza","Málaga","Murcia","Bilbao","Alicante"] },
+  "Netherlands":      { secondCity: "Rotterdam",        pop: 17.9,   cities: ["Rotterdam","The Hague","Utrecht","Eindhoven","Groningen","Tilburg","Almere","Breda"] },
+  "Belgium":          { secondCity: "Antwerp",          pop: 11.7,   cities: ["Antwerp","Ghent","Charleroi","Liège","Bruges","Namur","Leuven","Mechelen"] },
+  "Portugal":         { secondCity: "Porto",            pop: 10.2,   cities: ["Porto","Braga","Coimbra","Funchal","Setúbal","Aveiro","Viseu","Évora"] },
+  "Sweden":           { secondCity: "Gothenburg",       pop: 10.5,   cities: ["Gothenburg","Malmö","Uppsala","Linköping","Örebro","Västerås","Helsingborg","Norrköping"] },
+  "Norway":           { secondCity: "Bergen",           pop: 5.5,    cities: ["Bergen","Trondheim","Stavanger","Tromsø","Drammen","Fredrikstad","Kristiansand","Sandnes"] },
+  "Poland":           { secondCity: "Kraków",           pop: 37.6,   cities: ["Kraków","Łódź","Wrocław","Poznań","Gdańsk","Szczecin","Bydgoszcz","Lublin"] },
+  "Greece":           { secondCity: "Thessaloniki",     pop: 10.4,   cities: ["Thessaloniki","Patras","Heraklion","Larissa","Volos","Ioannina","Kavala","Rhodes"] },
+  "Ukraine":          { secondCity: "Kharkiv",          pop: 37.0,   cities: ["Kharkiv","Odessa","Dnipro","Donetsk","Zaporizhzhia","Lviv","Kryvyi Rih","Mykolaiv"] },
+  "Russia":           { secondCity: "St. Petersburg",   pop: 144.4,  cities: ["St. Petersburg","Novosibirsk","Yekaterinburg","Kazan","Nizhny Novgorod","Chelyabinsk","Samara","Omsk"] },
+  "United States":    { secondCity: "Los Angeles",      pop: 335.0,  cities: ["Los Angeles","Chicago","Houston","Phoenix","Philadelphia","San Antonio","San Diego","Dallas"] },
+  "Canada":           { secondCity: "Montreal",         pop: 38.6,   cities: ["Montreal","Toronto","Vancouver","Calgary","Edmonton","Winnipeg","Quebec City","Hamilton"] },
+  "Mexico":           { secondCity: "Guadalajara",      pop: 130.9,  cities: ["Guadalajara","Monterrey","Puebla","Tijuana","León","Juárez","Mérida","Chihuahua"] },
+  "Brazil":           { secondCity: "São Paulo",        pop: 216.4,  cities: ["São Paulo","Rio de Janeiro","Salvador","Fortaleza","Belo Horizonte","Manaus","Curitiba","Recife"] },
+  "Argentina":        { secondCity: "Córdoba",          pop: 45.8,   cities: ["Córdoba","Rosario","Mendoza","La Plata","Tucumán","Mar del Plata","Salta","Santa Fe"] },
+  "China":            { secondCity: "Shanghai",         pop: 1419.0, cities: ["Shanghai","Beijing","Guangzhou","Shenzhen","Chengdu","Tianjin","Wuhan","Chongqing"] },
+  "Japan":            { secondCity: "Osaka",            pop: 124.5,  cities: ["Osaka","Yokohama","Nagoya","Sapporo","Fukuoka","Kobe","Kyoto","Kawasaki"] },
+  "India":            { secondCity: "Mumbai",           pop: 1441.0, cities: ["Mumbai","Delhi","Bangalore","Hyderabad","Chennai","Kolkata","Pune","Ahmedabad"] },
+  "South Korea":      { secondCity: "Busan",            pop: 51.7,   cities: ["Busan","Incheon","Daegu","Daejeon","Gwangju","Suwon","Ulsan","Changwon"] },
+  "Indonesia":        { secondCity: "Surabaya",         pop: 279.0,  cities: ["Surabaya","Bandung","Medan","Semarang","Makassar","Palembang","Tangerang","Depok"] },
+  "Turkey":           { secondCity: "Istanbul",         pop: 85.3,   cities: ["Istanbul","Izmir","Bursa","Adana","Gaziantep","Konya","Mersin","Kayseri"] },
+  "Saudi Arabia":     { secondCity: "Jeddah",           pop: 36.9,   cities: ["Jeddah","Mecca","Medina","Dammam","Taif","Tabuk","Buraidah","Khobar"] },
+  "Australia":        { secondCity: "Melbourne",        pop: 26.5,   cities: ["Melbourne","Brisbane","Perth","Adelaide","Gold Coast","Newcastle","Canberra","Wollongong"] },
+  "South Africa":     { secondCity: "Cape Town",        pop: 60.4,   cities: ["Cape Town","Durban","Johannesburg","Soweto","Ekurhuleni","Port Elizabeth","Bloemfontein","East London"] },
+  "Egypt":            { secondCity: "Alexandria",       pop: 107.0,  cities: ["Alexandria","Giza","Shubra El Kheima","Port Said","Suez","Luxor","Mansoura","Tanta"] },
+  "Nigeria":          { secondCity: "Lagos",            pop: 224.0,  cities: ["Lagos","Kano","Ibadan","Benin City","Port Harcourt","Kaduna","Maiduguri","Zaria"] },
+  "Iran":             { secondCity: "Mashhad",          pop: 90.3,   cities: ["Mashhad","Isfahan","Karaj","Tabriz","Shiraz","Qom","Ahvaz","Kermanshah"] },
+  "Pakistan":         { secondCity: "Lahore",           pop: 245.0,  cities: ["Lahore","Karachi","Faisalabad","Rawalpindi","Gujranwala","Peshawar","Multan","Hyderabad"] },
+  "Bangladesh":       { secondCity: "Chittagong",       pop: 173.0,  cities: ["Chittagong","Khulna","Rajshahi","Sylhet","Comilla","Rangpur","Mymensingh","Narayanganj"] },
+  "Vietnam":          { secondCity: "Ho Chi Minh City", pop: 98.2,   cities: ["Ho Chi Minh City","Hai Phong","Da Nang","Can Tho","Bien Hoa","Hue","Nha Trang","Buon Ma Thuot"] },
+  "Thailand":         { secondCity: "Chiang Mai",       pop: 71.8,   cities: ["Chiang Mai","Nonthaburi","Pak Kret","Hat Yai","Udon Thani","Chon Buri","Nakhon Ratchasima","Ubon Ratchathani"] },
+  "Colombia":         { secondCity: "Medellín",         pop: 52.2,   cities: ["Medellín","Cali","Barranquilla","Cartagena","Cúcuta","Bucaramanga","Pereira","Santa Marta"] },
+  "Algeria":          { secondCity: "Oran",             pop: 45.6,   cities: ["Oran","Constantine","Annaba","Batna","Djelfa","Sétif","Sidi Bel Abbès","Biskra"] },
+  "Sudan":            { secondCity: "Omdurman",         pop: 46.9,   cities: ["Omdurman","Khartoum North","Port Sudan","Kassala","Obeid","Gedaref","Wad Madani","El Fasher"] },
+  "Kazakhstan":       { secondCity: "Almaty",           pop: 19.6,   cities: ["Almaty","Shymkent","Karaganda","Aktobe","Taraz","Pavlodar","Ust-Kamenogorsk","Semey"] },
+  "Romania":          { secondCity: "Cluj-Napoca",      pop: 19.0,   cities: ["Cluj-Napoca","Timișoara","Iași","Constanța","Craiova","Brașov","Galați","Ploiești"] },
+  "Peru":             { secondCity: "Arequipa",         pop: 33.4,   cities: ["Arequipa","Trujillo","Chiclayo","Piura","Iquitos","Cusco","Chimbote","Huancayo"] },
+  "Venezuela":        { secondCity: "Maracaibo",        pop: 28.2,   cities: ["Maracaibo","Valencia","Barquisimeto","Ciudad Guayana","Maturín","Barcelona","Cumana","Mérida"] },
 };
 
 let gameSettings = {
@@ -1434,8 +1434,36 @@ function buildCapitalQ(country, area, pool) {
   if (currentDiff === 'jeroen') {
     buildTypedInput(area, country.capital, localCapital(country), t().ui.typeCapital);
   } else {
-    let wrongs = getWrongAnswers(country,'capital',pool);
-    buildChoices(shuffle([country,...wrongs]), area, c=>localCapital(c), c=>c===country, localCapital(country));
+    let wrongChoices;
+    const extra = COUNTRY_EXTRA[country.name];
+    if (currentDiff === 'medium' && extra?.cities && extra.cities.length >= 3) {
+      // Use cities from the same country as wrong answers — much harder
+      const otherCities = extra.cities.filter(c => c !== country.capital);
+      wrongChoices = shuffle(otherCities).slice(0, 3).map(city => ({capital: city}));
+    } else {
+      // Dumb Test: use other countries' capitals (easier, recognisable names)
+      wrongChoices = getWrongAnswers(country, 'capital', pool);
+    }
+    // Build choices — mix correct answer with wrongs
+    const choices = shuffle([country.capital, ...wrongChoices.map(w => w.capital)]);
+    const grid = document.createElement('div'); grid.className = 'choices-grid';
+    ['A','B','C','D'].forEach((letter, i) => {
+      if (!choices[i]) return;
+      const btn = document.createElement('button'); btn.className = 'choice-btn';
+      btn.innerHTML = `<span class="choice-letter">${letter}</span>${choices[i]}`;
+      btn.onclick = () => {
+        if (awaitingNext) return; stopTimer();
+        grid.querySelectorAll('.choice-btn').forEach(b => {
+          b.disabled = true;
+          if (b.textContent.trim().endsWith(localCapital(country))) b.classList.add('correct');
+        });
+        if (choices[i] !== country.capital) btn.classList.add('wrong');
+        showFeedback(choices[i] === country.capital,
+          choices[i] === country.capital ? t().ui.correct : t().ui.wrong(localCapital(country)));
+      };
+      grid.appendChild(btn);
+    });
+    area.appendChild(grid);
   }
 }
 
