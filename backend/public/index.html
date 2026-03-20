@@ -1834,13 +1834,15 @@ function buildMapQ(country, area, isCapitalMap) {
         .then(topo => {
           geoJsonCache = topojson.feature(topo, topo.objects.countries);
           L.geoJSON(geoJsonCache, {
-            style: { color: '#f0b429', weight: 1, fillOpacity: 0, opacity: 0.6 }
+            style: { color: '#f0b429', weight: 0.8, fillOpacity: 0, opacity: 0.7 },
+            filter: f => f.geometry && f.geometry.type !== 'LineString' && f.geometry.type !== 'MultiLineString'
           }).addTo(map);
         })
         .catch(() => {});
     } else {
       L.geoJSON(geoJsonCache, {
-        style: { color: '#f0b429', weight: 1, fillOpacity: 0, opacity: 0.6 }
+        style: { color: '#f0b429', weight: 0.8, fillOpacity: 0, opacity: 0.7 },
+        filter: f => f.geometry && f.geometry.type !== 'LineString' && f.geometry.type !== 'MultiLineString'
       }).addTo(map);
     }
 
