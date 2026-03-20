@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/d3-geo@3/dist/d3-geo.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3-geo/3.1.0/d3-geo.min.js"></script>
 <script src="https://unpkg.com/topojson@3/dist/topojson.min.js"></script>
 <style>
 :root {
@@ -1102,6 +1102,7 @@ function fuzzyMatch(input, correct) {
 // ════════════════════════════════════
 
 window.onload = async () => {
+  console.log('d3-geo check:', typeof d3?.geoCentroid, typeof window.d3geo?.geoCentroid);
   await fetchSettings();
   applyLanguageUI();
   if (token && username) showMenu();
