@@ -7,7 +7,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
 <style>
 :root {
   --bg: #0a0e1a; --surface: #111827; --surface2: #1a2235; --border: #1e2d45;
@@ -868,7 +867,6 @@ let leafletMarker = null;
 let leafletCorrectMarker = null;
 let leafletLine = null;
 let geoJsonCache = null;
-let topoCache = null;
 let marker = null; // {lat, lng} of current pin
 let lastMatchCountries = []; // prevent duplicate match questions
 let currentQ = null;
@@ -1824,23 +1822,9 @@ function buildMapQ(country, area, isCapitalMap) {
     if (map) { map.remove(); map = null; }
     leafletMarker = null; leafletCorrectMarker = null; leafletLine = null;
     map = L.map('map', { zoomControl: true, attributionControl: false, maxZoom: 10 }).setView([20, 0], 2);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       subdomains: 'abcd', maxZoom: 10
     }).addTo(map);
-
-    // Load GeoJSON for border overlay
-    if (!geoJsonCache) {
-      fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
-        .then(r => r.json())
-        .then(topo => {
-          topoCache = topo;
-          geoJsonCache = topojson.feature(topo, topo.objects.countries);
-          addMapOverlay(map, topo);
-        })
-        .catch(() => {});
-    } else {
-      addMapOverlay(map, topoCache);
-    }
 
     map.on('click', e => {
       if (awaitingNext) return;
@@ -1855,20 +1839,6 @@ function buildMapQ(country, area, isCapitalMap) {
       hint.textContent = t().ui.confirmPin;
     });
   }, 50);
-}
-
-function addMapOverlay(map, topo) {
-  if (!topo) return;
-  // External borders (coastlines) — a === b means boundary of a single country
-  const coastlines = topojson.mesh(topo, topo.objects.countries, (a, b) => a === b);
-  // Internal borders (between countries)
-  const borders = topojson.mesh(topo, topo.objects.countries, (a, b) => a !== b);
-  L.geoJSON(coastlines, {
-    style: { color: '#f0b429', weight: 0.6, opacity: 0.6, fill: false }
-  }).addTo(map);
-  L.geoJSON(borders, {
-    style: { color: '#f0b429', weight: 0.8, opacity: 0.9, fill: false }
-  }).addTo(map);
 }
 
 // ── CAPITAL → MAP ──
