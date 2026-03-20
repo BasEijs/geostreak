@@ -1827,12 +1827,21 @@ function buildMapQ(country, area, isCapitalMap) {
       subdomains: 'abcd', maxZoom: 10
     }).addTo(map);
 
-    // Load GeoJSON for border detection (cached)
+    // Load GeoJSON for border overlay
     if (!geoJsonCache) {
       fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
         .then(r => r.json())
-        .then(topo => { geoJsonCache = topojson.feature(topo, topo.objects.countries); })
+        .then(topo => {
+          geoJsonCache = topojson.feature(topo, topo.objects.countries);
+          L.geoJSON(geoJsonCache, {
+            style: { color: '#f0b429', weight: 1, fillOpacity: 0, opacity: 0.6 }
+          }).addTo(map);
+        })
         .catch(() => {});
+    } else {
+      L.geoJSON(geoJsonCache, {
+        style: { color: '#f0b429', weight: 1, fillOpacity: 0, opacity: 0.6 }
+      }).addTo(map);
     }
 
     map.on('click', e => {
@@ -1861,26 +1870,8 @@ function submitMapAnswer(isCapitalMap) {
   const { country } = currentQ;
   const cfg = getDiffConfig(currentDiff);
   const dist = haversine(marker.lat, marker.lng, country.lat, country.lng);
-
-  // Border detection using d3-geo geoContains
-  let insideBorder = false;
-  if (geoJsonCache) {
-    const clickCoords = [marker.lng, marker.lat];
-    let bestFeature = null, bestDist = Infinity;
-    for (const f of geoJsonCache.features) {
-      try {
-        const centroid = d3.geoCentroid(f);
-        const d = haversine(centroid[1], centroid[0], country.lat, country.lng);
-        if (d < bestDist) { bestDist = d; bestFeature = f; }
-      } catch {}
-    }
-    if (bestFeature && bestDist < 800) {
-      try { insideBorder = d3.geoContains(bestFeature, clickCoords); } catch {}
-    }
-  }
-
   const effectiveThreshold = Math.max(cfg.mapThreshold, country.extraRadius || 0);
-  const correct = insideBorder || dist <= effectiveThreshold;
+  const correct = dist <= effectiveThreshold;
 
   // Show correct location
   if (leafletCorrectMarker) map.removeLayer(leafletCorrectMarker);
@@ -1888,29 +1879,21 @@ function submitMapAnswer(isCapitalMap) {
   leafletCorrectMarker = L.circleMarker([country.lat, country.lng], {
     radius: 10, fillColor: '#22c55e', fillOpacity: 1, color: '#fff', weight: 2
   }).addTo(map);
-  if (!insideBorder) {
-    leafletLine = L.polyline([[marker.lat, marker.lng], [country.lat, country.lng]], {
-      color: '#f0b429', weight: 2, dashArray: '5,4'
-    }).addTo(map);
-  }
+  leafletLine = L.polyline([[marker.lat, marker.lng], [country.lat, country.lng]], {
+    color: '#f0b429', weight: 2, dashArray: '5,4'
+  }).addTo(map);
 
   document.getElementById('map-submit').style.display = 'none';
-
   const badge = document.getElementById('distance-badge');
   badge.style.display = 'block';
-  const distDisplay = Math.round(dist);
-  const verdictText = insideBorder
-    ? `✓ Binnen de grenzen`
-    : (correct ? t().ui.withinKm(effectiveThreshold) : t().ui.tooFar(effectiveThreshold));
   badge.innerHTML = `
-    <div class="dist-value">${distDisplay} km</div>
+    <div class="dist-value">${Math.round(dist)} km</div>
     <div class="dist-label">from ${localName(country)}</div>
     <div class="dist-verdict" style="color:${correct ? 'var(--success)' : 'var(--danger)'}">
-      ${verdictText}</div>`;
-  const feedbackMsg = insideBorder
-    ? `✓ Binnen de grenzen van ${localName(country)}!`
-    : (correct ? t().ui.closeEnough(distDisplay) : t().ui.tooFarDist(distDisplay));
-  showFeedback(correct, feedbackMsg, insideBorder ? '' : localName(country));
+      ${correct ? t().ui.withinKm(effectiveThreshold) : t().ui.tooFar(effectiveThreshold)}</div>`;
+  showFeedback(correct,
+    correct ? t().ui.closeEnough(Math.round(dist)) : t().ui.tooFarDist(Math.round(dist)),
+    localName(country));
 }
 
 // ── SECOND CITY ──
@@ -2174,58 +2157,6 @@ function buildMatchPopulationQ(pool, area) {
   submitContainer.appendChild(resetBtn); submitContainer.appendChild(submitBtn);
   submitContainer.classList.add('visible');
 }
-
-// ── GEO UTILS (inline, no external dependency) ──
-const d3 = {
-  geoCentroid(feature) {
-    // Simple centroid: average of all coordinate pairs
-    let x = 0, y = 0, n = 0;
-    function processCoords(coords) {
-      if (typeof coords[0] === 'number') { x += coords[0]; y += coords[1]; n++; return; }
-      coords.forEach(processCoords);
-    }
-    const geom = feature.geometry;
-    if (!geom) return [0, 0];
-    if (geom.type === 'Point') return geom.coordinates;
-    processCoords(geom.coordinates);
-    return n ? [x/n, y/n] : [0, 0];
-  },
-  geoContains(feature, point) {
-    // Ray casting algorithm for point-in-polygon
-    const [px, py] = point;
-    function pointInRing(ring) {
-      let inside = false;
-      for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-        const [xi, yi] = ring[i], [xj, yj] = ring[j];
-        if (((yi > py) !== (yj > py)) && (px < (xj - xi) * (py - yi) / (yj - yi) + xi)) {
-          inside = !inside;
-        }
-      }
-      return inside;
-    }
-    function testGeometry(geom) {
-      if (!geom) return false;
-      if (geom.type === 'Polygon') {
-        if (!pointInRing(geom.coordinates[0])) return false;
-        for (let i = 1; i < geom.coordinates.length; i++) {
-          if (pointInRing(geom.coordinates[i])) return false; // hole
-        }
-        return true;
-      }
-      if (geom.type === 'MultiPolygon') {
-        return geom.coordinates.some(poly => {
-          if (!pointInRing(poly[0])) return false;
-          for (let i = 1; i < poly.length; i++) {
-            if (pointInRing(poly[i])) return false;
-          }
-          return true;
-        });
-      }
-      return false;
-    }
-    return testGeometry(feature.geometry);
-  }
-};
 
 function haversine(lat1,lng1,lat2,lng2) {
   const R=6371,dL=(lat2-lat1)*Math.PI/180,dN=(lng2-lng1)*Math.PI/180;
