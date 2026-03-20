@@ -1822,8 +1822,8 @@ function buildMapQ(country, area, isCapitalMap) {
     if (map) { map.remove(); map = null; }
     leafletMarker = null; leafletCorrectMarker = null; leafletLine = null;
     map = L.map('map', { zoomControl: true, attributionControl: false, maxZoom: 10 }).setView([20, 0], 2);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      subdomains: 'abcd', maxZoom: 10
+    L.tileLayer('https://stamen-tiles.a.ssl.fastly.net/toner-background/{z}/{x}/{y}.png', {
+      maxZoom: 10
     }).addTo(map);
 
     map.on('click', e => {
