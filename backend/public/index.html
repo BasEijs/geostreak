@@ -7,6 +7,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/d3-geo@3/dist/d3-geo.umd.min.js"></script>
+<script src="https://unpkg.com/topojson@3/dist/topojson.min.js"></script>
 <style>
 :root {
   --bg: #0a0e1a; --surface: #111827; --surface2: #1a2235; --border: #1e2d45;
@@ -24,7 +26,7 @@ body::before {
 body.jeroen-mode::before {
   background-image: linear-gradient(rgba(168,85,247,0.05) 1px,transparent 1px), linear-gradient(90deg,rgba(168,85,247,0.05) 1px,transparent 1px);
 }
-#app { max-width: 720px; margin: 0 auto; min-height: 100vh; position: relative; border-left: 1px solid var(--border); border-right: 1px solid var(--border); background: var(--bg); display: flex; flex-direction: column; }
+#app { max-width: 920px; margin: 0 auto; min-height: 100vh; position: relative; border-left: 1px solid var(--border); border-right: 1px solid var(--border); background: var(--bg); display: flex; flex-direction: column; }
 .screen { display: none; position: relative; z-index: 1; }
 .screen.active { display: flex; }
 
@@ -117,10 +119,10 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .streak-number { font-family: 'Bebas Neue',sans-serif; font-size: 34px; color: var(--accent); line-height: 1; }
 .jeroen-mode .streak-number { color: var(--jeroen); }
 .streak-label { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); }
-.timer-wrap { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1; }
-.timer-bar-bg { width: 100%; max-width: 180px; height: 5px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
-.timer-bar { height: 100%; background: var(--jeroen); border-radius: 3px; transition: width 1s linear, background 0.5s; }
-.timer-count { font-family: 'Bebas Neue',sans-serif; font-size: 20px; color: var(--jeroen); line-height: 1; }
+.timer-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+.timer-bar-bg { width: 100%; max-width: 220px; height: 7px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+.timer-bar { height: 100%; background: var(--jeroen); border-radius: 4px; transition: width 1s linear, background 0.5s; }
+.timer-count { font-family: 'Bebas Neue',sans-serif; font-size: 32px; color: var(--jeroen); line-height: 1; letter-spacing: 1px; }
 .timer-count.urgent { color: var(--danger); animation: pulse 0.5s infinite; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 .header-right { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
@@ -135,9 +137,9 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .question-text span { color: var(--accent); font-weight: 600; }
 .jeroen-mode .question-text span { color: var(--jeroen); }
 .historical-note { font-size: 11px; color: var(--jeroen); margin-top: 4px; }
-.answer-area { display: flex; flex-direction: column; overflow: hidden; position: relative; min-height: 0; }
-.answer-area.map-mode { flex: 1; }
-.answer-area.match-mode { flex: 1; min-height: 0; }
+.answer-area { display: flex; flex-direction: column; overflow: hidden; position: relative; min-height: 0; align-items: center; }
+.answer-area.map-mode { flex: 1; align-items: stretch; }
+.answer-area.match-mode { flex: 0 1 auto; overflow-y: auto; min-height: 0; align-items: center; }
 /* map CSS moved to CUSTOM MAP section below */
 .map-hint { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); background: rgba(10,14,26,0.88); border: 1px solid var(--border); border-radius: 20px; padding: 6px 16px; font-size: 12px; color: var(--text-muted); z-index: 1000; pointer-events: none; white-space: nowrap; }
 #map-submit { position: absolute; bottom: 50px; right: 14px; z-index: 1000; width: auto; padding: 10px 20px; background: linear-gradient(135deg,var(--accent),var(--accent2)); color: #000; font-weight: 700; border-radius: 8px; display: none; border: none; font-family: 'DM Sans',sans-serif; font-size: 14px; cursor: pointer; }
@@ -146,7 +148,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .distance-badge .dist-value { font-family: 'Bebas Neue',sans-serif; font-size: 26px; color: var(--accent); }
 .distance-badge .dist-label { font-size: 10px; color: var(--text-muted); }
 .distance-badge .dist-verdict { margin-top: 3px; font-size: 11px; font-weight: 600; }
-.choices-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px 16px; align-content: start; }
+.choices-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px 16px; align-content: start; max-width: 620px; width: 100%; align-self: center; }
 .choice-btn { padding: 14px 13px; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); color: var(--text); font-family: 'DM Sans',sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s; text-align: left; display: flex; align-items: center; gap: 10px; }
 .choice-btn:hover:not(:disabled) { border-color: var(--accent); background: var(--surface2); }
 .jeroen-mode .choice-btn:hover:not(:disabled) { border-color: var(--jeroen); }
@@ -168,8 +170,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .next-btn:hover { border-color: var(--accent); }
 
 /* MATCHING QUESTION */
-.match-area { display: flex; flex-direction: column; padding: 16px 16px 0; gap: 10px; min-height: 0; overflow: hidden; }
-.answer-area.match-mode { flex: 0 1 auto; overflow-y: auto; min-height: 0; }
+.match-area { display: flex; flex-direction: column; padding: 16px 16px 0; gap: 10px; min-height: 0; overflow: hidden; max-width: 620px; width: 100%; align-self: center; }
 .match-instructions { font-size: 12px; color: var(--text-muted); text-align: center; flex-shrink: 0; }
 .match-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex: 1; align-content: start; overflow-y: auto; min-height: 0; }
 .match-col { display: flex; flex-direction: column; gap: 8px; }
@@ -191,7 +192,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .match-flag { width: 48px; height: 32px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border); flex-shrink: 0; }
 .match-connected { position: absolute; right: -6px; top: 50%; transform: translateY(-50%); width: 12px; height: 12px; background: var(--success); border-radius: 50%; border: 2px solid var(--bg); }
 .match-submit { flex-shrink: 0; }
-#match-submit-container { flex-shrink: 0; padding: 10px 16px 12px; display: none; gap: 10px; }
+#match-submit-container { flex-shrink: 0; padding: 10px 16px 12px; display: none; gap: 10px; max-width: 620px; width: 100%; align-self: center; }
 #match-submit-container.visible { display: flex; }
 #match-submit-container .btn-primary { flex: 1; }
 #match-reset-btn { width: auto; padding: 13px 20px; }
@@ -268,7 +269,7 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
 .leaflet-tile { filter: brightness(0.85) saturate(0.8); }
 
 /* TYPED ANSWER */
-.typed-answer-area { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.typed-answer-area { padding: 16px; display: flex; flex-direction: column; gap: 12px; max-width: 620px; width: 100%; align-self: center; }
 .typed-input-row { display: flex; gap: 10px; }
 .typed-input { flex: 1; padding: 14px 16px; background: var(--bg); border: 2px solid var(--border); border-radius: var(--radius); color: var(--text); font-family: 'DM Sans',sans-serif; font-size: 16px; outline: none; transition: border-color 0.2s; }
 .typed-input:focus { border-color: var(--accent); }
@@ -867,6 +868,7 @@ let map = null;
 let leafletMarker = null;
 let leafletCorrectMarker = null;
 let leafletLine = null;
+let geoJsonCache = null;
 let marker = null; // {lat, lng} of current pin
 let lastMatchCountries = []; // prevent duplicate match questions
 let currentQ = null;
@@ -1826,6 +1828,14 @@ function buildMapQ(country, area, isCapitalMap) {
       subdomains: 'abcd', maxZoom: 10
     }).addTo(map);
 
+    // Load GeoJSON for border detection (cached)
+    if (!geoJsonCache) {
+      fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
+        .then(r => r.json())
+        .then(topo => { geoJsonCache = topojson.feature(topo, topo.objects.countries); })
+        .catch(() => {});
+    }
+
     map.on('click', e => {
       if (awaitingNext) return;
       marker = { lat: e.latlng.lat, lng: e.latlng.lng };
@@ -1853,30 +1863,55 @@ function submitMapAnswer(isCapitalMap) {
   const cfg = getDiffConfig(currentDiff);
   const dist = haversine(marker.lat, marker.lng, country.lat, country.lng);
 
+  // Border detection using d3-geo geoContains
+  let insideBorder = false;
+  if (geoJsonCache) {
+    const clickCoords = [marker.lng, marker.lat];
+    let bestFeature = null, bestDist = Infinity;
+    for (const f of geoJsonCache.features) {
+      try {
+        const centroid = d3geo.geoCentroid(f);
+        const d = haversine(centroid[1], centroid[0], country.lat, country.lng);
+        if (d < bestDist) { bestDist = d; bestFeature = f; }
+      } catch {}
+    }
+    if (bestFeature && bestDist < 800) {
+      try { insideBorder = d3geo.geoContains(bestFeature, clickCoords); } catch {}
+    }
+  }
+
+  const effectiveThreshold = Math.max(cfg.mapThreshold, country.extraRadius || 0);
+  const correct = insideBorder || dist <= effectiveThreshold;
+
   // Show correct location
   if (leafletCorrectMarker) map.removeLayer(leafletCorrectMarker);
   if (leafletLine) map.removeLayer(leafletLine);
   leafletCorrectMarker = L.circleMarker([country.lat, country.lng], {
     radius: 10, fillColor: '#22c55e', fillOpacity: 1, color: '#fff', weight: 2
   }).addTo(map);
-  leafletLine = L.polyline([[marker.lat, marker.lng], [country.lat, country.lng]], {
-    color: '#f0b429', weight: 2, dashArray: '5,4'
-  }).addTo(map);
+  if (!insideBorder) {
+    leafletLine = L.polyline([[marker.lat, marker.lng], [country.lat, country.lng]], {
+      color: '#f0b429', weight: 2, dashArray: '5,4'
+    }).addTo(map);
+  }
 
   document.getElementById('map-submit').style.display = 'none';
 
-  const effectiveThreshold = Math.max(cfg.mapThreshold, country.extraRadius || 0);
-  const correct = dist <= effectiveThreshold;
   const badge = document.getElementById('distance-badge');
   badge.style.display = 'block';
+  const distDisplay = Math.round(dist);
+  const verdictText = insideBorder
+    ? `✓ Binnen de grenzen`
+    : (correct ? t().ui.withinKm(effectiveThreshold) : t().ui.tooFar(effectiveThreshold));
   badge.innerHTML = `
-    <div class="dist-value">${Math.round(dist)} km</div>
+    <div class="dist-value">${distDisplay} km</div>
     <div class="dist-label">from ${localName(country)}</div>
     <div class="dist-verdict" style="color:${correct ? 'var(--success)' : 'var(--danger)'}">
-      ${correct ? t().ui.withinKm(effectiveThreshold) : t().ui.tooFar(effectiveThreshold)}</div>`;
-  showFeedback(correct,
-    correct ? t().ui.closeEnough(Math.round(dist)) : t().ui.tooFarDist(Math.round(dist)),
-    localName(country));
+      ${verdictText}</div>`;
+  const feedbackMsg = insideBorder
+    ? `✓ Binnen de grenzen van ${localName(country)}!`
+    : (correct ? t().ui.closeEnough(distDisplay) : t().ui.tooFarDist(distDisplay));
+  showFeedback(correct, feedbackMsg, insideBorder ? '' : localName(country));
 }
 
 // ── SECOND CITY ──
