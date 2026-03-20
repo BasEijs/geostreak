@@ -1859,10 +1859,15 @@ function buildMapQ(country, area, isCapitalMap) {
 
 function addMapOverlay(map, topo) {
   if (!topo) return;
-  // Country borders as mesh — shared borders only, avoids outer coastline artifacts
+  // External borders (coastlines) — a === b means boundary of a single country
+  const coastlines = topojson.mesh(topo, topo.objects.countries, (a, b) => a === b);
+  // Internal borders (between countries)
   const borders = topojson.mesh(topo, topo.objects.countries, (a, b) => a !== b);
+  L.geoJSON(coastlines, {
+    style: { color: '#f0b429', weight: 0.6, opacity: 0.6, fill: false }
+  }).addTo(map);
   L.geoJSON(borders, {
-    style: { color: '#f0b429', weight: 0.8, opacity: 0.8, fill: false }
+    style: { color: '#f0b429', weight: 0.8, opacity: 0.9, fill: false }
   }).addTo(map);
 }
 
