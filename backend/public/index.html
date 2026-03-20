@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/d3-geo@3/dist/d3-geo.umd.min.js"></script>
+<script src="https://unpkg.com/d3-geo@3/dist/d3-geo.min.js"></script>
 <script src="https://unpkg.com/topojson@3/dist/topojson.min.js"></script>
 <style>
 :root {
@@ -1870,13 +1870,13 @@ function submitMapAnswer(isCapitalMap) {
     let bestFeature = null, bestDist = Infinity;
     for (const f of geoJsonCache.features) {
       try {
-        const centroid = d3geo.geoCentroid(f);
+        const centroid = d3.geoCentroid(f);
         const d = haversine(centroid[1], centroid[0], country.lat, country.lng);
         if (d < bestDist) { bestDist = d; bestFeature = f; }
       } catch {}
     }
     if (bestFeature && bestDist < 800) {
-      try { insideBorder = d3geo.geoContains(bestFeature, clickCoords); } catch {}
+      try { insideBorder = d3.geoContains(bestFeature, clickCoords); } catch {}
     }
   }
 
