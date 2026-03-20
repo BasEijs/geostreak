@@ -2033,20 +2033,18 @@ function submitMapAnswer(isCapitalMap) {
 // ── SECOND CITY ──
 function buildSecondCityQ(country, area, pool) {
   const extra = COUNTRY_EXTRA[country.name];
-  if (!extra?.secondCity) { nextQuestion(); return; } // skip if no data
+  if (!extra?.secondCity) { nextQuestion(); return; }
   document.getElementById('question-text').innerHTML =
     `Wat is de <span>tweede grootste stad</span> (qua inwoners) van ${localName(country)}?`;
 
   if (currentDiff === 'jeroen') {
     buildTypedInput(area, extra.secondCity, extra.secondCity, 'Typ de stad');
   } else {
-    // Build wrong answers from other countries' second cities
-    const otherExtras = pool
-      .filter(c => c !== country && COUNTRY_EXTRA[c.name])
-      .map(c => COUNTRY_EXTRA[c.name].secondCity)
-      .filter(Boolean);
-    const wrongs = shuffle(otherExtras).slice(0, 3);
-    const choices = shuffle([extra.secondCity, ...wrongs]);
+    // Use other cities from the same country as wrong answers
+    const sameCityWrongs = extra.cities
+      ? shuffle(extra.cities.filter(c => c !== extra.secondCity)).slice(0, 3)
+      : shuffle(pool.filter(c => c !== country && COUNTRY_EXTRA[c.name]).map(c => COUNTRY_EXTRA[c.name].secondCity).filter(Boolean)).slice(0, 3);
+    const choices = shuffle([extra.secondCity, ...sameCityWrongs]);
     const grid = document.createElement('div'); grid.className = 'choices-grid';
     ['A','B','C','D'].forEach((letter, i) => {
       if (!choices[i]) return;
