@@ -1840,6 +1840,7 @@ function buildMapQ(country, area, isCapitalMap) {
         .catch(() => {});
     } else {
       addMapOverlay(map, topoCache);
+    }
 
     map.on('click', e => {
       if (awaitingNext) return;
