@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GeoStreak</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/d3@7/dist/d3.min.js"></script>
+<script src="https://unpkg.com/topojson@3/dist/topojson.min.js"></script>
 <style>
 :root {
   --bg: #0a0e1a; --surface: #111827; --surface2: #1a2235; --border: #1e2d45;
@@ -138,8 +138,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .answer-area { display: flex; flex-direction: column; overflow: hidden; position: relative; min-height: 0; }
 .answer-area.map-mode { flex: 1; }
 .answer-area.match-mode { flex: 1; min-height: 0; }
-#map-container { flex: 1; position: relative; min-height: 0; }
-#map { width: 100%; height: 100%; }
+/* map CSS moved to CUSTOM MAP section below */
 .map-hint { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); background: rgba(10,14,26,0.88); border: 1px solid var(--border); border-radius: 20px; padding: 6px 16px; font-size: 12px; color: var(--text-muted); z-index: 1000; pointer-events: none; white-space: nowrap; }
 #map-submit { position: absolute; bottom: 50px; right: 14px; z-index: 1000; width: auto; padding: 10px 20px; background: linear-gradient(135deg,var(--accent),var(--accent2)); color: #000; font-weight: 700; border-radius: 8px; display: none; border: none; font-family: 'DM Sans',sans-serif; font-size: 14px; cursor: pointer; }
 .jeroen-mode #map-submit { background: linear-gradient(135deg,var(--jeroen),var(--jeroen2)); color: #fff; }
@@ -262,8 +261,19 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
 .confirm-box p { font-size: 14px; color: var(--text-muted); margin-bottom: 20px; }
 .confirm-actions { display: flex; gap: 10px; }
 
-.leaflet-container { background: #e8e8e8 !important; }
-.leaflet-tile { filter: none; }
+/* CUSTOM MAP */
+#map-container { flex: 1; position: relative; min-height: 0; background: #0d1421; overflow: hidden; }
+#map-svg { width: 100%; height: 100%; cursor: crosshair; }
+.country-path { fill: #131e30; stroke: #f0b429; stroke-linejoin: round; transition: fill 0.15s; }
+.country-path:hover { fill: #1e2e47; }
+.country-path.guessed { fill: #22c55e; fill-opacity: 0.3; stroke: #22c55e; }
+.country-path.wrong-guess { fill: #ef4444; fill-opacity: 0.2; }
+.pin-marker { pointer-events: none; }
+.correct-marker { pointer-events: none; }
+.distance-line { pointer-events: none; stroke: #f0b429; stroke-width: 1.5; stroke-dasharray: 6,4; fill: none; }
+.map-zoom-controls { position: absolute; top: 12px; left: 12px; display: flex; flex-direction: column; gap: 4px; z-index: 10; }
+.map-zoom-btn { width: 32px; height: 32px; background: #1a2235; border: 1px solid #1e2d45; border-radius: 6px; color: #e8edf5; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; transition: background 0.15s; }
+.map-zoom-btn:hover { background: #243050; }
 
 /* TYPED ANSWER */
 .typed-answer-area { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
@@ -771,8 +781,13 @@ let currentStatTab = 'easy';
 let useTimer = false;
 let timerInterval = null;
 let timerSecondsLeft = 15;
-let map = null;
-let marker = null;
+let mapSvg = null;
+let mapProjection = null;
+let mapPath = null;
+let mapPin = null;
+let mapGeoJson = null;
+let mapTransform = {k:1, x:0, y:0};
+let marker = null; // {lat, lng} of current pin
 let currentQ = null;
 let awaitingNext = false;
 let allStats = {};
@@ -1659,31 +1674,139 @@ function buildMapQ(country, area, isCapitalMap) {
     document.getElementById('question-text').innerHTML = t().ui.clickCountry(localName(country), cfg.mapThreshold);
   }
 
-  const container=document.createElement('div'); container.id='map-container';
-  const mapDiv=document.createElement('div'); mapDiv.id='map';
-  const hint=document.createElement('div'); hint.className='map-hint'; hint.textContent=t().ui.pinHint;
-  const submitBtn=document.createElement('button'); submitBtn.id='map-submit'; submitBtn.textContent=t().ui.submitPin; submitBtn.onclick=()=>submitMapAnswer(isCapitalMap);
-  const badge=document.createElement('div'); badge.className='distance-badge'; badge.id='distance-badge';
-  container.appendChild(mapDiv); container.appendChild(hint); container.appendChild(submitBtn); container.appendChild(badge);
+  const container = document.createElement('div'); container.id = 'map-container';
+
+  // Zoom controls
+  const zoomControls = document.createElement('div'); zoomControls.className = 'map-zoom-controls';
+  const zoomIn = document.createElement('button'); zoomIn.className = 'map-zoom-btn'; zoomIn.textContent = '+'; zoomIn.onclick = () => changeZoom(1.5);
+  const zoomOut = document.createElement('button'); zoomOut.className = 'map-zoom-btn'; zoomOut.textContent = '−'; zoomOut.onclick = () => changeZoom(1/1.5);
+  zoomControls.appendChild(zoomIn); zoomControls.appendChild(zoomOut);
+
+  const hint = document.createElement('div'); hint.className = 'map-hint'; hint.textContent = t().ui.pinHint;
+  const submitBtn = document.createElement('button'); submitBtn.id = 'map-submit'; submitBtn.textContent = t().ui.submitPin; submitBtn.onclick = () => submitMapAnswer(isCapitalMap); submitBtn.style.display = 'none';
+  const badge = document.createElement('div'); badge.className = 'distance-badge'; badge.id = 'distance-badge';
+
+  container.appendChild(zoomControls);
+  container.appendChild(hint);
+  container.appendChild(submitBtn);
+  container.appendChild(badge);
   area.classList.add('map-mode');
   area.appendChild(container);
 
-  setTimeout(()=>{
-    if(map){map.remove();map=null;}
-    map=L.map('map',{zoomControl:true,attributionControl:false}).setView([20,0],2);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',{maxZoom:9,attribution:''}).addTo(map);
-    marker=null;
-    map.on('click',e=>{
-      if(awaitingNext) return;
-      if(marker) map.removeLayer(marker);
-      marker=L.circleMarker([e.latlng.lat,e.latlng.lng],{
-        radius:8, fillColor:currentDiff==='jeroen'?'#a855f7':'#f0b429',
-        fillOpacity:1, color:'#fff', weight:2
-      }).addTo(map);
-      submitBtn.style.display='block';
-      hint.textContent=t().ui.confirmPin;
+  marker = null;
+  mapTransform = {k: 1, x: 0, y: 0};
+
+  // Build SVG map
+  setTimeout(() => initD3Map(container, hint, submitBtn), 50);
+}
+
+let geoJsonCache = null;
+
+async function initD3Map(container, hint, submitBtn) {
+  const w = container.clientWidth || 600;
+  const h = container.clientHeight || 400;
+
+  // Load GeoJSON (cached after first load)
+  if (!geoJsonCache) {
+    try {
+      const res = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json');
+      const topo = await res.json();
+      geoJsonCache = topojson.feature(topo, topo.objects.countries);
+    } catch(e) {
+      // Fallback to alternative CDN
+      try {
+        const res = await fetch('https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson');
+        geoJsonCache = await res.json();
+      } catch(e2) {
+        console.error('Failed to load map data');
+        return;
+      }
+    }
+  }
+
+  // Create SVG
+  const svg = d3.select(container)
+    .insert('svg', ':first-child')
+    .attr('id', 'map-svg')
+    .attr('width', w)
+    .attr('height', h);
+
+  mapSvg = svg;
+
+  // Projection: Natural Earth, centered on world
+  const projection = d3.geoNaturalEarth1()
+    .scale(w / 6.2)
+    .translate([w / 2, h / 2]);
+
+  mapProjection = projection;
+  const pathGen = d3.geoPath().projection(projection);
+  mapPath = pathGen;
+
+  // Zoom behavior
+  const MIN_ZOOM = 1;
+  const MAX_ZOOM = 12; // ~half of Europe
+  const zoom = d3.zoom()
+    .scaleExtent([MIN_ZOOM, MAX_ZOOM])
+    .on('zoom', (event) => {
+      mapTransform = event.transform;
+      g.attr('transform', event.transform);
+      // Scale border thickness inversely with zoom
+      const baseStroke = 0.8;
+      const minStroke = 0.3;
+      const stroke = Math.max(minStroke, baseStroke / Math.sqrt(event.transform.k));
+      g.selectAll('.country-path').attr('stroke-width', stroke + 'px');
     });
-  },50);
+
+  svg.call(zoom);
+  window._mapZoom = zoom;
+
+  const g = svg.append('g').attr('id', 'map-g');
+
+  // Draw countries
+  const features = geoJsonCache.features || geoJsonCache;
+  g.selectAll('.country-path')
+    .data(features)
+    .enter()
+    .append('path')
+    .attr('class', 'country-path')
+    .attr('d', pathGen)
+    .attr('stroke-width', '0.8px');
+
+  // Click handler
+  svg.on('click', function(event) {
+    if (awaitingNext) return;
+    const [px, py] = d3.pointer(event, this);
+    // Invert zoom transform
+    const transform = mapTransform;
+    const ix = (px - transform.x) / transform.k;
+    const iy = (py - transform.y) / transform.k;
+    const coords = projection.invert([ix, iy]);
+    if (!coords || isNaN(coords[0])) return;
+
+    marker = {lat: coords[1], lng: coords[0]};
+
+    // Remove old pin
+    g.selectAll('.pin-marker').remove();
+
+    // Draw pin
+    const [sx, sy] = projection(coords);
+    const pinR = Math.max(4, 8 / Math.sqrt(transform.k));
+    g.append('circle')
+      .attr('class', 'pin-marker')
+      .attr('cx', sx).attr('cy', sy)
+      .attr('r', pinR)
+      .attr('fill', currentDiff === 'jeroen' ? '#a855f7' : '#f0b429')
+      .attr('stroke', '#fff')
+      .attr('stroke-width', Math.max(1, 2 / Math.sqrt(transform.k)));
+
+    submitBtn.style.display = 'block';
+    hint.textContent = t().ui.confirmPin;
+  });
+}
+
+function changeZoom(factor) {
+  if (!mapSvg || !window._mapZoom) return;
+  mapSvg.transition().duration(300).call(window._mapZoom.scaleBy, factor);
 }
 
 // ── CAPITAL → MAP ──
@@ -1692,23 +1815,43 @@ function buildCapitalMapQ(country, area) {
 }
 
 function submitMapAnswer(isCapitalMap) {
-  if(!marker||awaitingNext) return;
+  if (!marker || awaitingNext) return;
   stopTimer();
-  const {country}=currentQ;
-  const cfg=getDiffConfig(currentDiff);
-  const g=marker.getLatLng();
-  const dist=haversine(g.lat,g.lng,country.lat,country.lng);
-  L.circleMarker([country.lat,country.lng],{radius:10,fillColor:'#22c55e',fillOpacity:1,color:'#fff',weight:2}).addTo(map);
-  L.polyline([[g.lat,g.lng],[country.lat,country.lng]],{color:'#f0b429',weight:2,dashArray:'5,4'}).addTo(map);
-  document.getElementById('map-submit').style.display='none';
+  const {country} = currentQ;
+  const cfg = getDiffConfig(currentDiff);
+  const dist = haversine(marker.lat, marker.lng, country.lat, country.lng);
+
+  // Show correct location on map
+  const g = d3.select('#map-g');
+  const [cx, cy] = mapProjection([country.lng, country.lat]);
+  const transform = mapTransform;
+  const r = Math.max(5, 10 / Math.sqrt(transform.k));
+
+  // Line from pin to correct
+  const [px, py] = mapProjection([marker.lng, marker.lat]);
+  g.append('line')
+    .attr('class', 'distance-line')
+    .attr('x1', px).attr('y1', py)
+    .attr('x2', cx).attr('y2', cy);
+
+  g.append('circle')
+    .attr('class', 'correct-marker')
+    .attr('cx', cx).attr('cy', cy)
+    .attr('r', r)
+    .attr('fill', '#22c55e')
+    .attr('stroke', '#fff')
+    .attr('stroke-width', Math.max(1, 2 / Math.sqrt(transform.k)));
+
+  document.getElementById('map-submit').style.display = 'none';
+
   const effectiveThreshold = Math.max(cfg.mapThreshold, country.extraRadius || 0);
-  const correct=dist<=effectiveThreshold;
-  const badge=document.getElementById('distance-badge');
-  badge.style.display='block';
-  badge.innerHTML=`
+  const correct = dist <= effectiveThreshold;
+  const badge = document.getElementById('distance-badge');
+  badge.style.display = 'block';
+  badge.innerHTML = `
     <div class="dist-value">${Math.round(dist)} km</div>
     <div class="dist-label">from ${localName(country)}</div>
-    <div class="dist-verdict" style="color:${correct?'var(--success)':'var(--danger)'}">
+    <div class="dist-verdict" style="color:${correct ? 'var(--success)' : 'var(--danger)'}">
       ${correct ? t().ui.withinKm(effectiveThreshold) : t().ui.tooFar(effectiveThreshold)}</div>`;
   showFeedback(correct,
     correct ? t().ui.closeEnough(Math.round(dist)) : t().ui.tooFarDist(Math.round(dist)),
