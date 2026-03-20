@@ -405,6 +405,7 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
     <div class="header-right">
       <div class="question-badge" id="q-type-badge">—</div>
       <div class="diff-badge" id="diff-badge">—</div>
+      <div id="dev-mode-badge" style="display:none;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:#ef4444;font-size:10px;padding:3px 9px;border-radius:20px;font-weight:700;letter-spacing:1px">DEV</div>
       <button class="btn btn-ghost btn-sm btn-danger" id="quit-btn" onclick="giveUp()">Quit</button>
     </div>
   </div>
@@ -453,6 +454,21 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
   <div class="admin-content">
     <div class="admin-title">⚙ Admin Panel</div>
 
+    <!-- DEV MODE -->
+    <div class="admin-section">
+      <div class="admin-section-header">
+        <h3>🧪 Developer Mode</h3>
+        <p>When active, all answers count as correct regardless of what you pick or type. Scores are never saved to the leaderboard. Use this to test question types and gameplay without being limited by your geographical knowledge. Active for this session only — resets when you log out.</p>
+      </div>
+      <div class="clear-scores-row">
+        <div class="clear-scores-label">
+          Developer mode
+          <span id="dev-mode-status">Currently <strong style="color:var(--success)">OFF</strong></span>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="dev-mode-toggle-btn" onclick="toggleDevMode()">Enable Dev Mode</button>
+      </div>
+    </div>
+
     <!-- GAME SETTINGS -->
     <div class="admin-section">
       <div class="admin-section-header">
@@ -463,68 +479,62 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
         <div class="settings-group">
           <div class="settings-group-title">🧠 Dumb Test</div>
           <div class="setting-row">
-            <div class="setting-label">
-              Timer duration (seconds)
-              <span>How long players have to answer each question. Set to 0 to disable the timer entirely.</span>
-            </div>
-            <input type="number" class="setting-input" id="setting-easy-timer" min="0" max="60" value="5">
+            <div class="setting-label">Simple questions timer (seconds)<span>Capital, flag & continent questions. Set to 0 to disable.</span></div>
+            <input type="number" class="setting-input" id="setting-easy-timer-simple" min="0" max="120" value="5">
+          </div>
+          <div class="setting-row">
+            <div class="setting-label">Match questions timer (seconds)<span>Drag & drop matching questions. Set to 0 to disable.</span></div>
+            <input type="number" class="setting-input" id="setting-easy-timer-match" min="0" max="300" value="30">
           </div>
         </div>
         <div class="settings-group">
           <div class="settings-group-title">🗺️ Medium</div>
           <div class="setting-row">
-            <div class="setting-label">
-              Timer duration (seconds)
-              <span>How long players have to answer each question. Set to 0 to disable the timer entirely.</span>
-            </div>
-            <input type="number" class="setting-input" id="setting-medium-timer" min="0" max="60" value="0">
+            <div class="setting-label">Simple questions timer (seconds)<span>Capital, flag & continent questions. Set to 0 to disable.</span></div>
+            <input type="number" class="setting-input" id="setting-medium-timer-simple" min="0" max="120" value="0">
+          </div>
+          <div class="setting-row">
+            <div class="setting-label">Map questions timer (seconds)<span>Click-on-map questions. Set to 0 to disable.</span></div>
+            <input type="number" class="setting-input" id="setting-medium-timer-map" min="0" max="120" value="0">
+          </div>
+          <div class="setting-row">
+            <div class="setting-label">Match questions timer (seconds)<span>Drag & drop matching questions. Set to 0 to disable.</span></div>
+            <input type="number" class="setting-input" id="setting-medium-timer-match" min="0" max="300" value="0">
           </div>
         </div>
         <div class="settings-group">
           <div class="settings-group-title">💀 Jeroen Mode</div>
           <div class="setting-row">
-            <div class="setting-label">
-              Timer duration (seconds)
-              <span>How long players have to answer each question. Set to 0 to disable the timer. Jeroen suffers more with less time.</span>
-            </div>
-            <input type="number" class="setting-input" id="setting-jeroen-timer" min="0" max="60" value="12">
+            <div class="setting-label">Simple questions timer (seconds)<span>Capital & flag questions (typed answers). Set to 0 to disable.</span></div>
+            <input type="number" class="setting-input" id="setting-jeroen-timer-simple" min="0" max="120" value="12">
           </div>
           <div class="setting-row">
-            <div class="setting-label">
-              Map distance threshold (km)
-              <span>How close players need to click on the map to score a point. Lower = harder. Default is 400km.</span>
-            </div>
+            <div class="setting-label">Map questions timer (seconds)<span>Click-on-map questions. Set to 0 to disable.</span></div>
+            <input type="number" class="setting-input" id="setting-jeroen-timer-map" min="0" max="120" value="30">
+          </div>
+          <div class="setting-row">
+            <div class="setting-label">Match questions timer (seconds)<span>Drag & drop matching questions. Set to 0 to disable.</span></div>
+            <input type="number" class="setting-input" id="setting-jeroen-timer-match" min="0" max="300" value="60">
+          </div>
+          <div class="setting-row">
+            <div class="setting-label">Capital → Map timer (seconds)<span>Given a capital, click the country on the map. Set to 0 to disable.</span></div>
+            <input type="number" class="setting-input" id="setting-jeroen-timer-capitalmap" min="0" max="120" value="30">
+          </div>
+          <div class="setting-row">
+            <div class="setting-label">Map distance threshold (km)<span>How close players need to click to score. Lower = harder. Default 400km.</span></div>
             <input type="number" class="setting-input" id="setting-jeroen-map" min="50" max="2000" value="400">
           </div>
           <div class="setting-row">
-            <div class="setting-label">
-              Show historical flag label
-              <span>When enabled, historical/old flags show a warning note so players know it's no longer in use. Disable to make it harder.</span>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="setting-historical-label" checked>
-              <span class="slider"></span>
-            </label>
+            <div class="setting-label">Show historical flag label<span>Shows ⚠️ warning on old flags so players know it's no longer in use.</span></div>
+            <label class="switch"><input type="checkbox" id="setting-historical-label" checked><span class="slider"></span></label>
           </div>
           <div class="setting-row">
-            <div class="setting-label">
-              Include historical flags
-              <span>When enabled, old flags like the Soviet Union, Yugoslavia and East Germany appear in flag questions. Capital questions for these countries are never asked regardless of this setting.</span>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="setting-historical-flags" checked>
-              <span class="slider"></span>
-            </label>
+            <div class="setting-label">Include historical flags<span>Soviet Union, Yugoslavia, East Germany etc. appear in flag questions.</span></div>
+            <label class="switch"><input type="checkbox" id="setting-historical-flags" checked><span class="slider"></span></label>
           </div>
           <div class="setting-row">
-            <div class="setting-label">
-              Include historical capitals
-              <span>When enabled, capital questions for defunct countries (Soviet Union, Yugoslavia etc.) are also asked. Off by default — these are extremely hard. Only works when historical flags are also enabled.</span>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="setting-historical-capitals">
-              <span class="slider"></span>
-            </label>
+            <div class="setting-label">Include historical capitals<span>Capital questions for defunct countries. Off by default — extremely hard.</span></div>
+            <label class="switch"><input type="checkbox" id="setting-historical-capitals"><span class="slider"></span></label>
           </div>
         </div>
       </div>
@@ -729,9 +739,10 @@ const HISTORICAL_FLAGS = [
 // ════════════════════════════════════
 
 let gameSettings = {
-  easy_timer: 5,
-  medium_timer: 0,
-  jeroen_timer: 12,
+  easy_timer_simple: 5, easy_timer_match: 30, easy_timer_map: 0,
+  medium_timer_simple: 0, medium_timer_match: 0, medium_timer_map: 0,
+  jeroen_timer_simple: 12, jeroen_timer_match: 60, jeroen_timer_map: 30,
+  jeroen_timer_typed: 15, jeroen_timer_capitalmap: 30,
   jeroen_map_threshold: 400,
   jeroen_show_historical_label: true,
   jeroen_historical_flags: true,
@@ -748,21 +759,39 @@ function getDiffConfig(diff) {
       countries: easyCountries,
       questionTypes: ["capital","capital","flag","flag","continent","match-flags","match-capitals"],
       mapThreshold: 1000,
-      timerSeconds: gameSettings.easy_timer || null,
+      timers: {
+        simple: gameSettings.easy_timer_simple || null,
+        map: gameSettings.easy_timer_map || null,
+        match: gameSettings.easy_timer_match || null,
+        typed: null,
+        capitalmap: null,
+      },
     },
     medium: {
       label:"Medium", badge:"medium",
       countries: medCountries,
       questionTypes: ["capital","capital","flag","flag","map","map","match-flags","match-capitals"],
       mapThreshold: 800,
-      timerSeconds: gameSettings.medium_timer || null,
+      timers: {
+        simple: gameSettings.medium_timer_simple || null,
+        map: gameSettings.medium_timer_map || null,
+        match: gameSettings.medium_timer_match || null,
+        typed: null,
+        capitalmap: null,
+      },
     },
     jeroen: {
       label:"Jeroen Mode 💀", badge:"jeroen",
       countries: [...jeroenCountries, ...(gameSettings.jeroen_historical_flags ? HISTORICAL_FLAGS : [])],
       questionTypes: ["capital","capital","flag","flag","map","map","capital-map","match-flags","match-capitals"],
       mapThreshold: gameSettings.jeroen_map_threshold,
-      timerSeconds: gameSettings.jeroen_timer || null,
+      timers: {
+        simple: gameSettings.jeroen_timer_simple || null,
+        map: gameSettings.jeroen_timer_map || null,
+        match: gameSettings.jeroen_timer_match || null,
+        typed: gameSettings.jeroen_timer_typed || null,
+        capitalmap: gameSettings.jeroen_timer_capitalmap || null,
+      },
     },
   }[diff];
 }
@@ -775,6 +804,7 @@ let token = localStorage.getItem('token');
 let username = localStorage.getItem('username');
 let isAdmin = localStorage.getItem('is_admin') === '1';
 let currentLang = localStorage.getItem('language') || 'en';
+let devMode = false;
 let streak = 0;
 let currentDiff = 'easy';
 let currentStatTab = 'easy';
@@ -1036,12 +1066,12 @@ async function fetchSettings() {
 }
 
 function updateDiffDescriptions() {
-  const et = gameSettings.easy_timer;
-  const mt = gameSettings.medium_timer;
-  const jt = gameSettings.jeroen_timer;
+  const es = gameSettings.easy_timer_simple;
+  const ms = gameSettings.medium_timer_simple;
+  const jt = gameSettings.jeroen_timer_simple;
   const jm = gameSettings.jeroen_map_threshold;
-  document.getElementById('desc-easy').textContent = t().ui.dumbTestDesc(et, jm);
-  document.getElementById('desc-medium').textContent = t().ui.mediumDesc(mt, jm);
+  document.getElementById('desc-easy').textContent = t().ui.dumbTestDesc(es, jm);
+  document.getElementById('desc-medium').textContent = t().ui.mediumDesc(ms, jm);
   document.getElementById('desc-jeroen').textContent = t().ui.jeroenDesc(jt, jm);
 }
 
@@ -1221,13 +1251,16 @@ async function loadLeaderboard(diff) {
 function startGame() {
   streak=0; awaitingNext=false;
   const cfg = getDiffConfig(currentDiff);
-  useTimer = !!(cfg.timerSeconds);
+  useTimer = !devMode && Object.values(cfg.timers).some(v => v > 0);
   stopTimer(); updateStreakDisplay();
   document.body.classList.toggle('jeroen-mode', currentDiff==='jeroen');
   const badge = document.getElementById('diff-badge');
   badge.textContent = cfg.label; badge.className = 'diff-badge '+cfg.badge;
   document.getElementById('quit-btn').textContent = t().ui.quit;
   document.getElementById('streak-label-el').textContent = t().ui.streak;
+  // Dev mode badge
+  const devBadge = document.getElementById('dev-mode-badge');
+  if (devBadge) devBadge.style.display = devMode ? 'inline-block' : 'none';
   showScreen('game-screen');
   nextQuestion();
 }
@@ -1282,15 +1315,25 @@ function nextQuestion() {
   else if (type==='match-capitals') buildMatchQ('capital', nonHistoricalPool, area);
   else if (type==='capital-map') buildCapitalMapQ(country, area);
 
-  if (useTimer) startTimer(type.startsWith('match') ? 6 : 1);
+  if (useTimer) startTimer(type);
 }
 
 // ── TIMER ──
 let timerMultiplier = 1;
-function startTimer(multiplier = 1) {
+let timerTotal = 0;
+function startTimer(questionType) {
+  if (devMode) return;
   const cfg = getDiffConfig(currentDiff);
-  timerMultiplier = multiplier;
-  timerSecondsLeft = cfg.timerSeconds * multiplier;
+  const typeKey = questionType.startsWith('match') ? 'match'
+    : questionType === 'map' ? 'map'
+    : questionType === 'capital-map' ? 'capitalmap'
+    : (questionType === 'capital' || questionType === 'flag' || questionType === 'continent') && currentDiff === 'jeroen' ? 'typed'
+    : 'simple';
+  // For Jeroen typed questions (capital/flag) use typed timer
+  const seconds = cfg.timers[typeKey] || 0;
+  if (!seconds) return;
+  timerTotal = seconds;
+  timerSecondsLeft = seconds;
   document.getElementById('timer-wrap').style.display='flex';
   updateTimerDisplay();
   timerInterval = setInterval(()=>{
@@ -1304,9 +1347,7 @@ function stopTimer() {
   document.getElementById('timer-wrap').style.display='none';
 }
 function updateTimerDisplay() {
-  const cfg = getDiffConfig(currentDiff);
-  const total = cfg.timerSeconds * timerMultiplier;
-  const pct = (timerSecondsLeft / total) * 100;
+  const pct = timerTotal > 0 ? (timerSecondsLeft / timerTotal) * 100 : 0;
   const cnt = document.getElementById('timer-count');
   const bar = document.getElementById('timer-bar');
   cnt.textContent = timerSecondsLeft;
@@ -1867,16 +1908,17 @@ function haversine(lat1,lng1,lat2,lng2) {
 // ── FEEDBACK ──
 function showFeedback(correct, message, sub='') {
   awaitingNext=true;
-  if(correct){streak++;updateStreakDisplay();}
+  const effectiveCorrect = correct || devMode;
+  if(effectiveCorrect){streak++;updateStreakDisplay();}
   const bar=document.getElementById('feedback-bar');
   bar.className=`feedback-bar ${correct?'correct-bar':'wrong-bar'}`;
   bar.style.display='flex';
   bar.innerHTML=`
     <div>
-      <div class="feedback-text">${message}</div>
+      <div class="feedback-text">${message}${devMode && !correct ? ' <span style="font-size:11px;opacity:0.6">[DEV]</span>' : ''}</div>
       ${sub?`<div class="feedback-sub">${sub}</div>`:''}
     </div>
-    <button class="next-btn" onclick="${correct?'nextQuestion()':'endGame()'}">${correct ? t().ui.nextQuestion : t().ui.seeResults}</button>`;
+    <button class="next-btn" onclick="${effectiveCorrect?'nextQuestion()':'endGame()'}">${effectiveCorrect ? t().ui.nextQuestion : t().ui.seeResults}</button>`;
 }
 
 async function endGame() {
@@ -1885,11 +1927,13 @@ async function endGame() {
   submitContainer.innerHTML = '';
   submitContainer.classList.remove('visible');
   try {
-    await fetch('/api/scores',{
-      method:'POST',
-      headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
-      body:JSON.stringify({streak,difficulty:currentDiff})
-    });
+    if (!devMode) {
+      await fetch('/api/scores',{
+        method:'POST',
+        headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
+        body:JSON.stringify({streak,difficulty:currentDiff})
+      });
+    }
   } catch {}
   const isJ=currentDiff==='jeroen';
   document.getElementById('final-streak').className='gameover-streak'+(isJ?' jeroen-score':'');
@@ -1926,6 +1970,21 @@ async function endGame() {
 // ADMIN
 // ════════════════════════════════════
 
+function toggleDevMode() {
+  devMode = !devMode;
+  const btn = document.getElementById('dev-mode-toggle-btn');
+  const status = document.getElementById('dev-mode-status');
+  if (devMode) {
+    btn.textContent = 'Disable Dev Mode';
+    btn.className = 'btn btn-danger btn-sm';
+    status.innerHTML = 'Currently <strong style="color:var(--danger)">ON</strong> — scores will not be saved';
+  } else {
+    btn.textContent = 'Enable Dev Mode';
+    btn.className = 'btn btn-ghost btn-sm';
+    status.innerHTML = 'Currently <strong style="color:var(--success)">OFF</strong>';
+  }
+}
+
 async function showAdmin() {
   showScreen('admin-screen');
   document.getElementById('admin-nav-username').textContent = username;
@@ -1937,9 +1996,15 @@ async function loadAdminSettings() {
   try {
     const res = await fetch('/api/settings');
     const s = await res.json();
-    document.getElementById('setting-easy-timer').value = s.easy_timer;
-    document.getElementById('setting-medium-timer').value = s.medium_timer;
-    document.getElementById('setting-jeroen-timer').value = s.jeroen_timer;
+    document.getElementById('setting-easy-timer-simple').value = s.easy_timer_simple;
+    document.getElementById('setting-easy-timer-match').value = s.easy_timer_match;
+    document.getElementById('setting-medium-timer-simple').value = s.medium_timer_simple;
+    document.getElementById('setting-medium-timer-map').value = s.medium_timer_map;
+    document.getElementById('setting-medium-timer-match').value = s.medium_timer_match;
+    document.getElementById('setting-jeroen-timer-simple').value = s.jeroen_timer_simple;
+    document.getElementById('setting-jeroen-timer-map').value = s.jeroen_timer_map;
+    document.getElementById('setting-jeroen-timer-match').value = s.jeroen_timer_match;
+    document.getElementById('setting-jeroen-timer-capitalmap').value = s.jeroen_timer_capitalmap;
     document.getElementById('setting-jeroen-map').value = s.jeroen_map_threshold;
     document.getElementById('setting-historical-label').checked = s.jeroen_show_historical_label;
     document.getElementById('setting-historical-flags').checked = s.jeroen_historical_flags;
@@ -1949,9 +2014,17 @@ async function loadAdminSettings() {
 
 async function saveSettings() {
   const payload = {
-    easy_timer: parseInt(document.getElementById('setting-easy-timer').value) || 0,
-    medium_timer: parseInt(document.getElementById('setting-medium-timer').value) || 0,
-    jeroen_timer: parseInt(document.getElementById('setting-jeroen-timer').value) || 0,
+    easy_timer_simple: parseInt(document.getElementById('setting-easy-timer-simple').value) || 0,
+    easy_timer_match: parseInt(document.getElementById('setting-easy-timer-match').value) || 0,
+    easy_timer_map: 0,
+    medium_timer_simple: parseInt(document.getElementById('setting-medium-timer-simple').value) || 0,
+    medium_timer_map: parseInt(document.getElementById('setting-medium-timer-map').value) || 0,
+    medium_timer_match: parseInt(document.getElementById('setting-medium-timer-match').value) || 0,
+    jeroen_timer_simple: parseInt(document.getElementById('setting-jeroen-timer-simple').value) || 0,
+    jeroen_timer_map: parseInt(document.getElementById('setting-jeroen-timer-map').value) || 0,
+    jeroen_timer_match: parseInt(document.getElementById('setting-jeroen-timer-match').value) || 0,
+    jeroen_timer_typed: parseInt(document.getElementById('setting-jeroen-timer-simple').value) || 0,
+    jeroen_timer_capitalmap: parseInt(document.getElementById('setting-jeroen-timer-capitalmap').value) || 0,
     jeroen_map_threshold: parseInt(document.getElementById('setting-jeroen-map').value) || 400,
     jeroen_show_historical_label: document.getElementById('setting-historical-label').checked ? '1' : '0',
     jeroen_historical_flags: document.getElementById('setting-historical-flags').checked ? '1' : '0',

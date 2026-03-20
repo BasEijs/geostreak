@@ -62,10 +62,23 @@ try { db.exec(`ALTER TABLE users ADD COLUMN language TEXT NOT NULL DEFAULT 'en'`
 
 // Default settings
 const DEFAULT_SETTINGS = {
-  easy_timer: '5',
-  medium_timer: '0',
-  jeroen_timer: '12',
+  // Dumb Test timers
+  easy_timer_simple: '5',    // capital, flag, continent
+  easy_timer_match: '30',    // match questions
+  easy_timer_map: '0',       // map (not used in easy but stored)
+  // Medium timers
+  medium_timer_simple: '0',
+  medium_timer_match: '0',
+  medium_timer_map: '0',
+  // Jeroen timers
+  jeroen_timer_simple: '12',
+  jeroen_timer_match: '60',
+  jeroen_timer_map: '30',
+  jeroen_timer_typed: '15',
+  jeroen_timer_capitalmap: '30',
+  // Map settings
   jeroen_map_threshold: '400',
+  // Historical flags
   jeroen_show_historical_label: '1',
   jeroen_historical_flags: '1',
   jeroen_historical_capitals: '0',
@@ -139,9 +152,17 @@ const VALID_DIFFICULTIES = ['easy', 'medium', 'jeroen'];
 // Game settings (public)
 app.get('/api/settings', (req, res) => {
   res.json({
-    easy_timer: parseInt(getSetting('easy_timer')),
-    medium_timer: parseInt(getSetting('medium_timer')),
-    jeroen_timer: parseInt(getSetting('jeroen_timer')),
+    easy_timer_simple: parseInt(getSetting('easy_timer_simple')),
+    easy_timer_match: parseInt(getSetting('easy_timer_match')),
+    easy_timer_map: parseInt(getSetting('easy_timer_map')),
+    medium_timer_simple: parseInt(getSetting('medium_timer_simple')),
+    medium_timer_match: parseInt(getSetting('medium_timer_match')),
+    medium_timer_map: parseInt(getSetting('medium_timer_map')),
+    jeroen_timer_simple: parseInt(getSetting('jeroen_timer_simple')),
+    jeroen_timer_match: parseInt(getSetting('jeroen_timer_match')),
+    jeroen_timer_map: parseInt(getSetting('jeroen_timer_map')),
+    jeroen_timer_typed: parseInt(getSetting('jeroen_timer_typed')),
+    jeroen_timer_capitalmap: parseInt(getSetting('jeroen_timer_capitalmap')),
     jeroen_map_threshold: parseInt(getSetting('jeroen_map_threshold')),
     jeroen_show_historical_label: getSetting('jeroen_show_historical_label') === '1',
     jeroen_historical_flags: getSetting('jeroen_historical_flags') === '1',
@@ -252,7 +273,12 @@ app.delete('/api/admin/scores/user/:id', auth, adminOnly, (req, res) => {
 
 // Update settings
 app.post('/api/admin/settings', auth, adminOnly, (req, res) => {
-  const allowed = ['easy_timer', 'medium_timer', 'jeroen_timer', 'jeroen_map_threshold', 'jeroen_show_historical_label', 'jeroen_historical_flags', 'jeroen_historical_capitals'];
+  const allowed = [
+    'easy_timer_simple','easy_timer_match','easy_timer_map',
+    'medium_timer_simple','medium_timer_match','medium_timer_map',
+    'jeroen_timer_simple','jeroen_timer_match','jeroen_timer_map','jeroen_timer_typed','jeroen_timer_capitalmap',
+    'jeroen_map_threshold','jeroen_show_historical_label','jeroen_historical_flags','jeroen_historical_capitals'
+  ];
   for (const key of allowed) {
     if (req.body[key] !== undefined) {
       db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(key, String(req.body[key]));
