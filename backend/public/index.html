@@ -536,6 +536,14 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
             <div class="setting-label">Include historical capitals<span>Capital questions for defunct countries. Off by default — extremely hard.</span></div>
             <label class="switch"><input type="checkbox" id="setting-historical-capitals"><span class="slider"></span></label>
           </div>
+          <div class="setting-row">
+            <div class="setting-label">Medium population margin (%)<span>How far off a population guess can be in Medium mode. Default 20%.</span></div>
+            <input type="number" class="setting-input" id="setting-medium-pop-margin" min="1" max="50" value="20">
+          </div>
+          <div class="setting-row">
+            <div class="setting-label">Jeroen population margin (%)<span>Tighter margin for Jeroen Mode. Default 10%.</span></div>
+            <input type="number" class="setting-input" id="setting-jeroen-pop-margin" min="1" max="30" value="10">
+          </div>
         </div>
       </div>
       <div class="settings-save">
@@ -735,8 +743,55 @@ const HISTORICAL_FLAGS = [
 ];
 
 // ════════════════════════════════════
-// GAME CONFIG (will be updated from server)
+// SECOND CITY + POPULATION DATA
+// (only large well-known countries)
 // ════════════════════════════════════
+
+const COUNTRY_EXTRA = {
+  // name → { secondCity, pop (millions, 2024 est.) }
+  "France":           { secondCity: "Marseille",     pop: 68.4  },
+  "Germany":          { secondCity: "Hamburg",        pop: 84.4  },
+  "United Kingdom":   { secondCity: "Birmingham",     pop: 67.7  },
+  "Italy":            { secondCity: "Milan",          pop: 58.9  },
+  "Spain":            { secondCity: "Barcelona",      pop: 47.4  },
+  "Netherlands":      { secondCity: "Rotterdam",      pop: 17.9  },
+  "Belgium":          { secondCity: "Antwerp",        pop: 11.7  },
+  "Portugal":         { secondCity: "Porto",          pop: 10.2  },
+  "Sweden":           { secondCity: "Gothenburg",     pop: 10.5  },
+  "Norway":           { secondCity: "Bergen",         pop: 5.5   },
+  "Poland":           { secondCity: "Kraków",         pop: 37.6  },
+  "Greece":           { secondCity: "Thessaloniki",   pop: 10.4  },
+  "Ukraine":          { secondCity: "Kharkiv",        pop: 37.0  },
+  "Russia":           { secondCity: "St. Petersburg", pop: 144.4 },
+  "United States":    { secondCity: "Los Angeles",    pop: 335.0 },
+  "Canada":           { secondCity: "Montreal",       pop: 38.6  },
+  "Mexico":           { secondCity: "Guadalajara",    pop: 130.9 },
+  "Brazil":           { secondCity: "São Paulo",      pop: 216.4 },
+  "Argentina":        { secondCity: "Córdoba",        pop: 45.8  },
+  "China":            { secondCity: "Shanghai",       pop: 1419.0},
+  "Japan":            { secondCity: "Osaka",          pop: 124.5 },
+  "India":            { secondCity: "Mumbai",         pop: 1441.0},
+  "South Korea":      { secondCity: "Busan",          pop: 51.7  },
+  "Indonesia":        { secondCity: "Surabaya",       pop: 279.0 },
+  "Turkey":           { secondCity: "Istanbul",       pop: 85.3  },
+  "Saudi Arabia":     { secondCity: "Jeddah",         pop: 36.9  },
+  "Australia":        { secondCity: "Melbourne",      pop: 26.5  },
+  "South Africa":     { secondCity: "Cape Town",      pop: 60.4  },
+  "Egypt":            { secondCity: "Alexandria",     pop: 107.0 },
+  "Nigeria":          { secondCity: "Lagos",          pop: 224.0 },
+  "Iran":             { secondCity: "Mashhad",        pop: 90.3  },
+  "Pakistan":         { secondCity: "Lahore",         pop: 245.0 },
+  "Bangladesh":       { secondCity: "Chittagong",     pop: 173.0 },
+  "Vietnam":          { secondCity: "Ho Chi Minh City", pop: 98.2},
+  "Thailand":         { secondCity: "Chiang Mai",     pop: 71.8  },
+  "Colombia":         { secondCity: "Medellín",       pop: 52.2  },
+  "Algeria":          { secondCity: "Oran",           pop: 45.6  },
+  "Sudan":            { secondCity: "Omdurman",       pop: 46.9  },
+  "Kazakhstan":       { secondCity: "Almaty",         pop: 19.6  },
+  "Romania":          { secondCity: "Cluj-Napoca",    pop: 19.0  },
+  "Peru":             { secondCity: "Arequipa",       pop: 33.4  },
+  "Venezuela":        { secondCity: "Maracaibo",      pop: 28.2  },
+};
 
 let gameSettings = {
   easy_timer_simple: 5, easy_timer_match: 30, easy_timer_map: 0,
@@ -747,6 +802,8 @@ let gameSettings = {
   jeroen_show_historical_label: true,
   jeroen_historical_flags: true,
   jeroen_historical_capitals: false,
+  medium_pop_margin: 20,
+  jeroen_pop_margin: 10,
 };
 
 function getDiffConfig(diff) {
@@ -763,27 +820,25 @@ function getDiffConfig(diff) {
         simple: gameSettings.easy_timer_simple || null,
         map: gameSettings.easy_timer_map || null,
         match: gameSettings.easy_timer_match || null,
-        typed: null,
-        capitalmap: null,
+        typed: null, capitalmap: null,
       },
     },
     medium: {
       label:"Medium", badge:"medium",
       countries: medCountries,
-      questionTypes: ["capital","capital","flag","flag","map","map","match-flags","match-capitals"],
+      questionTypes: ["capital","capital","flag","flag","map","map","match-flags","match-capitals","second-city","population"],
       mapThreshold: 800,
       timers: {
         simple: gameSettings.medium_timer_simple || null,
         map: gameSettings.medium_timer_map || null,
         match: gameSettings.medium_timer_match || null,
-        typed: null,
-        capitalmap: null,
+        typed: null, capitalmap: null,
       },
     },
     jeroen: {
       label:"Jeroen Mode 💀", badge:"jeroen",
       countries: [...jeroenCountries, ...(gameSettings.jeroen_historical_flags ? HISTORICAL_FLAGS : [])],
-      questionTypes: ["capital","capital","flag","flag","map","map","capital-map","match-flags","match-capitals"],
+      questionTypes: ["capital","capital","flag","flag","map","map","capital-map","match-flags","match-capitals","second-city","population","population","match-population"],
       mapThreshold: gameSettings.jeroen_map_threshold,
       timers: {
         simple: gameSettings.jeroen_timer_simple || null,
@@ -1293,11 +1348,18 @@ function nextQuestion() {
   const nonHistoricalPool = pool.filter(c => !c.historical);
   // Historical countries only appear in capital questions if that toggle is on, flags always use full pool
   const capitalPool = gameSettings.jeroen_historical_capitals ? pool : nonHistoricalPool;
+  const extraPool = nonHistoricalPool.filter(c => COUNTRY_EXTRA[c.name]);
   const type = cfg.questionTypes[Math.floor(Math.random()*cfg.questionTypes.length)];
-  const country = getRandom(type === 'flag' ? pool : type === 'capital' ? capitalPool : nonHistoricalPool);
+  // Pick country based on question type
+  let country;
+  if (type === 'flag') country = getRandom(pool);
+  else if (type === 'capital') country = getRandom(capitalPool);
+  else if (type === 'second-city' || type === 'population') country = extraPool.length ? getRandom(extraPool) : getRandom(nonHistoricalPool);
+  else if (type === 'match-population') country = getRandom(nonHistoricalPool); // not used directly, buildMatchPopulationQ handles selection
+  else country = getRandom(nonHistoricalPool);
   currentQ = {type, country};
 
-  const badges = {capital:'🏛 Capital', flag:'🚩 Flag', map:'🗺 Map', continent:'🌍 Continent', 'match-flags':'🚩 Match Flags', 'match-capitals':'🏛 Match Capitals', 'capital-map':'🗺 Capital → Map'};
+  const badges = {capital:'🏛 Capital', flag:'🚩 Flag', map:'🗺 Map', continent:'🌍 Continent', 'match-flags':'🚩 Match Flags', 'match-capitals':'🏛 Match Capitals', 'capital-map':'🗺 Capital → Map', 'second-city':'🏙 Second City', 'population':'👥 Population', 'match-population':'👥 Match Population'};
   document.getElementById('q-type-badge').textContent = badges[type] || type;
 
   const area = document.getElementById('answer-area');
@@ -1314,6 +1376,9 @@ function nextQuestion() {
   else if (type==='match-flags') buildMatchQ('flag', pool, area);
   else if (type==='match-capitals') buildMatchQ('capital', nonHistoricalPool, area);
   else if (type==='capital-map') buildCapitalMapQ(country, area);
+  else if (type==='second-city') buildSecondCityQ(country, area, nonHistoricalPool);
+  else if (type==='population') buildPopulationQ(country, area);
+  else if (type==='match-population') buildMatchPopulationQ(nonHistoricalPool, area);
 
   if (useTimer) startTimer(type);
 }
@@ -1899,6 +1964,234 @@ function submitMapAnswer(isCapitalMap) {
     localName(country));
 }
 
+// ── SECOND CITY ──
+function buildSecondCityQ(country, area, pool) {
+  const extra = COUNTRY_EXTRA[country.name];
+  if (!extra?.secondCity) { nextQuestion(); return; } // skip if no data
+  document.getElementById('question-text').innerHTML =
+    `Wat is de <span>tweede grootste stad</span> (qua inwoners) van ${localName(country)}?`;
+
+  if (currentDiff === 'jeroen') {
+    buildTypedInput(area, extra.secondCity, extra.secondCity, 'Typ de stad');
+  } else {
+    // Build wrong answers from other countries' second cities
+    const otherExtras = pool
+      .filter(c => c !== country && COUNTRY_EXTRA[c.name])
+      .map(c => COUNTRY_EXTRA[c.name].secondCity)
+      .filter(Boolean);
+    const wrongs = shuffle(otherExtras).slice(0, 3);
+    const choices = shuffle([extra.secondCity, ...wrongs]);
+    const grid = document.createElement('div'); grid.className = 'choices-grid';
+    ['A','B','C','D'].forEach((letter, i) => {
+      if (!choices[i]) return;
+      const btn = document.createElement('button'); btn.className = 'choice-btn';
+      btn.innerHTML = `<span class="choice-letter">${letter}</span>${choices[i]}`;
+      btn.onclick = () => {
+        if (awaitingNext) return; stopTimer();
+        grid.querySelectorAll('.choice-btn').forEach(b => {
+          b.disabled = true;
+          if (b.textContent.trim().endsWith(extra.secondCity)) b.classList.add('correct');
+        });
+        if (choices[i] !== extra.secondCity) btn.classList.add('wrong');
+        showFeedback(choices[i] === extra.secondCity,
+          choices[i] === extra.secondCity ? t().ui.correct : `Tweede stad: ${extra.secondCity}`);
+      };
+      grid.appendChild(btn);
+    });
+    area.appendChild(grid);
+  }
+}
+
+// ── POPULATION ──
+function buildPopulationQ(country, area) {
+  const extra = COUNTRY_EXTRA[country.name];
+  if (!extra?.pop) { nextQuestion(); return; }
+  document.getElementById('question-text').innerHTML =
+    `Hoeveel inwoners heeft <span>${localName(country)}</span>? (antwoord in miljoenen)`;
+
+  const margin = currentDiff === 'jeroen'
+    ? (gameSettings.jeroen_pop_margin || 10)
+    : (gameSettings.medium_pop_margin || 20);
+
+  const wrapper = document.createElement('div'); wrapper.className = 'typed-answer-area';
+  const row = document.createElement('div'); row.className = 'typed-input-row';
+
+  const input = document.createElement('input');
+  input.type = 'number'; input.step = '0.1';
+  input.className = 'typed-input'; input.placeholder = 'bv. 17.9';
+  input.autocomplete = 'off';
+
+  const btn = document.createElement('button'); btn.className = 'typed-submit'; btn.textContent = 'Bevestigen';
+  const hint = document.createElement('div'); hint.className = 'typed-hint';
+  hint.textContent = `Antwoord binnen ${margin}% afwijking is goed`;
+
+  const submit = () => {
+    if (awaitingNext || !input.value) return;
+    stopTimer();
+    const guess = parseFloat(input.value);
+    const actual = extra.pop;
+    const pctOff = Math.abs(guess - actual) / actual * 100;
+    const correct = pctOff <= margin;
+    input.disabled = true; btn.disabled = true;
+    input.classList.add(correct ? 'correct' : 'wrong');
+    if (!correct) {
+      hint.textContent = `✓ ${actual} miljoen (jij: ${guess}M, ${pctOff.toFixed(1)}% afwijking)`;
+      hint.style.color = 'var(--success)';
+    } else {
+      hint.textContent = `${pctOff.toFixed(1)}% afwijking — goed genoeg!`;
+      hint.style.color = 'var(--success)';
+    }
+    showFeedback(correct,
+      correct ? `${pctOff.toFixed(1)}% afwijking — goed!` : `${actual}M inwoners (${pctOff.toFixed(1)}% afwijking)`,
+      localName(country));
+  };
+  btn.onclick = submit;
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+  row.appendChild(input); row.appendChild(btn);
+  wrapper.appendChild(row); wrapper.appendChild(hint);
+  area.appendChild(wrapper);
+  setTimeout(() => input.focus(), 100);
+}
+
+// ── MATCH POPULATION (Jeroen only) ──
+function buildMatchPopulationQ(pool, area) {
+  const eligiblePool = pool.filter(c => COUNTRY_EXTRA[c.name]);
+  if (eligiblePool.length < 4) { nextQuestion(); return; }
+
+  // Pick 4 countries with well-spread populations
+  // Sort by population and sample spread-out countries to avoid similar values
+  const sorted = shuffle(eligiblePool)
+    .sort((a,b) => COUNTRY_EXTRA[a.name].pop - COUNTRY_EXTRA[b.name].pop);
+
+  // Pick 4 with at least 30% population difference between adjacent picks
+  let picks = [];
+  for (const c of sorted) {
+    if (picks.length === 0) { picks.push(c); continue; }
+    const lastPop = COUNTRY_EXTRA[picks[picks.length-1].name].pop;
+    const thisPop = COUNTRY_EXTRA[c.name].pop;
+    const ratio = Math.max(lastPop, thisPop) / Math.min(lastPop, thisPop);
+    if (ratio >= 1.5) picks.push(c); // at least 50% difference
+    if (picks.length === 4) break;
+  }
+  // Fallback if not enough spread
+  if (picks.length < 4) picks = sorted.slice(0, 4);
+
+  document.getElementById('question-text').innerHTML =
+    `Koppel elk land aan het juiste <span>aantal inwoners</span> (in miljoenen)`;
+
+  // Format population ranges as labels (round to nearest sensible value)
+  const popLabel = (pop) => {
+    if (pop >= 1000) return `${Math.round(pop/100)*100}M+`;
+    if (pop >= 100) return `~${Math.round(pop/10)*10}M`;
+    if (pop >= 10) return `~${Math.round(pop)}M`;
+    return `~${pop.toFixed(1)}M`;
+  };
+
+  // Left: country names (fixed), Right: population labels (shuffled)
+  const leftItems = picks;
+  const rightLabels = shuffle(picks.map(c => ({ country: c, label: popLabel(COUNTRY_EXTRA[c.name].pop) })));
+
+  const assignments = {};
+  let draggedItem = null;
+
+  const matchArea = document.createElement('div'); matchArea.className = 'match-area';
+  area.classList.add('match-mode');
+
+  const instructions = document.createElement('div'); instructions.className = 'match-instructions';
+  instructions.textContent = 'Sleep de inwonertallen naar het juiste land';
+  matchArea.appendChild(instructions);
+
+  const cols = document.createElement('div'); cols.className = 'match-columns';
+  const leftCol = document.createElement('div'); leftCol.className = 'match-col';
+  const rightCol = document.createElement('div'); rightCol.className = 'match-col';
+
+  const leftLabel = document.createElement('div'); leftLabel.className = 'match-col-label'; leftLabel.textContent = 'LANDEN';
+  const rightLabel = document.createElement('div'); rightLabel.className = 'match-col-label'; rightLabel.textContent = 'INWONERS';
+  leftCol.appendChild(leftLabel); rightCol.appendChild(rightLabel);
+
+  const leftSlots = leftItems.map((country, i) => {
+    const slot = document.createElement('div');
+    slot.className = 'match-item'; slot.dataset.index = i;
+    slot.textContent = localName(country);
+    slot.addEventListener('dragover', e => { e.preventDefault(); slot.classList.add('drag-over'); });
+    slot.addEventListener('dragleave', () => slot.classList.remove('drag-over'));
+    slot.addEventListener('drop', e => {
+      e.preventDefault(); slot.classList.remove('drag-over');
+      if (!draggedItem) return;
+      const old = assignments[i];
+      assignments[i] = draggedItem;
+      const existing = slot.querySelector('.match-label'); if (existing) existing.remove();
+      const lbl = document.createElement('span'); lbl.className = 'match-label';
+      lbl.style.cssText = 'font-size:12px;color:var(--text-muted);margin-left:6px;';
+      lbl.textContent = '→ ' + draggedItem.label;
+      slot.appendChild(lbl);
+      draggedItem._el.style.opacity = '0.35'; draggedItem._el.style.color = 'var(--text-muted)';
+      if (old) { old._el.style.opacity='1'; old._el.style.color='var(--text)'; }
+      draggedItem = null;
+      submitBtn.disabled = !picks.every((_, j) => assignments[j]);
+    });
+    leftCol.appendChild(slot);
+    return slot;
+  });
+
+  rightLabels.forEach(item => {
+    const el = document.createElement('div'); el.className = 'match-item';
+    el.textContent = item.label; el.draggable = true; item._el = el;
+    el.addEventListener('dragstart', () => { draggedItem = item; el.classList.add('dragging'); });
+    el.addEventListener('dragend', () => el.classList.remove('dragging'));
+    // Touch
+    el.addEventListener('touchstart', () => { draggedItem = item; el.classList.add('dragging'); }, {passive:true});
+    el.addEventListener('touchend', e => {
+      el.classList.remove('dragging');
+      const touch = e.changedTouches[0];
+      const target = document.elementFromPoint(touch.clientX, touch.clientY);
+      const slot = target?.closest('[data-index]');
+      if (slot) slot.dispatchEvent(new DragEvent('drop', {bubbles:true}));
+      draggedItem = null;
+    });
+    rightCol.appendChild(el);
+  });
+
+  const submitBtn = document.createElement('button');
+  submitBtn.className = 'btn btn-primary match-submit';
+  submitBtn.textContent = 'Bevestig koppeling'; submitBtn.disabled = true;
+  submitBtn.onclick = () => {
+    stopTimer(); let allCorrect = true;
+    picks.forEach((country, i) => {
+      const assigned = assignments[i];
+      const correct = assigned?.country === country;
+      if (!correct) allCorrect = false;
+      leftSlots[i].classList.add(correct ? 'matched' : 'wrong-match');
+      if (!correct) {
+        const correctLabel = popLabel(COUNTRY_EXTRA[country.name].pop);
+        const el = document.createElement('div');
+        el.style.cssText = 'font-size:11px;color:var(--success);margin-top:4px;';
+        el.textContent = `✓ ${correctLabel}`;
+        leftSlots[i].appendChild(el);
+      }
+    });
+    rightLabels.forEach(r => { r._el.draggable=false; r._el.style.pointerEvents='none'; });
+    showFeedback(allCorrect, allCorrect ? t().ui.perfectMatch : t().ui.someWrong);
+  };
+
+  const resetBtn = document.createElement('button');
+  resetBtn.className = 'btn btn-ghost'; resetBtn.textContent = '↺ Reset';
+  resetBtn.onclick = () => {
+    picks.forEach((_, i) => { assignments[i] = null; });
+    rightLabels.forEach(r => { r._el.style.opacity='1'; r._el.style.color='var(--text)'; });
+    leftSlots.forEach(slot => slot.querySelector('.match-label')?.remove());
+    submitBtn.disabled = true;
+  };
+
+  cols.appendChild(leftCol); cols.appendChild(rightCol);
+  matchArea.appendChild(cols); area.appendChild(matchArea);
+
+  const submitContainer = document.getElementById('match-submit-container');
+  submitContainer.innerHTML = '';
+  submitContainer.appendChild(resetBtn); submitContainer.appendChild(submitBtn);
+  submitContainer.classList.add('visible');
+}
+
 function haversine(lat1,lng1,lat2,lng2) {
   const R=6371,dL=(lat2-lat1)*Math.PI/180,dN=(lng2-lng1)*Math.PI/180;
   const a=Math.sin(dL/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dN/2)**2;
@@ -2009,6 +2302,8 @@ async function loadAdminSettings() {
     document.getElementById('setting-historical-label').checked = s.jeroen_show_historical_label;
     document.getElementById('setting-historical-flags').checked = s.jeroen_historical_flags;
     document.getElementById('setting-historical-capitals').checked = s.jeroen_historical_capitals;
+    document.getElementById('setting-medium-pop-margin').value = s.medium_pop_margin || 20;
+    document.getElementById('setting-jeroen-pop-margin').value = s.jeroen_pop_margin || 10;
   } catch {}
 }
 
@@ -2029,6 +2324,8 @@ async function saveSettings() {
     jeroen_show_historical_label: document.getElementById('setting-historical-label').checked ? '1' : '0',
     jeroen_historical_flags: document.getElementById('setting-historical-flags').checked ? '1' : '0',
     jeroen_historical_capitals: document.getElementById('setting-historical-capitals').checked ? '1' : '0',
+    medium_pop_margin: parseInt(document.getElementById('setting-medium-pop-margin').value) || 20,
+    jeroen_pop_margin: parseInt(document.getElementById('setting-jeroen-pop-margin').value) || 10,
   };
   try {
     await fetch('/api/admin/settings', {

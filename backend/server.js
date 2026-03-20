@@ -11,22 +11,8 @@ const app = express();
 const PORT = 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 
-// Rate limiters
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20, // max 20 attempts per IP per window
-  message: { error: 'Too many attempts, please try again later' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-const apiLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 120, // max 120 requests per IP per minute (generous for gameplay)
-  message: { error: 'Too many requests' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+const authLimiter = rateLimit({ windowMs: 15*60*1000, max: 20, message: { error: 'Too many attempts' }, standardHeaders: true, legacyHeaders: false });
+const apiLimiter = rateLimit({ windowMs: 60*1000, max: 120, message: { error: 'Too many requests' }, standardHeaders: true, legacyHeaders: false });
 
 const dataDir = '/app/data';
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
@@ -60,33 +46,18 @@ try { db.exec(`ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0`
 try { db.exec(`ALTER TABLE users ADD COLUMN temp_password TEXT`); } catch {}
 try { db.exec(`ALTER TABLE users ADD COLUMN language TEXT NOT NULL DEFAULT 'en'`); } catch {}
 
-// Default settings
 const DEFAULT_SETTINGS = {
-  // Dumb Test timers
-  easy_timer_simple: '5',    // capital, flag, continent
-  easy_timer_match: '30',    // match questions
-  easy_timer_map: '0',       // map (not used in easy but stored)
-  // Medium timers
-  medium_timer_simple: '0',
-  medium_timer_match: '0',
-  medium_timer_map: '0',
-  // Jeroen timers
-  jeroen_timer_simple: '12',
-  jeroen_timer_match: '60',
-  jeroen_timer_map: '30',
-  jeroen_timer_typed: '15',
-  jeroen_timer_capitalmap: '30',
-  // Map settings
+  easy_timer_simple: '5', easy_timer_match: '30', easy_timer_map: '0',
+  medium_timer_simple: '0', medium_timer_match: '0', medium_timer_map: '0',
+  jeroen_timer_simple: '12', jeroen_timer_match: '60', jeroen_timer_map: '30',
+  jeroen_timer_typed: '15', jeroen_timer_capitalmap: '30',
   jeroen_map_threshold: '400',
-  // Historical flags
-  jeroen_show_historical_label: '1',
-  jeroen_historical_flags: '1',
-  jeroen_historical_capitals: '0',
+  jeroen_show_historical_label: '1', jeroen_historical_flags: '1', jeroen_historical_capitals: '0',
+  medium_pop_margin: '20',
+  jeroen_pop_margin: '10',
 };
 for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
-  try {
-    db.prepare('INSERT INTO settings (key, value) VALUES (?, ?)').run(key, value);
-  } catch {}
+  try { db.prepare('INSERT INTO settings (key, value) VALUES (?, ?)').run(key, value); } catch {}
 }
 
 function getSetting(key) {
@@ -96,8 +67,6 @@ function getSetting(key) {
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
-
-// Apply rate limiting
 app.use('/api/login', authLimiter);
 app.use('/api/register', authLimiter);
 app.use('/api/', apiLimiter);
@@ -115,7 +84,6 @@ function adminOnly(req, res, next) {
   next();
 }
 
-// Register
 app.post('/api/register', (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
@@ -132,7 +100,6 @@ app.post('/api/register', (req, res) => {
   }
 });
 
-// Login
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
   const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username?.trim());
@@ -140,16 +107,13 @@ app.post('/api/login', (req, res) => {
   const pwMatch = bcrypt.compareSync(password, user.password_hash);
   const tmpMatch = user.temp_password && user.temp_password === password;
   if (!pwMatch && !tmpMatch) return res.status(401).json({ error: 'Invalid username or password' });
-  if (tmpMatch) {
-    db.prepare('UPDATE users SET temp_password = NULL WHERE id = ?').run(user.id);
-  }
+  if (tmpMatch) db.prepare('UPDATE users SET temp_password = NULL WHERE id = ?').run(user.id);
   const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: '30d' });
   res.json({ token, username: user.username, is_admin: user.is_admin, must_change_password: tmpMatch ? 1 : 0, language: user.language || 'en' });
 });
 
 const VALID_DIFFICULTIES = ['easy', 'medium', 'jeroen'];
 
-// Game settings (public)
 app.get('/api/settings', (req, res) => {
   res.json({
     easy_timer_simple: parseInt(getSetting('easy_timer_simple')),
@@ -167,10 +131,11 @@ app.get('/api/settings', (req, res) => {
     jeroen_show_historical_label: getSetting('jeroen_show_historical_label') === '1',
     jeroen_historical_flags: getSetting('jeroen_historical_flags') === '1',
     jeroen_historical_capitals: getSetting('jeroen_historical_capitals') === '1',
+    medium_pop_margin: parseInt(getSetting('medium_pop_margin')),
+    jeroen_pop_margin: parseInt(getSetting('jeroen_pop_margin')),
   });
 });
 
-// Submit score
 app.post('/api/scores', auth, (req, res) => {
   const { streak, difficulty } = req.body;
   if (typeof streak !== 'number' || streak < 0) return res.status(400).json({ error: 'Invalid streak' });
@@ -179,7 +144,6 @@ app.post('/api/scores', auth, (req, res) => {
   res.json({ ok: true });
 });
 
-// Leaderboard
 app.get('/api/leaderboard', (req, res) => {
   const difficulty = req.query.difficulty || 'medium';
   if (!VALID_DIFFICULTIES.includes(difficulty)) return res.status(400).json({ error: 'Invalid difficulty' });
@@ -192,7 +156,6 @@ app.get('/api/leaderboard', (req, res) => {
   res.json(rows);
 });
 
-// My stats
 app.get('/api/me/stats', auth, (req, res) => {
   const stats = {};
   for (const diff of VALID_DIFFICULTIES) {
@@ -203,7 +166,6 @@ app.get('/api/me/stats', auth, (req, res) => {
   res.json(stats);
 });
 
-// Change own password
 app.post('/api/me/change-password', auth, (req, res) => {
   const { password } = req.body;
   if (!password || password.length < 4) return res.status(400).json({ error: 'Password must be at least 4 characters' });
@@ -212,15 +174,12 @@ app.post('/api/me/change-password', auth, (req, res) => {
   res.json({ ok: true });
 });
 
-// Save language preference
 app.post('/api/me/language', auth, (req, res) => {
   const { language } = req.body;
   if (!['en', 'nl'].includes(language)) return res.status(400).json({ error: 'Invalid language' });
   db.prepare('UPDATE users SET language = ? WHERE id = ?').run(language, req.user.id);
   res.json({ ok: true });
 });
-
-// ── ADMIN ──
 
 app.get('/api/admin/users', auth, adminOnly, (req, res) => {
   const users = db.prepare(`
@@ -249,9 +208,8 @@ app.delete('/api/admin/users/:id', auth, adminOnly, (req, res) => {
   res.json({ ok: true });
 });
 
-// Generate temp password
 app.post('/api/admin/users/:id/reset-password', auth, adminOnly, (req, res) => {
-  const temp = crypto.randomBytes(3).toString('hex').toUpperCase(); // e.g. A3F2C1
+  const temp = crypto.randomBytes(3).toString('hex').toUpperCase();
   db.prepare('UPDATE users SET temp_password = ? WHERE id = ?').run(temp, req.params.id);
   res.json({ temp_password: temp });
 });
@@ -271,13 +229,13 @@ app.delete('/api/admin/scores/user/:id', auth, adminOnly, (req, res) => {
   res.json({ ok: true });
 });
 
-// Update settings
 app.post('/api/admin/settings', auth, adminOnly, (req, res) => {
   const allowed = [
     'easy_timer_simple','easy_timer_match','easy_timer_map',
     'medium_timer_simple','medium_timer_match','medium_timer_map',
     'jeroen_timer_simple','jeroen_timer_match','jeroen_timer_map','jeroen_timer_typed','jeroen_timer_capitalmap',
-    'jeroen_map_threshold','jeroen_show_historical_label','jeroen_historical_flags','jeroen_historical_capitals'
+    'jeroen_map_threshold','jeroen_show_historical_label','jeroen_historical_flags','jeroen_historical_capitals',
+    'medium_pop_margin','jeroen_pop_margin',
   ];
   for (const key of allowed) {
     if (req.body[key] !== undefined) {
