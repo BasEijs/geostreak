@@ -501,6 +501,10 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
             <div class="setting-label">Match questions timer (seconds)<span>Drag & drop matching questions. Set to 0 to disable.</span></div>
             <input type="number" class="setting-input" id="setting-medium-timer-match" min="0" max="300" value="0">
           </div>
+          <div class="setting-row">
+            <div class="setting-label">Include second largest city questions<span>Ask players to identify the second largest city of a country by population.</span></div>
+            <label class="switch"><input type="checkbox" id="setting-medium-second-city" checked><span class="slider"></span></label>
+          </div>
         </div>
         <div class="settings-group">
           <div class="settings-group-title">💀 Jeroen Mode</div>
@@ -804,6 +808,7 @@ let gameSettings = {
   jeroen_historical_capitals: false,
   medium_pop_margin: 20,
   jeroen_pop_margin: 10,
+  medium_second_city: true,
 };
 
 function getDiffConfig(diff) {
@@ -826,7 +831,7 @@ function getDiffConfig(diff) {
     medium: {
       label:"Medium", badge:"medium",
       countries: medCountries,
-      questionTypes: ["capital","capital","flag","flag","map","map","match-flags","match-capitals","second-city","population"],
+      questionTypes: ["capital","capital","flag","flag","map","map","match-flags","match-capitals","population", ...(gameSettings.medium_second_city ? ["second-city"] : [])],
       mapThreshold: 800,
       timers: {
         simple: gameSettings.medium_timer_simple || null,
@@ -2126,22 +2131,54 @@ function buildMatchPopulationQ(pool, area) {
   const freshPool = eligiblePool.filter(c => !lastMatchCountries.includes(c.name));
   const pickPool = freshPool.length >= 4 ? freshPool : eligiblePool;
 
-  // Pick 4 countries with well-spread populations
-  const sorted = shuffle(pickPool)
-    .sort((a,b) => COUNTRY_EXTRA[a.name].pop - COUNTRY_EXTRA[b.name].pop);
+  // Tiers: <20M, 20-80M, 80-300M, >300M
+  const tiers = [
+    pickPool.filter(c => COUNTRY_EXTRA[c.name].pop < 20),
+    pickPool.filter(c => COUNTRY_EXTRA[c.name].pop >= 20 && COUNTRY_EXTRA[c.name].pop < 80),
+    pickPool.filter(c => COUNTRY_EXTRA[c.name].pop >= 80 && COUNTRY_EXTRA[c.name].pop < 300),
+    pickPool.filter(c => COUNTRY_EXTRA[c.name].pop >= 300),
+  ].filter(t => t.length > 0);
 
-  // Pick 4 with at least 50% population difference between adjacent picks
   let picks = [];
-  for (const c of sorted) {
-    if (picks.length === 0) { picks.push(c); continue; }
-    const lastPop = COUNTRY_EXTRA[picks[picks.length-1].name].pop;
-    const thisPop = COUNTRY_EXTRA[c.name].pop;
-    const ratio = Math.max(lastPop, thisPop) / Math.min(lastPop, thisPop);
-    if (ratio >= 1.5) picks.push(c);
-    if (picks.length === 4) break;
+
+  if (currentDiff === 'easy') {
+    // One from each tier — obvious differences
+    for (const tier of tiers) {
+      if (tier.length > 0) picks.push(getRandom(tier, picks));
+      if (picks.length === 4) break;
+    }
+  } else if (currentDiff === 'medium') {
+    // Two pairs: pick 2 tiers, take 2 from each
+    const shuffledTiers = shuffle([...tiers]);
+    for (const tier of shuffledTiers) {
+      if (tier.length >= 2) {
+        picks.push(getRandom(tier, picks));
+        picks.push(getRandom(tier, picks));
+        if (picks.length >= 4) break;
+      }
+    }
+  } else {
+    // Jeroen: 3 from one tier + 1 outlier from a very different tier
+    const tiersWithEnough = tiers.filter(t => t.length >= 3);
+    if (tiersWithEnough.length > 0) {
+      const mainTier = getRandom(tiersWithEnough);
+      picks.push(getRandom(mainTier, picks));
+      picks.push(getRandom(mainTier, picks));
+      picks.push(getRandom(mainTier, picks));
+      // Outlier: pick from a tier that's far away (not adjacent)
+      const mainIndex = tiers.indexOf(mainTier);
+      const farTiers = tiers.filter((_, i) => Math.abs(i - mainIndex) >= 2);
+      const outlierTier = farTiers.length > 0 ? getRandom(farTiers) : tiers.find(t => t !== mainTier);
+      if (outlierTier) picks.push(getRandom(outlierTier, picks));
+    }
   }
-  // Fallback if not enough spread
-  if (picks.length < 4) picks = sorted.slice(0, 4);
+
+  // Fill any remaining slots
+  while (picks.length < 4) {
+    const extra = getRandom(pickPool, picks);
+    if (extra) picks.push(extra); else break;
+  }
+  picks = shuffle(picks);
   lastMatchCountries = picks.map(c => c.name);
 
   document.getElementById('question-text').innerHTML =
@@ -2372,6 +2409,7 @@ async function loadAdminSettings() {
     document.getElementById('setting-historical-capitals').checked = s.jeroen_historical_capitals;
     document.getElementById('setting-medium-pop-margin').value = s.medium_pop_margin || 20;
     document.getElementById('setting-jeroen-pop-margin').value = s.jeroen_pop_margin || 10;
+    document.getElementById('setting-medium-second-city').checked = s.medium_second_city !== false;
   } catch {}
 }
 
@@ -2394,6 +2432,7 @@ async function saveSettings() {
     jeroen_historical_capitals: document.getElementById('setting-historical-capitals').checked ? '1' : '0',
     medium_pop_margin: parseInt(document.getElementById('setting-medium-pop-margin').value) || 20,
     jeroen_pop_margin: parseInt(document.getElementById('setting-jeroen-pop-margin').value) || 10,
+    medium_second_city: document.getElementById('setting-medium-second-city').checked ? '1' : '0',
   };
   try {
     await fetch('/api/admin/settings', {
