@@ -397,14 +397,26 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
       <div class="lb-section-line"></div>
     </div>
     <div class="stats-section">
+      <!-- Region selector for leaderboard -->
+      <div class="stats-tabs" id="lb-region-tabs" style="margin-bottom:8px">
+        <button class="stats-tab active" id="lb-region-world" onclick="switchLBRegion('world')">🌍 World</button>
+        <button class="stats-tab" id="lb-region-nl" onclick="switchLBRegion('nl')">🇳🇱 NL</button>
+      </div>
+      <!-- World tabs -->
       <div class="stats-tabs" id="stats-tabs-world">
         <button class="stats-tab active" onclick="switchStatTab('easy')">Dumb Test</button>
         <button class="stats-tab" onclick="switchStatTab('medium')">Medium</button>
         <button class="stats-tab jeroen-tab" onclick="switchStatTab('jeroen')">Jeroen Mode</button>
       </div>
+      <!-- Topo tabs -->
       <div class="stats-tabs" id="stats-tabs-topo" style="display:none">
         <button class="stats-tab active" onclick="switchStatTab('medium')">Topo Medium</button>
         <button class="stats-tab jeroen-tab" onclick="switchStatTab('jeroen')">Topo Jeroen</button>
+      </div>
+      <!-- NL tabs -->
+      <div class="stats-tabs" id="stats-tabs-nl" style="display:none">
+        <button class="stats-tab active" onclick="switchStatTab('medium')">NL Medium</button>
+        <button class="stats-tab jeroen-tab" onclick="switchStatTab('jeroen')">NL Jeroen</button>
       </div>
       <div class="stats-row">
         <div class="stat-card" id="stat-card-best"><div class="value" id="stat-best">—</div><div class="label">Best Streak</div></div>
@@ -1813,11 +1825,11 @@ function showMenu() {
   document.getElementById('admin-nav-btn').style.display = isAdmin ? 'inline-block' : 'none';
   document.body.classList.remove('jeroen-mode');
   updateDiffDescriptions();
-  // Switch to the tab matching the game just played
-  const tabToShow = (currentRegion === 'nl' || currentGameMode === 'topo') && currentDiff === 'easy' ? 'medium' : currentDiff;
-  switchStatTab(tabToShow);
+  // Switch leaderboard to region of game just played, then refresh
+  currentLBRegion = currentRegion;
+  switchLBRegion(currentLBRegion);
   loadAllStats();
-  loadLeaderboard(tabToShow);
+  loadLeaderboard(currentDiff === 'easy' && currentLBRegion === 'nl' ? 'medium' : currentDiff);
 }
 
 // ════════════════════════════════════
@@ -2043,19 +2055,36 @@ function renderSetupSummary() {
 
 function confirmAndPlay() {
   currentRegion = setupRegion;
-  currentGameMode = setupRegion === 'nl' ? currentGameMode : currentGameMode; // keep mode
+  currentLBRegion = setupRegion;
   currentDiff = setupDiff;
   closeGameSetup();
   updateDiffDescriptions();
   startGame();
 }
 
+let currentLBRegion = 'world';
+
+function switchLBRegion(region) {
+  currentLBRegion = region;
+  // Update region tab active state
+  document.getElementById('lb-region-world').classList.toggle('active', region === 'world');
+  document.getElementById('lb-region-nl').classList.toggle('active', region === 'nl');
+  // Show correct diff tabs
+  document.getElementById('stats-tabs-world').style.display = (region === 'world' && currentGameMode !== 'topo') ? 'flex' : 'none';
+  document.getElementById('stats-tabs-topo').style.display = (region === 'world' && currentGameMode === 'topo') ? 'flex' : 'none';
+  document.getElementById('stats-tabs-nl').style.display = region === 'nl' ? 'flex' : 'none';
+  // Default diff for this region
+  const defaultDiff = region === 'nl' ? 'medium' : (currentGameMode === 'topo' ? 'medium' : 'easy');
+  switchStatTab(defaultDiff);
+}
+
 function selectGameMode(mode) {
   currentGameMode = mode;
   const defaultDiff = (mode === 'topo' && currentDiff === 'easy') ? 'medium' : currentDiff;
   currentDiff = defaultDiff;
+  // Update diff tabs visibility
+  switchLBRegion(currentLBRegion);
   updateDiffDescriptions();
-  switchStatTab(defaultDiff);
 }
 
 function selectDiff(diff) {
@@ -2078,7 +2107,7 @@ function switchStatTab(diff) {
   const isJ = diff==='jeroen';
   document.getElementById('stat-card-best').classList.toggle('jeroen-stat', isJ);
   document.getElementById('stat-card-games').classList.toggle('jeroen-stat', isJ);
-  const key = `${currentRegion}_${currentGameMode}_${diff}`;
+  const key = `${currentLBRegion}_${currentGameMode}_${diff}`;
   const s = allStats[key] || allStats[diff] || {};
   document.getElementById('stat-best').textContent = s.best_streak || '0';
   document.getElementById('stat-games').textContent = s.games_played || '0';
@@ -2105,7 +2134,7 @@ async function loadAllStats() {
       }
     }
     const mode = currentGameMode;
-    const key = `${currentRegion}_${mode}_${currentStatTab}`;
+    const key = `${currentLBRegion}_${mode}_${currentStatTab}`;
     const s = allStats[key] || allStats[currentStatTab] || {};
     document.getElementById('stat-best').textContent = s.best_streak || '0';
     document.getElementById('stat-games').textContent = s.games_played || '0';
@@ -2114,7 +2143,7 @@ async function loadAllStats() {
 
 async function loadLeaderboard(diff) {
   const isTopo = currentGameMode === 'topo';
-  const isNL = currentRegion === 'nl';
+  const isNL = currentLBRegion === 'nl';
   const mode = currentGameMode;
   const titles = {
     easy: '🧠 Dumb Test Leaderboard',
@@ -2124,7 +2153,7 @@ async function loadLeaderboard(diff) {
   document.getElementById('lb-title').textContent = titles[diff];
   document.getElementById('lb-section-title').textContent = titles[diff];
   try {
-    const res = await fetch(`/api/leaderboard?difficulty=${diff}&mode=${mode}&region=${currentRegion}`);
+    const res = await fetch(`/api/leaderboard?difficulty=${diff}&mode=${mode}&region=${currentLBRegion}`);
     const data = await res.json();
     const body = document.getElementById('leaderboard-body');
     const isJ = diff==='jeroen';
