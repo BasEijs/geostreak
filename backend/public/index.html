@@ -931,6 +931,7 @@ let mapMarkerObj = null;
 let geoJsonCache = null;
 let marker = null; // {lat, lng} of current pin
 let lastMatchCountries = []; // prevent duplicate match questions
+let countryQueue = []; // shuffled queue — cycle through all before repeating
 let currentQ = null;
 let awaitingNext = false;
 let allStats = {};
@@ -1404,6 +1405,8 @@ async function loadLeaderboard(diff) {
 function startGame() {
   streak=0; awaitingNext=false;
   const cfg = getDiffConfig(currentDiff);
+  countryQueue = []; // reset — will be built on first nextQuestion call
+  lastMatchCountries = [];
   useTimer = !devMode && Object.values(cfg.timers).some(v => v > 0);
   stopTimer(); updateStreakDisplay();
   document.body.classList.toggle('jeroen-mode', currentDiff==='jeroen');
@@ -1444,17 +1447,32 @@ function nextQuestion() {
   const cfg = getDiffConfig(currentDiff);
   const pool = cfg.countries.filter(c => !c.historical || currentDiff==='jeroen');
   const nonHistoricalPool = pool.filter(c => !c.historical);
-  // Historical countries only appear in capital questions if that toggle is on, flags always use full pool
   const capitalPool = gameSettings.jeroen_historical_capitals ? pool : nonHistoricalPool;
   const extraPool = nonHistoricalPool.filter(c => COUNTRY_EXTRA[c.name]);
+
+  // Pick question type
   const type = cfg.questionTypes[Math.floor(Math.random()*cfg.questionTypes.length)];
-  // Pick country based on question type
+
+  // Determine which pool this question type draws from
+  const isMatch = type === 'match-flags' || type === 'match-capitals' || type === 'match-population';
+  const qPool = type === 'flag' ? pool
+    : type === 'capital' ? capitalPool
+    : (type === 'second-city' || type === 'population') ? (extraPool.length >= 4 ? extraPool : nonHistoricalPool)
+    : nonHistoricalPool;
+
+  // Use queue for non-match questions
   let country;
-  if (type === 'flag') country = getRandom(pool);
-  else if (type === 'capital') country = getRandom(capitalPool);
-  else if (type === 'second-city' || type === 'population') country = extraPool.length ? getRandom(extraPool) : getRandom(nonHistoricalPool);
-  else if (type === 'match-population') country = getRandom(nonHistoricalPool); // not used directly, buildMatchPopulationQ handles selection
-  else country = getRandom(nonHistoricalPool);
+  if (!isMatch) {
+    // Refill queue when empty
+    if (countryQueue.length === 0) countryQueue = shuffle(qPool);
+    // Pop from queue, skip if doesn't fit current pool (e.g. pool changed)
+    while (countryQueue.length > 0 && !qPool.includes(countryQueue[0])) countryQueue.shift();
+    if (countryQueue.length === 0) countryQueue = shuffle(qPool);
+    country = countryQueue.shift();
+  } else {
+    country = getRandom(nonHistoricalPool); // match questions manage their own selection
+  }
+
   currentQ = {type, country};
 
   const badges = {capital:'🏛 Capital', flag:'🚩 Flag', map:'🗺 Map', continent:'🌍 Continent', 'match-flags':'🚩 Match Flags', 'match-capitals':'🏛 Match Capitals', 'capital-map':'🗺 Capital → Map', 'second-city':'🏙 Second City', 'population':'👥 Population', 'match-population':'👥 Match Population'};
