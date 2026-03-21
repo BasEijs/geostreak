@@ -33,6 +33,8 @@ db.exec(`
     user_id INTEGER NOT NULL,
     streak INTEGER NOT NULL,
     difficulty TEXT NOT NULL DEFAULT 'medium',
+    mode TEXT NOT NULL DEFAULT 'world',
+    region TEXT NOT NULL DEFAULT 'world',
     played_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
