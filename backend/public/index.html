@@ -89,7 +89,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .play-btn.jeroen-play { background: linear-gradient(135deg,var(--jeroen),var(--jeroen2)); color: #fff; box-shadow: 0 6px 24px rgba(168,85,247,0.25); }
 .play-btn.jeroen-play:hover { box-shadow: 0 10px 32px rgba(168,85,247,0.4); }
 .menu-intro-section { width: 100%; max-width: 700px; display: flex; flex-direction: column; align-items: center; gap: 20px; padding-bottom: 36px; }
-.menu-lb-section { width: 100%; max-width: 700px; border-top: 2px solid var(--border); padding-top: 32px; display: flex; flex-direction: column; gap: 12px; }
+.menu-lb-section { width: 100%; max-width: 700px; border-top: 2px solid var(--border); padding-top: 32px; display: flex; flex-direction: column; gap: 0; }
 .lb-section-header { display: flex; align-items: center; gap: 16px; width: 100%; }
 .lb-section-line { flex: 1; height: 1px; background: var(--border); }
 .lb-section-title { font-family: 'Bebas Neue',sans-serif; font-size: 22px; letter-spacing: 2px; color: var(--text-muted); white-space: nowrap; }
@@ -120,14 +120,20 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .lb-me { background: rgba(240,180,41,0.05) !important; }
 .lb-me.jeroen-row { background: rgba(168,85,247,0.06) !important; }
 
+.lb-region-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); width: 100%; }
+.lb-region-tab { padding: 10px 24px; border: none; background: none; color: var(--text-muted); font-family: 'DM Sans',sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.15s; }
+.lb-region-tab:hover { color: var(--text); }
+.lb-region-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.lb-filters { display: flex; gap: 20px; padding: 14px 0 4px; align-items: flex-start; }
+.lb-filter-group { display: flex; flex-direction: column; gap: 6px; }
+.lb-filter-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); font-weight: 600; }
+.menu-lb-section { width: 100%; max-width: 700px; border-top: 2px solid var(--border); padding-top: 32px; display: flex; flex-direction: column; gap: 0; }
 .lb-controls { display: flex; gap: 8px; width: 100%; }
-.lb-toggle { display: flex; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 3px; flex: 1; }
+.lb-toggle { display: flex; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 3px; }
 .lb-diff-toggle { flex: none; width: 100%; }
-.lb-toggle-btn { flex: 1; padding: 7px 10px; border: none; background: none; color: var(--text-muted); font-size: 13px; border-radius: calc(var(--radius) - 2px); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+.lb-toggle-btn { flex: 1; padding: 7px 14px; border: none; background: none; color: var(--text-muted); font-size: 13px; border-radius: calc(var(--radius) - 2px); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
 .lb-toggle-btn.active { background: var(--surface2); color: var(--text); font-weight: 600; }
 .lb-diff-jeroen.active { background: rgba(168,85,247,0.15); color: var(--jeroen); }
-.lb-diff-select { width: 100%; max-width: 700px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); padding: 10px 14px; font-size: 14px; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239aadca' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; }
-.lb-diff-select:focus { outline: none; border-color: var(--accent); }
 .game-intro-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 2px; color: var(--accent); }
 .game-intro { width: 100%; max-width: 700px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; }
 .game-intro-text { font-size: 15px; color: var(--text-muted); line-height: 1.65; max-width: 560px; }
@@ -408,34 +414,31 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
     <div class="menu-lb-section">
       <div class="lb-section-header">
         <div class="lb-section-line"></div>
-        <div class="lb-section-title" id="lb-section-title">Leaderboards</div>
+        <div class="lb-section-title">Leaderboards</div>
         <div class="lb-section-line"></div>
       </div>
-      <div class="stats-section">
-        <div class="lb-controls">
-          <div class="lb-toggle" id="lb-region-toggle">
-            <button class="lb-toggle-btn active" id="lb-region-world" onclick="switchLBRegion('world')">🌍 World</button>
-            <button class="lb-toggle-btn" id="lb-region-nl" onclick="switchLBRegion('nl')">🇳🇱 NL</button>
-          </div>
-          <div class="lb-toggle" id="lb-mode-toggle">
-            <button class="lb-toggle-btn active" id="lb-mode-world" onclick="switchLBMode('world')">🌍 Geography</button>
-            <button class="lb-toggle-btn" id="lb-mode-topo" onclick="switchLBMode('topo')">📍 Map Only</button>
-          </div>
+      <!-- Region tabs -->
+      <div class="lb-region-tabs" id="lb-region-tabs"></div>
+      <!-- Mode + Difficulty filters -->
+      <div class="lb-filters" id="lb-filters">
+        <div class="lb-filter-group">
+          <div class="lb-filter-label" id="lb-filter-mode-label">Mode</div>
+          <div class="lb-toggle" id="lb-mode-toggle"></div>
         </div>
-        <div class="lb-toggle lb-diff-toggle" id="lb-diff-toggle">
-          <button class="lb-toggle-btn" id="lb-diff-easy" onclick="switchStatTab('easy')">🧠 Dumb Test</button>
-          <button class="lb-toggle-btn active" id="lb-diff-medium" onclick="switchStatTab('medium')">🗺️ Medium</button>
-          <button class="lb-toggle-btn lb-diff-jeroen" id="lb-diff-jeroen" onclick="switchStatTab('jeroen')">💀 Jeroen</button>
+        <div class="lb-filter-group">
+          <div class="lb-filter-label" id="lb-filter-diff-label">Difficulty</div>
+          <div class="lb-toggle" id="lb-diff-toggle"></div>
         </div>
-        <div class="leaderboard">
-          <div class="lb-meta-row" id="lb-meta-row">
-            <div class="lb-meta-stat" id="lb-meta-best"><span id="stat-best">—</span> <span class="lb-meta-label" id="lb-stat-best-label"></span></div>
-            <div class="leaderboard-active-title" id="lb-title"></div>
-            <div class="lb-meta-stat" id="lb-meta-games"><span id="stat-games">—</span> <span class="lb-meta-label" id="lb-stat-games-label"></span></div>
-          </div>
-          <div class="leaderboard-cols"><div>#</div><div>Player</div><div style="text-align:right">Best</div><div style="text-align:right">Games</div></div>
-          <div id="leaderboard-body"></div>
+      </div>
+      <!-- Leaderboard table -->
+      <div class="leaderboard">
+        <div class="lb-meta-row" id="lb-meta-row" style="display:none">
+          <div class="lb-meta-stat" id="lb-meta-best"><span id="stat-best">—</span> <span class="lb-meta-label" id="lb-stat-best-label"></span></div>
+          <div class="leaderboard-active-title" id="lb-title"></div>
+          <div class="lb-meta-stat" id="lb-meta-games"><span id="stat-games">—</span> <span class="lb-meta-label" id="lb-stat-games-label"></span></div>
         </div>
+        <div class="leaderboard-cols"><div>#</div><div>Player</div><div style="text-align:right">Best</div><div style="text-align:right">Games</div></div>
+        <div id="leaderboard-body"></div>
       </div>
     </div>
   </div>
@@ -1486,7 +1489,7 @@ let streak = 0;
 let currentGameMode = 'world'; // 'world' | 'topo'
 let currentRegion = 'world';   // 'world' | 'nl'
 let currentDiff = 'easy';
-let currentStatTab = 'easy';
+let currentLBDiff = 'easy';
 let useTimer = false;
 let timerInterval = null;
 let timerSecondsLeft = 15;
@@ -1807,6 +1810,11 @@ function applyLanguageUI() {
   document.getElementById('lang-nl').classList.toggle('active', currentLang==='nl');
   document.getElementById('streak-label-el').textContent = t().ui.streak;
   updateDiffDescriptions();
+  // Re-render leaderboard controls with new language
+  if (document.getElementById('lb-region-tabs')) {
+    renderLBRegionTabs();
+    renderLBFilters();
+  }
 }
 
 // ════════════════════════════════════
@@ -1824,11 +1832,15 @@ function showMenu() {
   document.getElementById('admin-nav-btn').style.display = isAdmin ? 'inline-block' : 'none';
   document.body.classList.remove('jeroen-mode');
   updateDiffDescriptions();
+  // Sync leaderboard to game just played
   currentLBRegion = currentRegion;
   currentLBMode = currentGameMode;
-  const diff = (currentDiff === 'easy' && currentRegion === 'nl') ? 'medium' : currentDiff;
-  switchLBRegion(currentLBRegion, diff);
+  const region = LB_REGIONS.find(r => r.id === currentLBRegion) || LB_REGIONS[0];
+  currentLBDiff = region.diffs.includes(currentDiff) ? currentDiff : region.defaultDiff;
+  renderLBRegionTabs();
+  renderLBFilters();
   loadAllStats();
+  loadLeaderboard(currentLBDiff);
 }
 
 // ════════════════════════════════════
@@ -2101,6 +2113,7 @@ function confirmAndPlay() {
   currentRegion = setupRegion;
   currentLBRegion = setupRegion;
   currentLBMode = setupMode;
+  currentLBDiff = setupDiff;
   currentGameMode = setupMode;
   currentDiff = setupDiff;
   closeGameSetup();
@@ -2109,52 +2122,116 @@ function confirmAndPlay() {
 }
 
 let currentLBRegion = 'world';
-let currentLBMode = 'world'; // 'world' | 'topo' — for leaderboard viewing only
+let currentLBMode = 'world';
 
-function showCorrectDiffTabs() {
-  const isNL = currentLBRegion === 'nl';
-  const isTopo = currentLBMode === 'topo';
-  const hasDumbTest = !isNL && !isTopo;
-  const easyBtn = document.getElementById('lb-diff-easy');
-  if (easyBtn) easyBtn.style.display = hasDumbTest ? '' : 'none';
-  if (!hasDumbTest && currentStatTab === 'easy') {
-    currentStatTab = 'medium';
-    document.getElementById('lb-diff-medium')?.classList.add('active');
-    document.getElementById('lb-diff-easy')?.classList.remove('active');
-  }
+// Extensible region config — add Europe/US here later
+const LB_REGIONS = [
+  {
+    id: 'world', icon: '🌍', label: { nl: 'Wereld', en: 'World' },
+    modes: [
+      { id: 'world', icon: '🌍', label: { nl: 'Aardrijkskunde', en: 'Geography' } },
+      { id: 'topo',  icon: '📍', label: { nl: 'Topografie',     en: 'Map Only'  } },
+    ],
+    diffs: ['easy','medium','jeroen'],
+    defaultMode: 'world', defaultDiff: 'easy',
+  },
+  {
+    id: 'nl', icon: '🇳🇱', label: { nl: 'Nederland', en: 'Netherlands' },
+    modes: [
+      { id: 'world', icon: '🌍', label: { nl: 'Aardrijkskunde', en: 'Geography' } },
+      { id: 'topo',  icon: '📍', label: { nl: 'Topografie',     en: 'Map Only'  } },
+    ],
+    diffs: ['medium','jeroen'],
+    defaultMode: 'world', defaultDiff: 'medium',
+  },
+];
+
+function renderLBRegionTabs() {
+  const container = document.getElementById('lb-region-tabs');
+  container.innerHTML = '';
+  LB_REGIONS.forEach(r => {
+    const btn = document.createElement('button');
+    btn.className = 'lb-region-tab' + (r.id === currentLBRegion ? ' active' : '');
+    btn.innerHTML = `${r.icon} ${r.label[currentLang] || r.label.en}`;
+    btn.onclick = () => {
+      const region = LB_REGIONS.find(x => x.id === r.id);
+      currentLBRegion = r.id;
+      currentLBMode = region.defaultMode;
+      currentLBDiff = region.defaultDiff;
+      renderLBFilters();
+      renderLBRegionTabs();
+      loadLeaderboard(currentLBDiff);
+      loadAllStats();
+    };
+    container.appendChild(btn);
+  });
 }
 
-function switchLBMode(mode) {
-  currentLBMode = mode;
-  document.getElementById('lb-mode-world').classList.toggle('active', mode === 'world');
-  document.getElementById('lb-mode-topo').classList.toggle('active', mode === 'topo');
-  showCorrectDiffTabs();
-  const defaultDiff = mode === 'topo' ? 'medium' : (currentLBRegion === 'nl' ? 'medium' : 'easy');
-  switchStatTab(defaultDiff);
+function renderLBFilters() {
+  const region = LB_REGIONS.find(r => r.id === currentLBRegion);
+  const lang = currentLang;
+
+  // Mode toggle
+  const modeToggle = document.getElementById('lb-mode-toggle');
+  modeToggle.innerHTML = '';
+  region.modes.forEach(m => {
+    const btn = document.createElement('button');
+    btn.className = 'lb-toggle-btn' + (m.id === currentLBMode ? ' active' : '');
+    btn.textContent = `${m.icon} ${m.label[lang] || m.label.en}`;
+    btn.onclick = () => {
+      currentLBMode = m.id;
+      // reset diff to first available
+      currentLBDiff = region.diffs[0];
+      renderLBFilters();
+      loadLeaderboard(currentLBDiff);
+      loadAllStats();
+    };
+    modeToggle.appendChild(btn);
+  });
+
+  // Diff toggle
+  const diffToggle = document.getElementById('lb-diff-toggle');
+  diffToggle.innerHTML = '';
+  const diffDefs = {
+    easy:   { icon: '🧠', label: { nl: 'Dumb Test', en: 'Dumb Test' } },
+    medium: { icon: '🗺️', label: { nl: 'Medium',    en: 'Medium'   } },
+    jeroen: { icon: '💀', label: { nl: 'Jeroen',    en: 'Jeroen'   } },
+  };
+  region.diffs.forEach(d => {
+    const def = diffDefs[d];
+    const btn = document.createElement('button');
+    btn.className = 'lb-toggle-btn' + (d === currentLBDiff ? ' active' : '') + (d === 'jeroen' ? ' lb-diff-jeroen' : '');
+    btn.textContent = `${def.icon} ${def.label[lang] || def.label.en}`;
+    btn.onclick = () => {
+      currentLBDiff = d;
+      renderLBFilters();
+      loadLeaderboard(d);
+      loadAllStats();
+    };
+    diffToggle.appendChild(btn);
+  });
+
+  // Filter labels
+  const modeLbl = document.getElementById('lb-filter-mode-label');
+  const diffLbl = document.getElementById('lb-filter-diff-label');
+  if (modeLbl) modeLbl.textContent = lang === 'nl' ? 'Modus' : 'Mode';
+  if (diffLbl) diffLbl.textContent = lang === 'nl' ? 'Moeilijkheid' : 'Difficulty';
 }
 
-function switchLBRegion(region, forceDiff) {
-  currentLBRegion = region;
-  document.getElementById('lb-region-world').classList.toggle('active', region === 'world');
-  document.getElementById('lb-region-nl').classList.toggle('active', region === 'nl');
-  showCorrectDiffTabs();
-  const diff = forceDiff || (region === 'nl' || currentLBMode === 'topo' ? 'medium' : 'easy');
-  switchStatTab(diff);
-}
+function switchLBRegion(region, forceDiff) { /* legacy stub — now handled by renderLBRegionTabs */ }
+function switchLBMode(mode) { /* legacy stub */ }
+function showCorrectDiffTabs() { /* legacy stub */ }
 
 function selectGameMode(mode) {
   currentGameMode = mode;
   const defaultDiff = (mode === 'topo' && currentDiff === 'easy') ? 'medium' : currentDiff;
   currentDiff = defaultDiff;
-  // Update diff tabs visibility
-  switchLBRegion(currentLBRegion);
   updateDiffDescriptions();
 }
 
 function selectDiff(diff) {
   currentDiff = diff;
   updateDiffDescriptions();
-  switchStatTab(diff);
 }
 
 // ════════════════════════════════════
@@ -2162,14 +2239,8 @@ function selectDiff(diff) {
 // ════════════════════════════════════
 
 function switchStatTab(diff) {
-  currentStatTab = diff;
-  // Update difficulty pill toggle
-  ['easy','medium','jeroen'].forEach(d => {
-    const btn = document.getElementById(`lb-diff-${d}`);
-    if (btn) btn.classList.toggle('active', d === diff);
-  });
+  currentLBDiff = diff;
   const isJ = diff === 'jeroen';
-  // Update meta-row stats
   const key = `${currentLBRegion}_${currentLBMode}_${diff}`;
   const s = allStats[key] || allStats[diff] || {};
   const best = s.best_streak || 0;
@@ -2182,11 +2253,10 @@ function switchStatTab(diff) {
   const metaGames = document.getElementById('lb-stat-games-label');
   if (metaBest) metaBest.textContent = currentLang === 'nl' ? 'beste reeks' : 'best streak';
   if (metaGames) metaGames.textContent = currentLang === 'nl' ? 'gespeeld' : 'played';
-  // Jeroen colour on meta stats
   const metaLeft = document.querySelector('.lb-meta-stat:first-child');
   const metaRight = document.querySelector('.lb-meta-stat:last-child');
-  if (metaLeft) { metaLeft.style.color = isJ ? 'var(--jeroen)' : 'var(--accent)'; }
-  if (metaRight) { metaRight.style.color = isJ ? 'var(--jeroen)' : 'var(--accent)'; }
+  if (metaLeft) metaLeft.style.color = isJ ? 'var(--jeroen)' : 'var(--accent)';
+  if (metaRight) metaRight.style.color = isJ ? 'var(--jeroen)' : 'var(--accent)';
   loadLeaderboard(diff);
 }
 
@@ -2210,8 +2280,8 @@ async function loadAllStats() {
       }
     }
     const mode = currentGameMode;
-    const key = `${currentLBRegion}_${mode}_${currentStatTab}`;
-    const s = allStats[key] || allStats[currentStatTab] || {};
+    const key = `${currentLBRegion}_${mode}_${currentLBDiff}`;
+    const s = allStats[key] || allStats[currentLBDiff] || {};
     document.getElementById('stat-best').textContent = s.best_streak || '0';
     document.getElementById('stat-games').textContent = s.games_played || '0';
   } catch {}
@@ -2220,21 +2290,12 @@ async function loadAllStats() {
 async function loadLeaderboard(diff) {
   const isNL = currentLBRegion === 'nl';
   const isTopo = currentLBMode === 'topo';
-  const mode = currentLBMode;
-  const titles = {
-    easy:   '🧠 Dumb Test Leaderboard',
-    medium: isNL && isTopo ? '🇳🇱📍 NL Topo Medium'
-          : isNL           ? '🇳🇱 NL Medium Leaderboard'
-          : isTopo         ? '📍 Topo Medium Leaderboard'
-                           : '🗺️ Medium Leaderboard',
-    jeroen: isNL && isTopo ? '🇳🇱📍💀 NL Topo Jeroen'
-          : isNL           ? '🇳🇱💀 NL Jeroen Leaderboard'
-          : isTopo         ? '📍💀 Topo Jeroen Leaderboard'
-                           : '💀 Jeroen Mode Leaderboard',
-  };
-  document.getElementById('lb-title').textContent = titles[diff] || '';
+  const region = LB_REGIONS.find(r => r.id === currentLBRegion);
+  const modeLabel = region?.modes.find(m => m.id === currentLBMode)?.label[currentLang] || currentLBMode;
+  const diffLabels = { easy: 'Dumb Test', medium: 'Medium', jeroen: 'Jeroen Mode 💀' };
+  document.getElementById('lb-title').textContent = `${modeLabel} · ${diffLabels[diff] || diff}`;
   try {
-    const res = await fetch(`/api/leaderboard?difficulty=${diff}&mode=${mode}&region=${currentLBRegion}`);
+    const res = await fetch(`/api/leaderboard?difficulty=${diff}&mode=${currentLBMode}&region=${currentLBRegion}`);
     const data = await res.json();
     const body = document.getElementById('leaderboard-body');
     const isJ = diff==='jeroen';
