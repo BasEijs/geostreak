@@ -398,23 +398,26 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
       <div class="lb-section-line"></div>
     </div>
     <div class="stats-section">
-      <!-- Region selector for leaderboard -->
+      <!-- Row 1: Region -->
       <div class="stats-tabs" id="lb-region-tabs" style="margin-bottom:8px">
         <button class="stats-tab active" id="lb-region-world" onclick="switchLBRegion('world')">🌍 World</button>
         <button class="stats-tab" id="lb-region-nl" onclick="switchLBRegion('nl')">🇳🇱 NL</button>
       </div>
-      <!-- World tabs -->
+      <!-- Row 2: Mode (only for World) -->
+      <div class="stats-tabs" id="lb-mode-tabs" style="margin-bottom:8px">
+        <button class="stats-tab active" id="lb-mode-world" onclick="switchLBMode('world')">🌍 Aardrijkskunde</button>
+        <button class="stats-tab" id="lb-mode-topo" onclick="switchLBMode('topo')">📍 Topografie</button>
+      </div>
+      <!-- Row 3: Difficulty tabs -->
       <div class="stats-tabs" id="stats-tabs-world">
         <button class="stats-tab active" onclick="switchStatTab('easy')">Dumb Test</button>
         <button class="stats-tab" onclick="switchStatTab('medium')">Medium</button>
         <button class="stats-tab jeroen-tab" onclick="switchStatTab('jeroen')">Jeroen Mode</button>
       </div>
-      <!-- Topo tabs -->
       <div class="stats-tabs" id="stats-tabs-topo" style="display:none">
-        <button class="stats-tab active" onclick="switchStatTab('medium')">Topo Medium</button>
-        <button class="stats-tab jeroen-tab" onclick="switchStatTab('jeroen')">Topo Jeroen</button>
+        <button class="stats-tab active" onclick="switchStatTab('medium')">Medium</button>
+        <button class="stats-tab jeroen-tab" onclick="switchStatTab('jeroen')">Jeroen Mode</button>
       </div>
-      <!-- NL tabs -->
       <div class="stats-tabs" id="stats-tabs-nl" style="display:none">
         <button class="stats-tab active" onclick="switchStatTab('medium')">NL Medium</button>
         <button class="stats-tab jeroen-tab" onclick="switchStatTab('jeroen')">NL Jeroen</button>
@@ -1834,6 +1837,7 @@ function showMenu() {
   document.body.classList.remove('jeroen-mode');
   updateDiffDescriptions();
   currentLBRegion = currentRegion;
+  currentLBMode = currentGameMode;
   const diff = (currentDiff === 'easy' && currentRegion === 'nl') ? 'medium' : currentDiff;
   switchLBRegion(currentLBRegion, diff);
   loadAllStats();
@@ -2089,6 +2093,7 @@ function renderSetupSummary() {
 function confirmAndPlay() {
   currentRegion = setupRegion;
   currentLBRegion = setupRegion;
+  currentLBMode = setupMode;
   currentGameMode = setupMode;
   currentDiff = setupDiff;
   closeGameSetup();
@@ -2097,15 +2102,28 @@ function confirmAndPlay() {
 }
 
 let currentLBRegion = 'world';
+let currentLBMode = 'world'; // 'world' | 'topo' — for leaderboard viewing only
+
+function switchLBMode(mode) {
+  currentLBMode = mode;
+  document.getElementById('lb-mode-world').classList.toggle('active', mode === 'world');
+  document.getElementById('lb-mode-topo').classList.toggle('active', mode === 'topo');
+  document.getElementById('stats-tabs-world').style.display = mode === 'world' ? 'flex' : 'none';
+  document.getElementById('stats-tabs-topo').style.display = mode === 'topo' ? 'flex' : 'none';
+  const defaultDiff = mode === 'topo' ? 'medium' : 'easy';
+  switchStatTab(defaultDiff);
+}
 
 function switchLBRegion(region, forceDiff) {
   currentLBRegion = region;
   document.getElementById('lb-region-world').classList.toggle('active', region === 'world');
   document.getElementById('lb-region-nl').classList.toggle('active', region === 'nl');
-  document.getElementById('stats-tabs-world').style.display = (region === 'world' && currentGameMode !== 'topo') ? 'flex' : 'none';
-  document.getElementById('stats-tabs-topo').style.display = (region === 'world' && currentGameMode === 'topo') ? 'flex' : 'none';
+  // Mode tabs only visible for World region
+  document.getElementById('lb-mode-tabs').style.display = region === 'world' ? 'flex' : 'none';
+  document.getElementById('stats-tabs-world').style.display = (region === 'world' && currentLBMode === 'world') ? 'flex' : 'none';
+  document.getElementById('stats-tabs-topo').style.display = (region === 'world' && currentLBMode === 'topo') ? 'flex' : 'none';
   document.getElementById('stats-tabs-nl').style.display = region === 'nl' ? 'flex' : 'none';
-  const diff = forceDiff || (region === 'nl' ? 'medium' : (currentGameMode === 'topo' ? 'medium' : 'easy'));
+  const diff = forceDiff || (region === 'nl' ? 'medium' : (currentLBMode === 'topo' ? 'medium' : 'easy'));
   switchStatTab(diff);
 }
 
@@ -2173,9 +2191,9 @@ async function loadAllStats() {
 }
 
 async function loadLeaderboard(diff) {
-  const isTopo = currentGameMode === 'topo';
   const isNL = currentLBRegion === 'nl';
-  const mode = currentGameMode;
+  const isTopo = !isNL && currentLBMode === 'topo';
+  const mode = currentLBMode;
   const titles = {
     easy: '🧠 Dumb Test Leaderboard',
     medium: isNL ? '🇳🇱 NL Medium Leaderboard' : isTopo ? '📍 Topo Medium Leaderboard' : '🗺️ Medium Leaderboard',
