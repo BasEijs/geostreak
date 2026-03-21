@@ -1833,6 +1833,15 @@ function buildMapQ(country, area, isCapitalMap) {
 
     map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-left');
 
+    map.on('load', () => {
+      // Hide all label/text layers
+      map.getStyle().layers.forEach(layer => {
+        if (layer.type === 'symbol') {
+          map.setLayoutProperty(layer.id, 'visibility', 'none');
+        }
+      });
+    });
+
     map.on('click', e => {
       if (awaitingNext) return;
       marker = { lat: e.lngLat.lat, lng: e.lngLat.lng };
