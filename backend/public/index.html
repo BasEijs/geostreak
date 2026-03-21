@@ -471,14 +471,16 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
     </div>
     <!-- Step 3: Confirm -->
     <div id="setup-step-3" class="setup-pane" style="display:none">
-      <div class="setup-pane-title" id="setup-step3-label">Klaar om te spelen</div>
-      <div id="setup-summary" style="background:var(--surface2);border-radius:12px;padding:20px;margin-bottom:20px;"></div>
-      <button class="play-btn" id="setup-play-btn" onclick="confirmAndPlay()" style="width:100%;font-size:28px;padding:18px;">PLAY</button>
+      <div class="setup-pane-title" id="setup-step3-label"></div>
+      <div id="setup-summary" style="background:var(--surface2);border-radius:12px;padding:20px;"></div>
     </div>
-    <div style="padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:space-between;">
-      <button class="btn btn-ghost" id="setup-back-btn" onclick="setupBack()" style="display:none">← Terug</button>
+    <div style="padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+      <button class="btn btn-ghost" id="setup-back-btn" onclick="setupBack()" style="display:none">← <span id="setup-back-label"></span></button>
       <div></div>
-      <button class="btn btn-ghost" onclick="closeGameSetup()">✕</button>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <button class="btn btn-ghost" onclick="closeGameSetup()">✕</button>
+        <button class="btn btn-primary" id="setup-next-btn" onclick="setupNext()"><span id="setup-next-label"></span> →</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1790,32 +1792,12 @@ function updateDiffDescriptions() {
       intro.innerHTML = `
         <div class="game-intro-title">Hoe ver kom jij?</div>
         <div class="game-intro-text">Test je aardrijkskundige kennis door vragen te beantwoorden over landen, hoofdsteden, vlaggen en kaarten. Houd je reeks zo lang mogelijk gaande — één fout en het is voorbij.</div>
-        <div class="game-intro-modes">
-          <div class="game-intro-mode">
-            <div class="game-intro-mode-name">🌍 Aardrijkskunde</div>
-            <div class="game-intro-mode-desc">Landen, hoofdsteden, vlaggen, kaarten en meer. Kies tussen Wereld of Nederland als regio.</div>
-          </div>
-          <div class="game-intro-mode">
-            <div class="game-intro-mode-name">📍 Alleen Topografie</div>
-            <div class="game-intro-mode-desc">Puur kaart aanwijzen. Klik landen of plaatsen zo precies mogelijk aan op de kaart.</div>
-          </div>
-        </div>
-        <div class="game-intro-text" style="font-size:12px">Klik op <strong>Nieuw Spel</strong> om je spel in te stellen.</div>`;
+        <div class="game-intro-text" style="font-size:12px;margin-top:2px">Klik op <strong>Nieuw Spel</strong> om je spel in te stellen.</div>`;
     } else {
       intro.innerHTML = `
         <div class="game-intro-title">How far can you go?</div>
         <div class="game-intro-text">Test your geography knowledge by answering questions about countries, capitals, flags and maps. Keep your streak going as long as possible — one mistake and it's over.</div>
-        <div class="game-intro-modes">
-          <div class="game-intro-mode">
-            <div class="game-intro-mode-name">🌍 Geography</div>
-            <div class="game-intro-mode-desc">Countries, capitals, flags, maps and more. Choose between World or Netherlands as your region.</div>
-          </div>
-          <div class="game-intro-mode">
-            <div class="game-intro-mode-name">📍 Map Only</div>
-            <div class="game-intro-mode-desc">Pure geography. Click countries or cities as precisely as possible on the map.</div>
-          </div>
-        </div>
-        <div class="game-intro-text" style="font-size:12px">Click <strong>New Game</strong> to configure your game.</div>`;
+        <div class="game-intro-text" style="font-size:12px;margin-top:2px">Click <strong>New Game</strong> to configure your game.</div>`;
     }
   }
 }
@@ -1965,6 +1947,11 @@ function closeGameSetup() {
   document.getElementById('setup-modal').style.display = 'none';
 }
 
+function setupNext() {
+  if (setupStep < 3) { setupStep++; renderSetupStep(); }
+  else confirmAndPlay();
+}
+
 function setupBack() {
   if (setupStep > 1) { setupStep--; renderSetupStep(); }
 }
@@ -1979,6 +1966,24 @@ function renderSetupStep() {
   document.getElementById('setup-back-btn').style.display = setupStep > 1 ? '' : 'none';
   [1,2,3].forEach(s => document.getElementById(`setup-step-${s}`).style.display = s === setupStep ? '' : 'none');
   document.getElementById('setup-title').textContent = currentLang === 'nl' ? 'NIEUW SPEL' : 'NEW GAME';
+
+  const lang = currentLang;
+  const backLabel = document.getElementById('setup-back-label');
+  const nextLabel = document.getElementById('setup-next-label');
+  if (backLabel) backLabel.textContent = lang === 'nl' ? 'Terug' : 'Back';
+  if (nextLabel) nextLabel.textContent = setupStep === 3
+    ? (lang === 'nl' ? 'Start spel' : 'Start game')
+    : (lang === 'nl' ? 'Volgende' : 'Next');
+
+  // Style next btn as play on step 3
+  const nextBtn = document.getElementById('setup-next-btn');
+  if (nextBtn) {
+    nextBtn.className = setupStep === 3
+      ? (setupDiff === 'jeroen' ? 'btn btn-jeroen' : 'play-btn')
+      : 'btn btn-primary';
+    if (setupStep === 3) nextBtn.style.cssText = 'font-size:18px;padding:12px 32px;';
+    else nextBtn.style.cssText = '';
+  }
 
   // Update title
   const titles = {
@@ -2032,9 +2037,7 @@ function renderSetupRegions() {
     card.onclick = () => {
       setupRegion = r.id;
       if (setupRegion === 'nl' && setupDiff === 'easy') setupDiff = 'medium';
-      // Auto-advance to step 2
-      setupStep = 2;
-      renderSetupStep();
+      renderSetupRegions(); // just re-render to show selection, no auto-advance
     };
     regionGrid.appendChild(card);
   });
@@ -2066,8 +2069,7 @@ function renderSetupDifficulties() {
     row.innerHTML = `<div class="setup-diff-icon">${d.icon}</div><div class="setup-diff-info"><div class="setup-diff-name">${d.name}</div><div class="setup-diff-desc">${d.desc[currentLang] || d.desc.en}</div></div>`;
     row.onclick = () => {
       setupDiff = d.id;
-      setupStep = 3;
-      renderSetupStep();
+      renderSetupDifficulties(); // re-render to show selection, no auto-advance
     };
     grid.appendChild(row);
   });
