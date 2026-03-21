@@ -129,6 +129,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .lb-diff-select { width: 100%; max-width: 700px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); padding: 10px 14px; font-size: 14px; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239aadca' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; }
 .lb-diff-select:focus { outline: none; border-color: var(--accent); }
 .game-intro-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 2px; color: var(--accent); }
+.game-intro { width: 100%; max-width: 700px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; }
 .game-intro-text { font-size: 15px; color: var(--text-muted); line-height: 1.65; max-width: 560px; }
 .game-intro-modes { display: flex; gap: 10px; width: 100%; }
 .game-intro-mode { flex: 1; display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; }
@@ -1799,7 +1800,7 @@ function updateDiffDescriptions() {
             <div class="game-intro-mode-desc">Puur kaart aanwijzen. Klik landen of plaatsen zo precies mogelijk aan op de kaart.</div>
           </div>
         </div>
-        <div class="game-intro-text" style="font-size:12px">Klik op <strong>Nieuw Spel</strong> om regio en moeilijkheid te kiezen.</div>`;
+        <div class="game-intro-text" style="font-size:12px">Klik op <strong>Nieuw Spel</strong> om je spel in te stellen.</div>`;
     } else {
       intro.innerHTML = `
         <div class="game-intro-title">How far can you go?</div>
@@ -1814,7 +1815,7 @@ function updateDiffDescriptions() {
             <div class="game-intro-mode-desc">Pure geography. Click countries or cities as precisely as possible on the map.</div>
           </div>
         </div>
-        <div class="game-intro-text" style="font-size:12px">Click <strong>New Game</strong> to choose your region and difficulty.</div>`;
+        <div class="game-intro-text" style="font-size:12px">Click <strong>New Game</strong> to configure your game.</div>`;
     }
   }
 }
