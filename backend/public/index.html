@@ -2195,19 +2195,30 @@ function buildMatchPopulationQ(pool, area) {
     const extra = getRandom(pickPool, picks);
     if (extra) picks.push(extra); else break;
   }
-  picks = shuffle(picks);
-  lastMatchCountries = picks.map(c => c.name);
 
-  document.getElementById('question-text').innerHTML =
-    `Koppel elk land aan het juiste <span>aantal inwoners</span> (in miljoenen)`;
-
-  // Format population ranges as labels (round to nearest sensible value)
+  // Ensure no two picks produce the same population label
   const popLabel = (pop) => {
     if (pop >= 1000) return `${Math.round(pop/100)*100}M+`;
     if (pop >= 100) return `~${Math.round(pop/10)*10}M`;
     if (pop >= 10) return `~${Math.round(pop)}M`;
     return `~${pop.toFixed(1)}M`;
   };
+  // If duplicate labels exist, replace one of the duplicates
+  let attempts = 0;
+  while (attempts++ < 20) {
+    const labels = picks.map(c => popLabel(COUNTRY_EXTRA[c.name].pop));
+    const dupeIndex = labels.findIndex((l, i) => labels.indexOf(l) !== i);
+    if (dupeIndex === -1) break; // no duplicates
+    const replacement = getRandom(pickPool, picks);
+    if (replacement) picks[dupeIndex] = replacement;
+    else break;
+  }
+
+  picks = shuffle(picks);
+  lastMatchCountries = picks.map(c => c.name);
+
+  document.getElementById('question-text').innerHTML =
+    `Koppel elk land aan het juiste <span>aantal inwoners</span> (in miljoenen)`;
 
   // Left: country names (fixed), Right: population labels (shuffled)
   const leftItems = picks;
