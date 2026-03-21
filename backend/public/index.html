@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GeoStreak</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
 <style>
 :root {
   --bg: #0a0e1a; --surface: #111827; --surface2: #1a2235; --border: #1e2d45;
@@ -263,8 +263,8 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
 /* MAP */
 #map-container { flex: 1; position: relative; min-height: 0; }
 #map { width: 100%; height: 100%; }
-.leaflet-container { background: #1a1a2e !important; }
-.leaflet-tile { filter: brightness(0.85) saturate(0.8); }
+.mapboxgl-ctrl-logo { display: none !important; }
+.mapboxgl-ctrl-attrib { display: none !important; }
 
 /* TYPED ANSWER */
 .typed-answer-area { padding: 16px; display: flex; flex-direction: column; gap: 12px; max-width: 620px; width: 100%; align-self: center; }
@@ -863,9 +863,8 @@ let useTimer = false;
 let timerInterval = null;
 let timerSecondsLeft = 15;
 let map = null;
-let leafletMarker = null;
-let leafletCorrectMarker = null;
-let leafletLine = null;
+let mapMarkerEl = null;
+let mapMarkerObj = null;
 let geoJsonCache = null;
 let marker = null; // {lat, lng} of current pin
 let lastMatchCountries = []; // prevent duplicate match questions
@@ -1817,24 +1816,37 @@ function buildMapQ(country, area, isCapitalMap) {
   area.appendChild(container);
 
   marker = null;
+  mapMarkerEl = null; mapMarkerObj = null;
 
   setTimeout(() => {
     if (map) { map.remove(); map = null; }
-    leafletMarker = null; leafletCorrectMarker = null; leafletLine = null;
-    map = L.map('map', { zoomControl: true, attributionControl: false, maxZoom: 10 }).setView([20, 0], 2);
-    L.tileLayer('https://stamen-tiles.a.ssl.fastly.net/toner-background/{z}/{x}/{y}.png', {
-      maxZoom: 10
-    }).addTo(map);
+
+    mapboxgl.accessToken = '__MAPBOX_TOKEN__';
+    map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/mapbox/dark-v11',
+      center: [0, 20],
+      zoom: 1.5,
+      maxZoom: 10,
+      attributionControl: false,
+    });
+
+    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-left');
 
     map.on('click', e => {
       if (awaitingNext) return;
-      marker = { lat: e.latlng.lat, lng: e.latlng.lng };
-      if (leafletMarker) map.removeLayer(leafletMarker);
-      leafletMarker = L.circleMarker([e.latlng.lat, e.latlng.lng], {
-        radius: 8,
-        fillColor: currentDiff === 'jeroen' ? '#a855f7' : '#f0b429',
-        fillOpacity: 1, color: '#fff', weight: 2
-      }).addTo(map);
+      marker = { lat: e.lngLat.lat, lng: e.lngLat.lng };
+
+      // Remove old marker
+      if (mapMarkerObj) { mapMarkerObj.remove(); }
+
+      // Create pin element
+      mapMarkerEl = document.createElement('div');
+      mapMarkerEl.style.cssText = `width:16px;height:16px;border-radius:50%;background:${currentDiff==='jeroen'?'#a855f7':'#f0b429'};border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.5);`;
+      mapMarkerObj = new mapboxgl.Marker({ element: mapMarkerEl, anchor: 'center' })
+        .setLngLat([e.lngLat.lng, e.lngLat.lat])
+        .addTo(map);
+
       submitBtn.style.display = 'block';
       hint.textContent = t().ui.confirmPin;
     });
@@ -1855,15 +1867,25 @@ function submitMapAnswer(isCapitalMap) {
   const effectiveThreshold = Math.max(cfg.mapThreshold, country.extraRadius || 0);
   const correct = dist <= effectiveThreshold;
 
-  // Show correct location
-  if (leafletCorrectMarker) map.removeLayer(leafletCorrectMarker);
-  if (leafletLine) map.removeLayer(leafletLine);
-  leafletCorrectMarker = L.circleMarker([country.lat, country.lng], {
-    radius: 10, fillColor: '#22c55e', fillOpacity: 1, color: '#fff', weight: 2
-  }).addTo(map);
-  leafletLine = L.polyline([[marker.lat, marker.lng], [country.lat, country.lng]], {
-    color: '#f0b429', weight: 2, dashArray: '5,4'
-  }).addTo(map);
+  // Show correct location marker
+  const correctEl = document.createElement('div');
+  correctEl.style.cssText = 'width:20px;height:20px;border-radius:50%;background:#22c55e;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.5);';
+  new mapboxgl.Marker({ element: correctEl, anchor: 'center' })
+    .setLngLat([country.lng, country.lat])
+    .addTo(map);
+
+  // Draw line from pin to correct
+  if (map.getSource('answer-line')) {
+    map.removeLayer('answer-line-layer');
+    map.removeSource('answer-line');
+  }
+  map.addSource('answer-line', {
+    type: 'geojson',
+    data: { type: 'Feature', geometry: { type: 'LineString', coordinates: [[marker.lng, marker.lat], [country.lng, country.lat]] } }
+  });
+  map.addLayer({ id: 'answer-line-layer', type: 'line', source: 'answer-line',
+    paint: { 'line-color': '#f0b429', 'line-width': 2, 'line-dasharray': [4, 3] }
+  });
 
   document.getElementById('map-submit').style.display = 'none';
   const badge = document.getElementById('distance-badge');
