@@ -114,6 +114,32 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .lb-me { background: rgba(240,180,41,0.05) !important; }
 .lb-me.jeroen-row { background: rgba(168,85,247,0.06) !important; }
 
+/* GAME SETUP MODAL */
+.setup-step { width:28px;height:28px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--text-muted);transition:all 0.2s; }
+.setup-step.active { border-color:var(--accent);color:var(--accent);background:rgba(240,180,41,0.1); }
+.setup-step.done { border-color:var(--success);color:var(--success);background:rgba(34,197,94,0.1); }
+.setup-pane { padding:24px; }
+.setup-pane-title { font-size:13px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:16px; }
+.setup-region-grid { display:flex;gap:12px;flex-wrap:wrap; }
+.setup-region-card { flex:1;min-width:140px;background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:20px;cursor:pointer;text-align:center;transition:all 0.2s; }
+.setup-region-card:hover,.setup-region-card.selected { border-color:var(--accent); }
+.setup-region-card.selected { background:rgba(240,180,41,0.08); }
+.setup-region-icon { font-size:34px;margin-bottom:8px; }
+.setup-region-name { font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px; }
+.setup-diff-grid { display:flex;gap:10px;flex-direction:column; }
+.setup-diff-row { background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:16px 20px;cursor:pointer;display:flex;align-items:center;gap:14px;transition:all 0.2s; }
+.setup-diff-row:hover,.setup-diff-row.selected { border-color:var(--accent); }
+.setup-diff-row.selected { background:rgba(240,180,41,0.08); }
+.setup-diff-row.jeroen-row:hover,.setup-diff-row.jeroen-row.selected { border-color:var(--jeroen); }
+.setup-diff-row.jeroen-row.selected { background:rgba(168,85,247,0.08); }
+.setup-diff-icon { font-size:24px; }
+.setup-diff-name { font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px; }
+.setup-diff-desc { font-size:12px;color:var(--text-muted);margin-top:2px; }
+.setup-summary-row { display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border); }
+.setup-summary-row:last-child { border-bottom:none; }
+.setup-summary-label { font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px; }
+.setup-summary-value { font-weight:600;font-size:15px; }
+
 /* GAME */
 #game-screen { height: 100vh; max-height: 100vh; flex-direction: column; overflow: hidden; }
 .game-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: var(--surface); border-bottom: 1px solid var(--border); z-index: 10; flex-shrink: 0; gap: 10px; }
@@ -239,6 +265,12 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .admin-user-scores.open { display: flex; }
 
 /* SETTINGS */
+.settings-details { border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 12px; overflow: hidden; }
+.settings-details[open] .settings-summary { border-bottom: 1px solid var(--border); }
+.settings-summary { padding: 14px 20px; font-weight: 600; font-size: 14px; cursor: pointer; user-select: none; list-style: none; display: flex; align-items: center; justify-content: space-between; background: var(--surface2); }
+.settings-summary::-webkit-details-marker { display: none; }
+.settings-summary::after { content: '▾'; font-size: 12px; color: var(--text-muted); }
+.settings-details[open] .settings-summary::after { content: '▴'; }
 .settings-grid { padding: 20px; display: flex; flex-direction: column; gap: 20px; }
 .settings-group { border-bottom: 1px solid var(--border); padding-bottom: 20px; }
 .settings-group:last-child { border-bottom: none; padding-bottom: 0; }
@@ -384,7 +416,7 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
       </div>
     </div>
 
-    <button class="play-btn" id="play-btn" onclick="startGame()">PLAY</button>
+    <button class="play-btn" id="play-btn" onclick="openGameSetup()">NIEUW SPEL →</button>
     <div class="lb-section-header">
       <div class="lb-section-line"></div>
       <div class="lb-section-title" id="lb-section-title">🧠 Dumb Test Leaderboard</div>
@@ -409,6 +441,41 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
         <div class="leaderboard-cols"><div>#</div><div>Player</div><div style="text-align:right">Best</div><div style="text-align:right">Games</div></div>
         <div id="leaderboard-body"></div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- GAME SETUP MODAL -->
+<div id="setup-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;width:100%;max-width:560px;overflow:hidden;">
+    <div style="padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;" id="setup-title">NIEUW SPEL</div>
+      <div style="display:flex;gap:8px;" id="setup-steps">
+        <div class="setup-step active" data-step="1">1</div>
+        <div class="setup-step" data-step="2">2</div>
+        <div class="setup-step" data-step="3">3</div>
+      </div>
+    </div>
+    <!-- Step 1: Region -->
+    <div id="setup-step-1" class="setup-pane">
+      <div class="setup-pane-title" id="setup-step1-label">Kies een regio</div>
+      <div class="setup-region-grid" id="setup-region-grid"></div>
+    </div>
+    <!-- Step 2: Difficulty -->
+    <div id="setup-step-2" class="setup-pane" style="display:none">
+      <div class="setup-pane-title" id="setup-step2-label">Kies moeilijkheid</div>
+      <div class="setup-diff-grid" id="setup-diff-grid"></div>
+    </div>
+    <!-- Step 3: Confirm -->
+    <div id="setup-step-3" class="setup-pane" style="display:none">
+      <div class="setup-pane-title" id="setup-step3-label">Klaar om te spelen</div>
+      <div id="setup-summary" style="background:var(--surface2);border-radius:12px;padding:20px;margin-bottom:20px;"></div>
+      <button class="play-btn" id="setup-play-btn" onclick="confirmAndPlay()" style="width:100%;font-size:28px;padding:18px;">PLAY</button>
+    </div>
+    <div style="padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:space-between;">
+      <button class="btn btn-ghost" id="setup-back-btn" onclick="setupBack()" style="display:none">← Terug</button>
+      <div></div>
+      <button class="btn btn-ghost" onclick="closeGameSetup()">✕</button>
     </div>
   </div>
 </div>
@@ -496,87 +563,148 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
     <div class="admin-section">
       <div class="admin-section-header">
         <h3>⚙️ Game Settings</h3>
-        <p>These settings take effect immediately for all players — no redeploy needed. Changes are saved to the database and survive container restarts.</p>
+        <p>These settings take effect immediately for all players — no redeploy needed.</p>
       </div>
-      <div class="settings-grid">
-        <div class="settings-group">
-          <div class="settings-group-title">🧠 Dumb Test</div>
-          <div class="setting-row">
-            <div class="setting-label">Simple questions timer (seconds)<span>Capital, flag & continent questions. Set to 0 to disable.</span></div>
-            <input type="number" class="setting-input" id="setting-easy-timer-simple" min="0" max="120" value="5">
+
+      <details class="settings-details" open>
+        <summary class="settings-summary">⏱ Timers</summary>
+        <div class="settings-grid">
+          <div class="settings-group">
+            <div class="settings-group-title">🧠 Dumb Test</div>
+            <div class="setting-row">
+              <div class="setting-label">Simple timer (s)<span>Capital, flag & continent. 0 = off.</span></div>
+              <input type="number" class="setting-input" id="setting-easy-timer-simple" min="0" max="120" value="5">
+            </div>
+            <div class="setting-row">
+              <div class="setting-label">Match timer (s)<span>Drag & drop. 0 = off.</span></div>
+              <input type="number" class="setting-input" id="setting-easy-timer-match" min="0" max="300" value="30">
+            </div>
           </div>
-          <div class="setting-row">
-            <div class="setting-label">Match questions timer (seconds)<span>Drag & drop matching questions. Set to 0 to disable.</span></div>
-            <input type="number" class="setting-input" id="setting-easy-timer-match" min="0" max="300" value="30">
+          <div class="settings-group">
+            <div class="settings-group-title">🗺️ Medium</div>
+            <div class="setting-row">
+              <div class="setting-label">Simple timer (s)</div>
+              <input type="number" class="setting-input" id="setting-medium-timer-simple" min="0" max="120" value="0">
+            </div>
+            <div class="setting-row">
+              <div class="setting-label">Map timer (s)</div>
+              <input type="number" class="setting-input" id="setting-medium-timer-map" min="0" max="120" value="0">
+            </div>
+            <div class="setting-row">
+              <div class="setting-label">Match timer (s)</div>
+              <input type="number" class="setting-input" id="setting-medium-timer-match" min="0" max="300" value="0">
+            </div>
           </div>
-        </div>
-        <div class="settings-group">
-          <div class="settings-group-title">🗺️ Medium</div>
-          <div class="setting-row">
-            <div class="setting-label">Simple questions timer (seconds)<span>Capital, flag & continent questions. Set to 0 to disable.</span></div>
-            <input type="number" class="setting-input" id="setting-medium-timer-simple" min="0" max="120" value="0">
-          </div>
-          <div class="setting-row">
-            <div class="setting-label">Map questions timer (seconds)<span>Click-on-map questions. Set to 0 to disable.</span></div>
-            <input type="number" class="setting-input" id="setting-medium-timer-map" min="0" max="120" value="0">
-          </div>
-          <div class="setting-row">
-            <div class="setting-label">Match questions timer (seconds)<span>Drag & drop matching questions. Set to 0 to disable.</span></div>
-            <input type="number" class="setting-input" id="setting-medium-timer-match" min="0" max="300" value="0">
-          </div>
-          <div class="setting-row">
-            <div class="setting-label">Include second largest city questions<span>Ask players to identify the second largest city of a country by population.</span></div>
-            <label class="switch"><input type="checkbox" id="setting-medium-second-city" checked><span class="slider"></span></label>
-          </div>
-          <div class="setting-row">
-            <div class="setting-label">Multiple choice population questions<span>Show 4 population options instead of open answer. Recommended — open answer is very hard.</span></div>
-            <label class="switch"><input type="checkbox" id="setting-population-mc" checked><span class="slider"></span></label>
-          </div>
-        </div>
-        <div class="settings-group">
-          <div class="settings-group-title">💀 Jeroen Mode</div>
-          <div class="setting-row">
-            <div class="setting-label">Simple questions timer (seconds)<span>Capital & flag questions (typed answers). Set to 0 to disable.</span></div>
-            <input type="number" class="setting-input" id="setting-jeroen-timer-simple" min="0" max="120" value="12">
-          </div>
-          <div class="setting-row">
-            <div class="setting-label">Map questions timer (seconds)<span>Click-on-map questions. Set to 0 to disable.</span></div>
-            <input type="number" class="setting-input" id="setting-jeroen-timer-map" min="0" max="120" value="30">
-          </div>
-          <div class="setting-row">
-            <div class="setting-label">Match questions timer (seconds)<span>Drag & drop matching questions. Set to 0 to disable.</span></div>
-            <input type="number" class="setting-input" id="setting-jeroen-timer-match" min="0" max="300" value="60">
-          </div>
-          <div class="setting-row">
-            <div class="setting-label">Capital → Map timer (seconds)<span>Given a capital, click the country on the map. Set to 0 to disable.</span></div>
-            <input type="number" class="setting-input" id="setting-jeroen-timer-capitalmap" min="0" max="120" value="30">
-          </div>
-          <div class="setting-row">
-            <div class="setting-label">Map distance threshold (km)<span>How close players need to click to score. Lower = harder. Default 400km.</span></div>
-            <input type="number" class="setting-input" id="setting-jeroen-map" min="50" max="2000" value="400">
-          </div>
-          <div class="setting-row">
-            <div class="setting-label">Show historical flag label<span>Shows ⚠️ warning on old flags so players know it's no longer in use.</span></div>
-            <label class="switch"><input type="checkbox" id="setting-historical-label" checked><span class="slider"></span></label>
-          </div>
-          <div class="setting-row">
-            <div class="setting-label">Include historical flags<span>Soviet Union, Yugoslavia, East Germany etc. appear in flag questions.</span></div>
-            <label class="switch"><input type="checkbox" id="setting-historical-flags" checked><span class="slider"></span></label>
-          </div>
-          <div class="setting-row">
-            <div class="setting-label">Include historical capitals<span>Capital questions for defunct countries. Off by default — extremely hard.</span></div>
-            <label class="switch"><input type="checkbox" id="setting-historical-capitals"><span class="slider"></span></label>
-          </div>
-          <div class="setting-row">
-            <div class="setting-label">Medium population margin (%)<span>How far off a population guess can be in Medium mode. Default 20%.</span></div>
-            <input type="number" class="setting-input" id="setting-medium-pop-margin" min="1" max="50" value="20">
-          </div>
-          <div class="setting-row">
-            <div class="setting-label">Jeroen population margin (%)<span>Tighter margin for Jeroen Mode. Default 10%.</span></div>
-            <input type="number" class="setting-input" id="setting-jeroen-pop-margin" min="1" max="30" value="10">
+          <div class="settings-group">
+            <div class="settings-group-title">💀 Jeroen Mode</div>
+            <div class="setting-row">
+              <div class="setting-label">Simple timer (s)</div>
+              <input type="number" class="setting-input" id="setting-jeroen-timer-simple" min="0" max="120" value="12">
+            </div>
+            <div class="setting-row">
+              <div class="setting-label">Map timer (s)</div>
+              <input type="number" class="setting-input" id="setting-jeroen-timer-map" min="0" max="120" value="30">
+            </div>
+            <div class="setting-row">
+              <div class="setting-label">Match timer (s)</div>
+              <input type="number" class="setting-input" id="setting-jeroen-timer-match" min="0" max="300" value="60">
+            </div>
+            <div class="setting-row">
+              <div class="setting-label">Capital → Map timer (s)</div>
+              <input type="number" class="setting-input" id="setting-jeroen-timer-capitalmap" min="0" max="120" value="30">
+            </div>
           </div>
         </div>
-      </div>
+      </details>
+
+      <details class="settings-details">
+        <summary class="settings-summary">🌍 World Mode</summary>
+        <div class="settings-grid">
+          <div class="settings-group">
+            <div class="settings-group-title">Maps & Thresholds</div>
+            <div class="setting-row">
+              <div class="setting-label">Jeroen map threshold (km)<span>How close to click. Default 400km.</span></div>
+              <input type="number" class="setting-input" id="setting-jeroen-map" min="50" max="2000" value="400">
+            </div>
+          </div>
+          <div class="settings-group">
+            <div class="settings-group-title">Historical Flags</div>
+            <div class="setting-row">
+              <div class="setting-label">Show historical label<span>⚠️ warning on old flags.</span></div>
+              <label class="switch"><input type="checkbox" id="setting-historical-label" checked><span class="slider"></span></label>
+            </div>
+            <div class="setting-row">
+              <div class="setting-label">Include historical flags<span>USSR, Yugoslavia etc. in flag questions.</span></div>
+              <label class="switch"><input type="checkbox" id="setting-historical-flags" checked><span class="slider"></span></label>
+            </div>
+            <div class="setting-row">
+              <div class="setting-label">Include historical capitals<span>Capitals for defunct countries. Very hard.</span></div>
+              <label class="switch"><input type="checkbox" id="setting-historical-capitals"><span class="slider"></span></label>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="settings-details">
+        <summary class="settings-summary">📊 Question Types</summary>
+        <div class="settings-grid">
+          <div class="settings-group">
+            <div class="settings-group-title">Population Questions</div>
+            <div class="setting-row">
+              <div class="setting-label">Multiple choice<span>4 options instead of open answer. Recommended.</span></div>
+              <label class="switch"><input type="checkbox" id="setting-population-mc" checked><span class="slider"></span></label>
+            </div>
+            <div class="setting-row">
+              <div class="setting-label">Medium margin (%)<span>Allowed deviation for open population answer. Default 20%.</span></div>
+              <input type="number" class="setting-input" id="setting-medium-pop-margin" min="1" max="50" value="20">
+            </div>
+            <div class="setting-row">
+              <div class="setting-label">Jeroen margin (%)<span>Tighter margin for Jeroen. Default 10%.</span></div>
+              <input type="number" class="setting-input" id="setting-jeroen-pop-margin" min="1" max="30" value="10">
+            </div>
+          </div>
+          <div class="settings-group">
+            <div class="settings-group-title">Second Largest City</div>
+            <div class="setting-row">
+              <div class="setting-label">Include in Medium<span>Ask for second largest city by population.</span></div>
+              <label class="switch"><input type="checkbox" id="setting-medium-second-city" checked><span class="slider"></span></label>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="settings-details">
+        <summary class="settings-summary">🇳🇱 NL Mode</summary>
+        <div class="settings-grid">
+          <div class="settings-group">
+            <div class="settings-group-title">Map Thresholds (base, scaled by place size)</div>
+            <div class="setting-row">
+              <div class="setting-label">Medium base threshold (km)<span>For avg-sized places. Large cities get tighter, small villages looser. Default 15km.</span></div>
+              <input type="number" class="setting-input" id="setting-nl-medium-map" min="1" max="100" value="15">
+            </div>
+            <div class="setting-row">
+              <div class="setting-label">Jeroen base threshold (km)<span>Default 8km.</span></div>
+              <input type="number" class="setting-input" id="setting-nl-jeroen-map" min="1" max="50" value="8">
+            </div>
+          </div>
+          <div class="settings-group">
+            <div class="settings-group-title">Place Filters (min. inhabitants)</div>
+            <div class="setting-row">
+              <div class="setting-label">Medium min. inhabitants<span>Only include places with at least this many people. Default 20,000.</span></div>
+              <input type="number" class="setting-input" id="setting-nl-medium-min-pop" min="1000" max="100000" value="20000">
+            </div>
+            <div class="setting-row">
+              <div class="setting-label">Jeroen min. inhabitants<span>Default 2,000.</span></div>
+              <input type="number" class="setting-input" id="setting-nl-jeroen-min-pop" min="500" max="50000" value="2000">
+            </div>
+            <div class="setting-row">
+              <div class="setting-label">Population question min. inhabitants<span>Only ask population questions for places above this threshold. Default 5,000.</span></div>
+              <input type="number" class="setting-input" id="setting-nl-pop-min-pop" min="500" max="50000" value="5000">
+            </div>
+          </div>
+        </div>
+      </details>
+
       <div class="settings-save">
         <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
         <div class="save-success" id="save-success">✓ Settings saved!</div>
@@ -823,6 +951,542 @@ const COUNTRY_EXTRA = {
   "Venezuela":        { secondCity: "Maracaibo",        pop: 28.2,   cities: ["Maracaibo","Valencia","Barquisimeto","Ciudad Guayana","Maturín","Barcelona","Cumana","Mérida"] },
 };
 
+// ════════════════════════════════════
+// REGIONS CONFIG
+// ════════════════════════════════════
+
+const REGIONS = {
+  world: {
+    name: { nl: "Wereld", en: "World" },
+    icon: "🌍",
+    mapConfig: null, // uses world map
+  },
+  nl: {
+    name: { nl: "Nederland", en: "Netherlands" },
+    icon: "🇳🇱",
+    mapConfig: {
+      center: [5.3, 52.3],
+      zoom: 7,
+      minZoom: 6,
+      maxZoom: 13,
+      maxBounds: [[2.5, 50.5], [8.0, 53.8]],
+    },
+  },
+};
+
+// ════════════════════════════════════
+// NL DATA — CBS municipalities 2024
+// ════════════════════════════════════
+
+const NL_PROVINCES = [
+  "Noord-Holland","Zuid-Holland","Utrecht","Noord-Brabant","Gelderland",
+  "Overijssel","Friesland","Groningen","Drenthe","Zeeland","Limburg","Flevoland"
+];
+
+// Medium: ~50 largest cities (pop ≥ 50,000)
+// Jeroen: all ~110 municipalities
+const NL_PLACES = [
+  // Noord-Holland
+  {name:"Amsterdam",province:"Noord-Holland",pop:921000,lat:52.374,lng:4.890},
+  {name:"Haarlem",province:"Noord-Holland",pop:162000,lat:52.387,lng:4.646},
+  {name:"Zaanstad",province:"Noord-Holland",pop:157000,lat:52.456,lng:4.818},
+  {name:"Alkmaar",province:"Noord-Holland",pop:108000,lat:52.631,lng:4.744},
+  {name:"Westland",province:"Zuid-Holland",pop:113000,lat:51.994,lng:4.194},
+  {name:"Haarlemmermeer",province:"Noord-Holland",pop:158000,lat:52.306,lng:4.693},
+  {name:"Purmerend",province:"Noord-Holland",pop:82000,lat:52.503,lng:4.958},
+  {name:"Hoorn",province:"Noord-Holland",pop:73000,lat:52.643,lng:5.060},
+  {name:"Enkhuizen",province:"Noord-Holland",pop:18000,lat:52.702,lng:5.291},
+  {name:"Edam-Volendam",province:"Noord-Holland",pop:36000,lat:52.515,lng:5.045},
+  {name:"Velsen",province:"Noord-Holland",pop:68000,lat:52.458,lng:4.656},
+  {name:"Hilversum",province:"Noord-Holland",pop:91000,lat:52.225,lng:5.175},
+  {name:"Amstelveen",province:"Noord-Holland",pop:92000,lat:52.309,lng:4.862},
+  {name:"Den Helder",province:"Noord-Holland",pop:55000,lat:52.958,lng:4.761},
+  {name:"Texel",province:"Noord-Holland",pop:13000,lat:53.059,lng:4.797},
+  {name:"Medemblik",province:"Noord-Holland",pop:44000,lat:52.769,lng:5.104},
+  {name:"Castricum",province:"Noord-Holland",pop:35000,lat:52.548,lng:4.664},
+  // Zuid-Holland
+  {name:"Rotterdam",province:"Zuid-Holland",pop:651000,lat:51.926,lng:4.462},
+  {name:"Den Haag",province:"Zuid-Holland",pop:548000,lat:52.071,lng:4.300},
+  {name:"Leiden",province:"Zuid-Holland",pop:124000,lat:52.160,lng:4.497},
+  {name:"Dordrecht",province:"Zuid-Holland",pop:119000,lat:51.814,lng:4.669},
+  {name:"Zoetermeer",province:"Zuid-Holland",pop:124000,lat:52.058,lng:4.494},
+  {name:"Delft",province:"Zuid-Holland",pop:104000,lat:52.012,lng:4.357},
+  {name:"Alphen aan den Rijn",province:"Zuid-Holland",pop:112000,lat:52.129,lng:4.657},
+  {name:"Brielle",province:"Zuid-Holland",pop:17000,lat:51.904,lng:4.163},
+  {name:"Gouda",province:"Zuid-Holland",pop:73000,lat:52.017,lng:4.707},
+  {name:"Schiedam",province:"Zuid-Holland",pop:78000,lat:51.920,lng:4.399},
+  {name:"Vlaardingen",province:"Zuid-Holland",pop:72000,lat:51.912,lng:4.341},
+  {name:"Spijkenisse",province:"Zuid-Holland",pop:73000,lat:51.845,lng:4.327},
+  {name:"Ridderkerk",province:"Zuid-Holland",pop:46000,lat:51.867,lng:4.607},
+  {name:"Capelle aan den IJssel",province:"Zuid-Holland",pop:67000,lat:51.930,lng:4.580},
+  {name:"Pijnacker-Nootdorp",province:"Zuid-Holland",pop:56000,lat:52.018,lng:4.432},
+  {name:"Leidschendam-Voorburg",province:"Zuid-Holland",pop:76000,lat:52.079,lng:4.390},
+  {name:"Barendrecht",province:"Zuid-Holland",pop:48000,lat:51.857,lng:4.537},
+  {name:"Hellevoetsluis",province:"Zuid-Holland",pop:40000,lat:51.833,lng:4.134},
+  {name:"Goeree-Overflakkee",province:"Zuid-Holland",pop:50000,lat:51.742,lng:4.093},
+  // Utrecht
+  {name:"Utrecht",province:"Utrecht",pop:361000,lat:52.090,lng:5.121},
+  {name:"Amersfoort",province:"Utrecht",pop:157000,lat:52.156,lng:5.388},
+  {name:"Veenendaal",province:"Utrecht",pop:66000,lat:52.026,lng:5.557},
+  {name:"Nieuwegein",province:"Utrecht",pop:64000,lat:52.031,lng:5.087},
+  {name:"Zeist",province:"Utrecht",pop:65000,lat:52.092,lng:5.234},
+  {name:"Houten",province:"Utrecht",pop:49000,lat:52.025,lng:5.168},
+  {name:"IJsselstein",province:"Utrecht",pop:34000,lat:52.018,lng:5.030},
+  {name:"Woerden",province:"Utrecht",pop:52000,lat:52.087,lng:4.888},
+  {name:"Soest",province:"Utrecht",pop:46000,lat:52.177,lng:5.302},
+  {name:"Stichtse Vecht",province:"Utrecht",pop:64000,lat:52.225,lng:5.020},
+  // Noord-Brabant
+  {name:"Eindhoven",province:"Noord-Brabant",pop:237000,lat:51.441,lng:5.478},
+  {name:"Tilburg",province:"Noord-Brabant",pop:223000,lat:51.560,lng:5.083},
+  {name:"Breda",province:"Noord-Brabant",pop:184000,lat:51.586,lng:4.775},
+  {name:"'s-Hertogenbosch",province:"Noord-Brabant",pop:155000,lat:51.686,lng:5.305},
+  {name:"Helmond",province:"Noord-Brabant",pop:93000,lat:51.481,lng:5.661},
+  {name:"Oss",province:"Noord-Brabant",pop:94000,lat:51.764,lng:5.518},
+  {name:"Bergen op Zoom",province:"Noord-Brabant",pop:68000,lat:51.496,lng:4.288},
+  {name:"Roosendaal",province:"Noord-Brabant",pop:78000,lat:51.530,lng:4.465},
+  {name:"Waalwijk",province:"Noord-Brabant",pop:48000,lat:51.682,lng:5.069},
+  {name:"Meierijstad",province:"Noord-Brabant",pop:82000,lat:51.619,lng:5.444},
+  {name:"Vught",province:"Noord-Brabant",pop:27000,lat:51.657,lng:5.293},
+  {name:"Boxtel",province:"Noord-Brabant",pop:30000,lat:51.597,lng:5.334},
+  {name:"Deurne",province:"Noord-Brabant",pop:32000,lat:51.462,lng:5.800},
+  {name:"Nuenen",province:"Noord-Brabant",pop:23000,lat:51.469,lng:5.542},
+  {name:"Veldhoven",province:"Noord-Brabant",pop:45000,lat:51.417,lng:5.407},
+  {name:"Geldrop-Mierlo",province:"Noord-Brabant",pop:39000,lat:51.419,lng:5.562},
+  // Gelderland
+  {name:"Nijmegen",province:"Gelderland",pop:178000,lat:51.843,lng:5.855},
+  {name:"Arnhem",province:"Gelderland",pop:163000,lat:51.985,lng:5.899},
+  {name:"Apeldoorn",province:"Gelderland",pop:163000,lat:52.212,lng:5.969},
+  {name:"Ede",province:"Gelderland",pop:117000,lat:52.043,lng:5.661},
+  {name:"Doetinchem",province:"Gelderland",pop:57000,lat:51.966,lng:6.296},
+  {name:"Harderwijk",province:"Gelderland",pop:46000,lat:52.341,lng:5.621},
+  {name:"Zutphen",province:"Gelderland",pop:48000,lat:52.139,lng:6.197},
+  {name:"Wageningen",province:"Gelderland",pop:38000,lat:51.970,lng:5.665},
+  {name:"Tiel",province:"Gelderland",pop:41000,lat:51.887,lng:5.430},
+  {name:"Winterswijk",province:"Gelderland",pop:29000,lat:51.972,lng:6.718},
+  {name:"Zevenaar",province:"Gelderland",pop:33000,lat:51.926,lng:6.073},
+  {name:"Barneveld",province:"Gelderland",pop:60000,lat:52.145,lng:5.589},
+  {name:"Buren",province:"Gelderland",pop:27000,lat:51.924,lng:5.345},
+  // Overijssel
+  {name:"Enschede",province:"Overijssel",pop:158000,lat:52.223,lng:6.896},
+  {name:"Zwolle",province:"Overijssel",pop:131000,lat:52.515,lng:6.100},
+  {name:"Deventer",province:"Overijssel",pop:100000,lat:52.255,lng:6.161},
+  {name:"Almelo",province:"Overijssel",pop:72000,lat:52.356,lng:6.664},
+  {name:"Hengelo",province:"Overijssel",pop:80000,lat:52.265,lng:6.793},
+  {name:"Kampen",province:"Overijssel",pop:53000,lat:52.555,lng:5.909},
+  {name:"Oldenzaal",province:"Overijssel",pop:32000,lat:52.312,lng:6.927},
+  {name:"Borne",province:"Overijssel",pop:22000,lat:52.302,lng:6.748},
+  {name:"Hardenberg",province:"Overijssel",pop:60000,lat:52.578,lng:6.618},
+  {name:"Steenwijk",province:"Overijssel",pop:43000,lat:52.786,lng:6.117},
+  // Friesland
+  {name:"Leeuwarden",province:"Friesland",pop:123000,lat:53.202,lng:5.800},
+  {name:"Súdwest-Fryslân",province:"Friesland",pop:90000,lat:52.971,lng:5.658},
+  {name:"Smallingerland",province:"Friesland",pop:56000,lat:53.111,lng:6.101},
+  {name:"Heerenveen",province:"Friesland",pop:50000,lat:52.959,lng:5.920},
+  {name:"Waadhoeke",province:"Friesland",pop:47000,lat:53.177,lng:5.511},
+  {name:"Noardeast-Fryslân",province:"Friesland",pop:45000,lat:53.325,lng:5.995},
+  // Groningen
+  {name:"Groningen",province:"Groningen",pop:233000,lat:53.219,lng:6.567},
+  {name:"Westerkwartier",province:"Groningen",pop:62000,lat:53.198,lng:6.340},
+  {name:"Veendam",province:"Groningen",pop:27000,lat:53.101,lng:6.877},
+  {name:"Stadskanaal",province:"Groningen",pop:32000,lat:52.984,lng:6.952},
+  {name:"Oldambt",province:"Groningen",pop:38000,lat:53.187,lng:7.050},
+  {name:"Midden-Groningen",province:"Groningen",pop:61000,lat:53.108,lng:6.733},
+  // Drenthe
+  {name:"Emmen",province:"Drenthe",pop:108000,lat:52.787,lng:6.899},
+  {name:"Assen",province:"Drenthe",pop:68000,lat:52.993,lng:6.563},
+  {name:"Hoogeveen",province:"Drenthe",pop:55000,lat:52.727,lng:6.479},
+  {name:"Meppel",province:"Drenthe",pop:34000,lat:52.696,lng:6.194},
+  {name:"Coevorden",province:"Drenthe",pop:35000,lat:52.660,lng:6.742},
+  {name:"De Wolden",province:"Drenthe",pop:24000,lat:52.647,lng:6.326},
+  {name:"Westerveld",province:"Drenthe",pop:19000,lat:52.816,lng:6.290},
+  // Zeeland
+  {name:"Middelburg",province:"Zeeland",pop:48000,lat:51.499,lng:3.614},
+  {name:"Vlissingen",province:"Zeeland",pop:45000,lat:51.443,lng:3.572},
+  {name:"Terneuzen",province:"Zeeland",pop:54000,lat:51.335,lng:3.829},
+  {name:"Goes",province:"Zeeland",pop:37000,lat:51.506,lng:3.888},
+  {name:"Bergen op Zoom (Zeeland)",province:"Zeeland",pop:29000,lat:51.671,lng:4.123},
+  {name:"Schouwen-Duiveland",province:"Zeeland",pop:34000,lat:51.707,lng:3.851},
+  {name:"Tholen",province:"Zeeland",pop:26000,lat:51.531,lng:4.214},
+  // Limburg
+  {name:"Maastricht",province:"Limburg",pop:121000,lat:50.851,lng:5.690},
+  {name:"Venlo",province:"Limburg",pop:101000,lat:51.370,lng:6.168},
+  {name:"Heerlen",province:"Limburg",pop:86000,lat:50.889,lng:5.979},
+  {name:"Sittard-Geleen",province:"Limburg",pop:93000,lat:51.000,lng:5.870},
+  {name:"Roermond",province:"Limburg",pop:57000,lat:51.193,lng:5.988},
+  {name:"Weert",province:"Limburg",pop:49000,lat:51.252,lng:5.707},
+  {name:"Valkenburg aan de Geul",province:"Limburg",pop:17000,lat:50.866,lng:5.833},
+  {name:"Kerkrade",province:"Limburg",pop:46000,lat:50.867,lng:6.059},
+  {name:"Landgraaf",province:"Limburg",pop:37000,lat:50.901,lng:6.023},
+  {name:"Brunssum",province:"Limburg",pop:29000,lat:50.950,lng:5.976},
+  // Flevoland
+  {name:"Almere",province:"Flevoland",pop:213000,lat:52.370,lng:5.217},
+  {name:"Lelystad",province:"Flevoland",pop:77000,lat:52.519,lng:5.471},
+  {name:"Dronten",province:"Flevoland",pop:41000,lat:52.524,lng:5.716},
+  {name:"Noordoostpolder",province:"Flevoland",pop:47000,lat:52.713,lng:5.850},
+  {name:"Urk",province:"Flevoland",pop:21000,lat:52.663,lng:5.601},
+  {name:"Zeewolde",province:"Flevoland",pop:22000,lat:52.331,lng:5.541},
+];
+
+const NL_PLACES = [
+  // Noord-Holland
+  {name:"Amsterdam",gemeente:"Amsterdam",province:"Noord-Holland",pop:921000,lat:52.374,lng:4.890},
+  {name:"Haarlem",gemeente:"Haarlem",province:"Noord-Holland",pop:162000,lat:52.387,lng:4.646},
+  {name:"Zaandam",gemeente:"Zaanstad",province:"Noord-Holland",pop:76000,lat:52.439,lng:4.813},
+  {name:"Alkmaar",gemeente:"Alkmaar",province:"Noord-Holland",pop:108000,lat:52.631,lng:4.744},
+  {name:"Purmerend",gemeente:"Purmerend",province:"Noord-Holland",pop:82000,lat:52.503,lng:4.958},
+  {name:"Hoorn",gemeente:"Hoorn",province:"Noord-Holland",pop:73000,lat:52.643,lng:5.060},
+  {name:"Amstelveen",gemeente:"Amstelveen",province:"Noord-Holland",pop:92000,lat:52.309,lng:4.862},
+  {name:"Hilversum",gemeente:"Hilversum",province:"Noord-Holland",pop:91000,lat:52.225,lng:5.175},
+  {name:"Den Helder",gemeente:"Den Helder",province:"Noord-Holland",pop:55000,lat:52.958,lng:4.761},
+  {name:"Hoofddorp",gemeente:"Haarlemmermeer",province:"Noord-Holland",pop:82000,lat:52.302,lng:4.690},
+  {name:"Nieuw-Vennep",gemeente:"Haarlemmermeer",province:"Noord-Holland",pop:30000,lat:52.262,lng:4.640},
+  {name:"Heerhugowaard",gemeente:"Dijk en Waard",province:"Noord-Holland",pop:58000,lat:52.669,lng:4.843},
+  {name:"Langedijk",gemeente:"Dijk en Waard",province:"Noord-Holland",pop:27000,lat:52.685,lng:4.800},
+  {name:"IJmuiden",gemeente:"Velsen",province:"Noord-Holland",pop:25000,lat:52.461,lng:4.618},
+  {name:"Beverwijk",gemeente:"Beverwijk",province:"Noord-Holland",pop:41000,lat:52.487,lng:4.658},
+  {name:"Castricum",gemeente:"Castricum",province:"Noord-Holland",pop:35000,lat:52.548,lng:4.664},
+  {name:"Enkhuizen",gemeente:"Enkhuizen",province:"Noord-Holland",pop:18000,lat:52.702,lng:5.291},
+  {name:"Volendam",gemeente:"Edam-Volendam",province:"Noord-Holland",pop:22000,lat:52.497,lng:5.072},
+  {name:"Edam",gemeente:"Edam-Volendam",province:"Noord-Holland",pop:7500,lat:52.516,lng:5.047},
+  {name:"Bussum",gemeente:"Gooise Meren",province:"Noord-Holland",pop:33000,lat:52.275,lng:5.163},
+  {name:"Naarden",gemeente:"Gooise Meren",province:"Noord-Holland",pop:17500,lat:52.299,lng:5.162},
+  {name:"Muiden",gemeente:"Gooise Meren",province:"Noord-Holland",pop:6800,lat:52.333,lng:5.074},
+  {name:"Weesp",gemeente:"Amsterdam",province:"Noord-Holland",pop:19000,lat:52.308,lng:5.043},
+  {name:"Medemblik",gemeente:"Medemblik",province:"Noord-Holland",pop:9000,lat:52.769,lng:5.104},
+  {name:"Schagen",gemeente:"Schagen",province:"Noord-Holland",pop:19000,lat:52.788,lng:4.800},
+  {name:"Anna Paulowna",gemeente:"Hollands Kroon",province:"Noord-Holland",pop:6000,lat:52.863,lng:4.836},
+  {name:"Texel",gemeente:"Texel",province:"Noord-Holland",pop:7500,lat:53.059,lng:4.797},
+  {name:"Marken",gemeente:"Waterland",province:"Noord-Holland",pop:2000,lat:52.455,lng:5.103},
+  {name:"Monnickendam",gemeente:"Waterland",province:"Noord-Holland",pop:9000,lat:52.457,lng:5.041},
+  {name:"Egmond aan Zee",gemeente:"Bergen",province:"Noord-Holland",pop:4500,lat:52.618,lng:4.630},
+  {name:"Bergen",gemeente:"Bergen",province:"Noord-Holland",pop:14000,lat:52.670,lng:4.697},
+  {name:"Heiloo",gemeente:"Heiloo",province:"Noord-Holland",pop:24000,lat:52.601,lng:4.700},
+  {name:"Wognum",gemeente:"Medemblik",province:"Noord-Holland",pop:4500,lat:52.721,lng:5.025},
+  {name:"Broek in Waterland",gemeente:"Waterland",province:"Noord-Holland",pop:3000,lat:52.435,lng:4.999},
+  {name:"Uithoorn",gemeente:"Uithoorn",province:"Noord-Holland",pop:29000,lat:52.240,lng:4.831},
+  {name:"Aalsmeer",gemeente:"Aalsmeer",province:"Noord-Holland",pop:32000,lat:52.263,lng:4.762},
+  {name:"Diemen",gemeente:"Diemen",province:"Noord-Holland",pop:30000,lat:52.341,lng:4.960},
+  {name:"Zaandijk",gemeente:"Zaanstad",province:"Noord-Holland",pop:11000,lat:52.470,lng:4.812},
+  {name:"Koog aan de Zaan",gemeente:"Zaanstad",province:"Noord-Holland",pop:10000,lat:52.463,lng:4.819},
+  // Zuid-Holland
+  {name:"Rotterdam",gemeente:"Rotterdam",province:"Zuid-Holland",pop:651000,lat:51.926,lng:4.462},
+  {name:"Den Haag",gemeente:"Den Haag",province:"Zuid-Holland",pop:548000,lat:52.071,lng:4.300},
+  {name:"Leiden",gemeente:"Leiden",province:"Zuid-Holland",pop:124000,lat:52.160,lng:4.497},
+  {name:"Dordrecht",gemeente:"Dordrecht",province:"Zuid-Holland",pop:119000,lat:51.814,lng:4.669},
+  {name:"Zoetermeer",gemeente:"Zoetermeer",province:"Zuid-Holland",pop:124000,lat:52.058,lng:4.494},
+  {name:"Delft",gemeente:"Delft",province:"Zuid-Holland",pop:104000,lat:52.012,lng:4.357},
+  {name:"Alphen aan den Rijn",gemeente:"Alphen aan den Rijn",province:"Zuid-Holland",pop:78000,lat:52.129,lng:4.657},
+  {name:"Gouda",gemeente:"Gouda",province:"Zuid-Holland",pop:73000,lat:52.017,lng:4.707},
+  {name:"Schiedam",gemeente:"Schiedam",province:"Zuid-Holland",pop:78000,lat:51.920,lng:4.399},
+  {name:"Vlaardingen",gemeente:"Vlaardingen",province:"Zuid-Holland",pop:72000,lat:51.912,lng:4.341},
+  {name:"Capelle aan den IJssel",gemeente:"Capelle aan den IJssel",province:"Zuid-Holland",pop:67000,lat:51.930,lng:4.580},
+  {name:"Ridderkerk",gemeente:"Ridderkerk",province:"Zuid-Holland",pop:46000,lat:51.867,lng:4.607},
+  {name:"Barendrecht",gemeente:"Barendrecht",province:"Zuid-Holland",pop:48000,lat:51.857,lng:4.537},
+  {name:"Spijkenisse",gemeente:"Nissewaard",province:"Zuid-Holland",pop:73000,lat:51.845,lng:4.327},
+  {name:"Hellevoetsluis",gemeente:"Voorne aan Zee",province:"Zuid-Holland",pop:40000,lat:51.833,lng:4.134},
+  {name:"Brielle",gemeente:"Voorne aan Zee",province:"Zuid-Holland",pop:16000,lat:51.904,lng:4.163},
+  {name:"Leidschendam",gemeente:"Leidschendam-Voorburg",province:"Zuid-Holland",pop:43000,lat:52.090,lng:4.393},
+  {name:"Voorburg",gemeente:"Leidschendam-Voorburg",province:"Zuid-Holland",pop:40000,lat:52.072,lng:4.369},
+  {name:"Rijswijk",gemeente:"Rijswijk",province:"Zuid-Holland",pop:57000,lat:52.040,lng:4.323},
+  {name:"Pijnacker",gemeente:"Pijnacker-Nootdorp",province:"Zuid-Holland",pop:30000,lat:52.018,lng:4.432},
+  {name:"Waddinxveen",gemeente:"Waddinxveen",province:"Zuid-Holland",pop:32000,lat:52.046,lng:4.657},
+  {name:"Gorinchem",gemeente:"Gorinchem",province:"Zuid-Holland",pop:35000,lat:51.835,lng:4.975},
+  {name:"Sliedrecht",gemeente:"Sliedrecht",province:"Zuid-Holland",pop:25000,lat:51.822,lng:4.773},
+  {name:"Papendrecht",gemeente:"Papendrecht",province:"Zuid-Holland",pop:32000,lat:51.835,lng:4.701},
+  {name:"Zwijndrecht",gemeente:"Zwijndrecht",province:"Zuid-Holland",pop:44000,lat:51.818,lng:4.637},
+  {name:"Hoek van Holland",gemeente:"Rotterdam",province:"Zuid-Holland",pop:10000,lat:51.976,lng:4.133},
+  {name:"Scheveningen",gemeente:"Den Haag",province:"Zuid-Holland",pop:33000,lat:52.106,lng:4.273},
+  {name:"Wassenaar",gemeente:"Wassenaar",province:"Zuid-Holland",pop:26000,lat:52.145,lng:4.400},
+  {name:"Katwijk",gemeente:"Katwijk",province:"Zuid-Holland",pop:65000,lat:52.202,lng:4.408},
+  {name:"Noordwijk",gemeente:"Noordwijk",province:"Zuid-Holland",pop:43000,lat:52.238,lng:4.454},
+  {name:"Lisse",gemeente:"Lisse",province:"Zuid-Holland",pop:23000,lat:52.257,lng:4.558},
+  {name:"Bodegraven",gemeente:"Bodegraven-Reeuwijk",province:"Zuid-Holland",pop:23000,lat:52.085,lng:4.753},
+  {name:"Oudewater",gemeente:"Oudewater",province:"Zuid-Holland",pop:10000,lat:52.027,lng:4.871},
+  {name:"Schoonhoven",gemeente:"Krimpenerwaard",province:"Zuid-Holland",pop:12000,lat:51.944,lng:4.851},
+  {name:"Goeree",gemeente:"Goeree-Overflakkee",province:"Zuid-Holland",pop:13000,lat:51.816,lng:3.997},
+  {name:"Middelharnis",gemeente:"Goeree-Overflakkee",province:"Zuid-Holland",pop:10500,lat:51.753,lng:4.173},
+  {name:"Hendrik-Ido-Ambacht",gemeente:"Hendrik-Ido-Ambacht",province:"Zuid-Holland",pop:32000,lat:51.848,lng:4.628},
+  // Utrecht
+  {name:"Utrecht",gemeente:"Utrecht",province:"Utrecht",pop:361000,lat:52.090,lng:5.121},
+  {name:"Amersfoort",gemeente:"Amersfoort",province:"Utrecht",pop:157000,lat:52.156,lng:5.388},
+  {name:"Veenendaal",gemeente:"Veenendaal",province:"Utrecht",pop:66000,lat:52.026,lng:5.557},
+  {name:"Nieuwegein",gemeente:"Nieuwegein",province:"Utrecht",pop:64000,lat:52.031,lng:5.087},
+  {name:"Zeist",gemeente:"Zeist",province:"Utrecht",pop:65000,lat:52.092,lng:5.234},
+  {name:"Houten",gemeente:"Houten",province:"Utrecht",pop:49000,lat:52.025,lng:5.168},
+  {name:"Woerden",gemeente:"Woerden",province:"Utrecht",pop:52000,lat:52.087,lng:4.888},
+  {name:"Soest",gemeente:"Soest",province:"Utrecht",pop:46000,lat:52.177,lng:5.302},
+  {name:"IJsselstein",gemeente:"IJsselstein",province:"Utrecht",pop:34000,lat:52.018,lng:5.030},
+  {name:"Bunschoten-Spakenburg",gemeente:"Bunschoten",province:"Utrecht",pop:22000,lat:52.252,lng:5.378},
+  {name:"Baarn",gemeente:"Baarn",province:"Utrecht",pop:24000,lat:52.208,lng:5.286},
+  {name:"Bilthoven",gemeente:"De Bilt",province:"Utrecht",pop:16000,lat:52.128,lng:5.200},
+  {name:"De Bilt",gemeente:"De Bilt",province:"Utrecht",pop:14000,lat:52.108,lng:5.179},
+  {name:"Maarssen",gemeente:"Stichtse Vecht",province:"Utrecht",pop:20000,lat:52.136,lng:5.043},
+  {name:"Breukelen",gemeente:"Stichtse Vecht",province:"Utrecht",pop:8000,lat:52.174,lng:4.998},
+  {name:"Abcoude",gemeente:"De Ronde Venen",province:"Utrecht",pop:8500,lat:52.277,lng:4.978},
+  {name:"Mijdrecht",gemeente:"De Ronde Venen",province:"Utrecht",pop:14000,lat:52.217,lng:4.868},
+  {name:"Doorn",gemeente:"Utrechtse Heuvelrug",province:"Utrecht",pop:10000,lat:52.031,lng:5.347},
+  {name:"Driebergen",gemeente:"Utrechtse Heuvelrug",province:"Utrecht",pop:19000,lat:52.060,lng:5.296},
+  {name:"Wijk bij Duurstede",gemeente:"Wijk bij Duurstede",province:"Utrecht",pop:23000,lat:51.978,lng:5.337},
+  {name:"Rhenen",gemeente:"Rhenen",province:"Utrecht",pop:20000,lat:51.959,lng:5.567},
+  {name:"Lopik",gemeente:"Lopik",province:"Utrecht",pop:14000,lat:51.978,lng:4.954},
+  // Noord-Brabant
+  {name:"Eindhoven",gemeente:"Eindhoven",province:"Noord-Brabant",pop:237000,lat:51.441,lng:5.478},
+  {name:"Tilburg",gemeente:"Tilburg",province:"Noord-Brabant",pop:223000,lat:51.560,lng:5.083},
+  {name:"Breda",gemeente:"Breda",province:"Noord-Brabant",pop:184000,lat:51.586,lng:4.775},
+  {name:"'s-Hertogenbosch",gemeente:"'s-Hertogenbosch",province:"Noord-Brabant",pop:155000,lat:51.686,lng:5.305},
+  {name:"Helmond",gemeente:"Helmond",province:"Noord-Brabant",pop:93000,lat:51.481,lng:5.661},
+  {name:"Oss",gemeente:"Oss",province:"Noord-Brabant",pop:94000,lat:51.764,lng:5.518},
+  {name:"Bergen op Zoom",gemeente:"Bergen op Zoom",province:"Noord-Brabant",pop:68000,lat:51.496,lng:4.288},
+  {name:"Roosendaal",gemeente:"Roosendaal",province:"Noord-Brabant",pop:78000,lat:51.530,lng:4.465},
+  {name:"Waalwijk",gemeente:"Waalwijk",province:"Noord-Brabant",pop:48000,lat:51.682,lng:5.069},
+  {name:"Veldhoven",gemeente:"Veldhoven",province:"Noord-Brabant",pop:45000,lat:51.417,lng:5.407},
+  {name:"Sint-Michielsgestel",gemeente:"Sint-Michielsgestel",province:"Noord-Brabant",pop:29000,lat:51.638,lng:5.352},
+  {name:"Vught",gemeente:"Vught",province:"Noord-Brabant",pop:27000,lat:51.657,lng:5.293},
+  {name:"Boxtel",gemeente:"Boxtel",province:"Noord-Brabant",pop:30000,lat:51.597,lng:5.334},
+  {name:"Deurne",gemeente:"Deurne",province:"Noord-Brabant",pop:32000,lat:51.462,lng:5.800},
+  {name:"Nuenen",gemeente:"Nuenen",province:"Noord-Brabant",pop:23000,lat:51.469,lng:5.542},
+  {name:"Geldrop",gemeente:"Geldrop-Mierlo",province:"Noord-Brabant",pop:27000,lat:51.423,lng:5.559},
+  {name:"Mierlo",gemeente:"Geldrop-Mierlo",province:"Noord-Brabant",pop:12000,lat:51.444,lng:5.627},
+  {name:"Valkenswaard",gemeente:"Valkenswaard",province:"Noord-Brabant",pop:31000,lat:51.351,lng:5.460},
+  {name:"Eersel",gemeente:"Eersel",province:"Noord-Brabant",pop:19000,lat:51.361,lng:5.322},
+  {name:"Bladel",gemeente:"Bladel",province:"Noord-Brabant",pop:19000,lat:51.366,lng:5.217},
+  {name:"Sint-Oedenrode",gemeente:"Meierijstad",province:"Noord-Brabant",pop:18000,lat:51.567,lng:5.457},
+  {name:"Veghel",gemeente:"Meierijstad",province:"Noord-Brabant",pop:38000,lat:51.616,lng:5.551},
+  {name:"Uden",gemeente:"Maashorst",province:"Noord-Brabant",pop:43000,lat:51.659,lng:5.614},
+  {name:"Nistelrode",gemeente:"Bernheze",province:"Noord-Brabant",pop:5000,lat:51.699,lng:5.546},
+  {name:"Grave",gemeente:"Land van Cuijk",province:"Noord-Brabant",pop:13000,lat:51.759,lng:5.738},
+  {name:"Cuijk",gemeente:"Land van Cuijk",province:"Noord-Brabant",pop:14000,lat:51.731,lng:5.879},
+  {name:"Geertruidenberg",gemeente:"Geertruidenberg",province:"Noord-Brabant",pop:22000,lat:51.699,lng:4.853},
+  {name:"Oosterhout",gemeente:"Oosterhout",province:"Noord-Brabant",pop:56000,lat:51.641,lng:4.861},
+  {name:"Dongen",gemeente:"Dongen",province:"Noord-Brabant",pop:26000,lat:51.626,lng:4.938},
+  {name:"Gilze",gemeente:"Gilze en Rijen",province:"Noord-Brabant",pop:12000,lat:51.550,lng:4.935},
+  {name:"Rijen",gemeente:"Gilze en Rijen",province:"Noord-Brabant",pop:14000,lat:51.588,lng:4.917},
+  {name:"Kaatsheuvel",gemeente:"Loon op Zand",province:"Noord-Brabant",pop:14000,lat:51.656,lng:5.054},
+  {name:"Drunen",gemeente:"Heusden",province:"Noord-Brabant",pop:14000,lat:51.685,lng:5.139},
+  {name:"Heusden",gemeente:"Heusden",province:"Noord-Brabant",pop:3000,lat:51.726,lng:5.146},
+  {name:"Steenbergen",gemeente:"Steenbergen",province:"Noord-Brabant",pop:24000,lat:51.589,lng:4.306},
+  {name:"Etten-Leur",gemeente:"Etten-Leur",province:"Noord-Brabant",pop:44000,lat:51.566,lng:4.639},
+  {name:"Zundert",gemeente:"Zundert",province:"Noord-Brabant",pop:22000,lat:51.471,lng:4.656},
+  {name:"Halderberge",gemeente:"Halderberge",province:"Noord-Brabant",pop:29000,lat:51.571,lng:4.451},
+  {name:"Oudenbosch",gemeente:"Halderberge",province:"Noord-Brabant",pop:11000,lat:51.593,lng:4.522},
+  // Gelderland
+  {name:"Nijmegen",gemeente:"Nijmegen",province:"Gelderland",pop:178000,lat:51.843,lng:5.855},
+  {name:"Arnhem",gemeente:"Arnhem",province:"Gelderland",pop:163000,lat:51.985,lng:5.899},
+  {name:"Apeldoorn",gemeente:"Apeldoorn",province:"Gelderland",pop:163000,lat:52.212,lng:5.969},
+  {name:"Ede",gemeente:"Ede",province:"Gelderland",pop:70000,lat:52.043,lng:5.661},
+  {name:"Doetinchem",gemeente:"Doetinchem",province:"Gelderland",pop:57000,lat:51.966,lng:6.296},
+  {name:"Harderwijk",gemeente:"Harderwijk",province:"Gelderland",pop:46000,lat:52.341,lng:5.621},
+  {name:"Zutphen",gemeente:"Zutphen",province:"Gelderland",pop:48000,lat:52.139,lng:6.197},
+  {name:"Wageningen",gemeente:"Wageningen",province:"Gelderland",pop:38000,lat:51.970,lng:5.665},
+  {name:"Tiel",gemeente:"Tiel",province:"Gelderland",pop:41000,lat:51.887,lng:5.430},
+  {name:"Barneveld",gemeente:"Barneveld",province:"Gelderland",pop:30000,lat:52.145,lng:5.589},
+  {name:"Winterswijk",gemeente:"Winterswijk",province:"Gelderland",pop:29000,lat:51.972,lng:6.718},
+  {name:"Zevenaar",gemeente:"Zevenaar",province:"Gelderland",pop:33000,lat:51.926,lng:6.073},
+  {name:"Bemmel",gemeente:"Lingewaard",province:"Gelderland",pop:18000,lat:51.892,lng:5.892},
+  {name:"Huissen",gemeente:"Lingewaard",province:"Gelderland",pop:16000,lat:51.940,lng:5.944},
+  {name:"Gennep",gemeente:"Gennep",province:"Gelderland",pop:17000,lat:51.698,lng:5.974},
+  {name:"Buren",gemeente:"Buren",province:"Gelderland",pop:3000,lat:51.924,lng:5.346},
+  {name:"Culemborg",gemeente:"Culemborg",province:"Gelderland",pop:29000,lat:51.950,lng:5.227},
+  {name:"Lochem",gemeente:"Lochem",province:"Gelderland",pop:10000,lat:52.161,lng:6.413},
+  {name:"Bronkhorst",gemeente:"Bronckhorst",province:"Gelderland",pop:1200,lat:52.000,lng:6.175},
+  {name:"Montferland",gemeente:"Montferland",province:"Gelderland",pop:10000,lat:51.900,lng:6.200},
+  {name:"Didam",gemeente:"Montferland",province:"Gelderland",pop:12000,lat:51.939,lng:6.128},
+  {name:"Elst",gemeente:"Overbetuwe",province:"Gelderland",pop:23000,lat:51.916,lng:5.848},
+  {name:"Druten",gemeente:"Druten",province:"Gelderland",pop:18000,lat:51.882,lng:5.604},
+  {name:"Beuningen",gemeente:"Beuningen",province:"Gelderland",pop:25000,lat:51.858,lng:5.773},
+  {name:"Wijchen",gemeente:"Wijchen",province:"Gelderland",pop:41000,lat:51.804,lng:5.728},
+  {name:"Westervoort",gemeente:"Westervoort",province:"Gelderland",pop:15000,lat:51.961,lng:5.977},
+  {name:"Hattem",gemeente:"Hattem",province:"Gelderland",pop:12000,lat:52.475,lng:6.064},
+  {name:"Heerde",gemeente:"Heerde",province:"Gelderland",pop:18000,lat:52.395,lng:6.041},
+  {name:"Epe",gemeente:"Epe",province:"Gelderland",pop:12000,lat:52.350,lng:5.982},
+  {name:"Nunspeet",gemeente:"Nunspeet",province:"Gelderland",pop:17000,lat:52.370,lng:5.780},
+  {name:"Ermelo",gemeente:"Ermelo",province:"Gelderland",pop:26000,lat:52.305,lng:5.623},
+  {name:"Putten",gemeente:"Putten",province:"Gelderland",pop:24000,lat:52.257,lng:5.597},
+  {name:"Doornspijk",gemeente:"Elburg",province:"Gelderland",pop:5000,lat:52.398,lng:5.764},
+  {name:"Elburg",gemeente:"Elburg",province:"Gelderland",pop:12000,lat:52.442,lng:5.836},
+  {name:"Oldebroek",gemeente:"Oldebroek",province:"Gelderland",pop:9000,lat:52.449,lng:5.905},
+  {name:"Giethoorn",gemeente:"Steenwijkerland",province:"Overijssel",pop:2600,lat:52.724,lng:6.075},
+  // Overijssel
+  {name:"Enschede",gemeente:"Enschede",province:"Overijssel",pop:158000,lat:52.223,lng:6.896},
+  {name:"Zwolle",gemeente:"Zwolle",province:"Overijssel",pop:131000,lat:52.515,lng:6.100},
+  {name:"Deventer",gemeente:"Deventer",province:"Overijssel",pop:100000,lat:52.255,lng:6.161},
+  {name:"Almelo",gemeente:"Almelo",province:"Overijssel",pop:72000,lat:52.356,lng:6.664},
+  {name:"Hengelo",gemeente:"Hengelo",province:"Overijssel",pop:80000,lat:52.265,lng:6.793},
+  {name:"Kampen",gemeente:"Kampen",province:"Overijssel",pop:53000,lat:52.555,lng:5.909},
+  {name:"Oldenzaal",gemeente:"Oldenzaal",province:"Overijssel",pop:32000,lat:52.312,lng:6.927},
+  {name:"Borne",gemeente:"Borne",province:"Overijssel",pop:22000,lat:52.302,lng:6.748},
+  {name:"Hardenberg",gemeente:"Hardenberg",province:"Overijssel",pop:20000,lat:52.578,lng:6.618},
+  {name:"Steenwijk",gemeente:"Steenwijkerland",province:"Overijssel",pop:24000,lat:52.786,lng:6.117},
+  {name:"Ommen",gemeente:"Ommen",province:"Overijssel",pop:10000,lat:52.516,lng:6.423},
+  {name:"Raalte",gemeente:"Raalte",province:"Overijssel",pop:16000,lat:52.389,lng:6.276},
+  {name:"Rijssen",gemeente:"Rijssen-Holten",province:"Overijssel",pop:24000,lat:52.304,lng:6.520},
+  {name:"Holten",gemeente:"Rijssen-Holten",province:"Overijssel",pop:10000,lat:52.281,lng:6.428},
+  {name:"Wierden",gemeente:"Wierden",province:"Overijssel",pop:14000,lat:52.360,lng:6.593},
+  {name:"Vriezenveen",gemeente:"Twenterand",province:"Overijssel",pop:13000,lat:52.403,lng:6.622},
+  {name:"Den Ham",gemeente:"Twenterand",province:"Overijssel",pop:5000,lat:52.463,lng:6.498},
+  {name:"Tubbergen",gemeente:"Tubbergen",province:"Overijssel",pop:6000,lat:52.404,lng:6.779},
+  {name:"Losser",gemeente:"Losser",province:"Overijssel",pop:10000,lat:52.262,lng:7.003},
+  {name:"Denekamp",gemeente:"Dinkelland",province:"Overijssel",pop:8000,lat:52.380,lng:7.000},
+  {name:"Weerselo",gemeente:"Dinkelland",province:"Overijssel",pop:5000,lat:52.344,lng:6.888},
+  {name:"Vroomshoop",gemeente:"Twenterand",province:"Overijssel",pop:7500,lat:52.450,lng:6.573},
+  {name:"Dalfsen",gemeente:"Dalfsen",province:"Overijssel",pop:9000,lat:52.500,lng:6.259},
+  {name:"Nieuwleusen",gemeente:"Dalfsen",province:"Overijssel",pop:7000,lat:52.567,lng:6.393},
+  {name:"Zwartsluis",gemeente:"Zwartewaterland",province:"Overijssel",pop:4500,lat:52.644,lng:6.070},
+  {name:"Hasselt",gemeente:"Zwartewaterland",province:"Overijssel",pop:7500,lat:52.598,lng:6.093},
+  {name:"Blokzijl",gemeente:"Steenwijkerland",province:"Overijssel",pop:1600,lat:52.726,lng:5.966},
+  // Friesland
+  {name:"Leeuwarden",gemeente:"Leeuwarden",province:"Friesland",pop:123000,lat:53.202,lng:5.800},
+  {name:"Sneek",gemeente:"Súdwest-Fryslân",province:"Friesland",pop:33000,lat:53.033,lng:5.659},
+  {name:"Drachten",gemeente:"Smallingerland",province:"Friesland",pop:44000,lat:53.111,lng:6.101},
+  {name:"Heerenveen",gemeente:"Heerenveen",province:"Friesland",pop:43000,lat:52.959,lng:5.920},
+  {name:"Franeker",gemeente:"Waadhoeke",province:"Friesland",pop:13000,lat:53.187,lng:5.542},
+  {name:"Dokkum",gemeente:"Noardeast-Fryslân",province:"Friesland",pop:13000,lat:53.325,lng:5.995},
+  {name:"Harlingen",gemeente:"Harlingen",province:"Friesland",pop:16000,lat:53.174,lng:5.424},
+  {name:"Bolsward",gemeente:"Súdwest-Fryslân",province:"Friesland",pop:10000,lat:53.065,lng:5.529},
+  {name:"Joure",gemeente:"De Friese Meren",province:"Friesland",pop:13000,lat:52.968,lng:5.792},
+  {name:"Lemmer",gemeente:"De Friese Meren",province:"Friesland",pop:10000,lat:52.849,lng:5.706},
+  {name:"Stavoren",gemeente:"Súdwest-Fryslân",province:"Friesland",pop:1100,lat:52.882,lng:5.363},
+  {name:"Workum",gemeente:"Súdwest-Fryslân",province:"Friesland",pop:4000,lat:52.977,lng:5.447},
+  {name:"Akkrum",gemeente:"Heerenveen",province:"Friesland",pop:3500,lat:53.049,lng:5.846},
+  {name:"Burgum",gemeente:"Tietjerksteradeel",province:"Friesland",pop:8000,lat:53.193,lng:5.990},
+  {name:"Damwâld",gemeente:"Dantumadiel",province:"Friesland",pop:7000,lat:53.276,lng:5.997},
+  {name:"Surhuisterveen",gemeente:"Achtkarspelen",province:"Friesland",pop:6000,lat:53.172,lng:6.173},
+  {name:"Buitenpost",gemeente:"Achtkarspelen",province:"Friesland",pop:5000,lat:53.255,lng:6.145},
+  {name:"Wolvega",gemeente:"Weststellingwerf",province:"Friesland",pop:12000,lat:52.878,lng:5.998},
+  // Groningen
+  {name:"Groningen",gemeente:"Groningen",province:"Groningen",pop:233000,lat:53.219,lng:6.567},
+  {name:"Veendam",gemeente:"Veendam",province:"Groningen",pop:27000,lat:53.101,lng:6.877},
+  {name:"Stadskanaal",gemeente:"Stadskanaal",province:"Groningen",pop:32000,lat:52.984,lng:6.952},
+  {name:"Winschoten",gemeente:"Oldambt",province:"Groningen",pop:19000,lat:53.144,lng:7.038},
+  {name:"Hoogezand",gemeente:"Midden-Groningen",province:"Groningen",pop:30000,lat:53.163,lng:6.770},
+  {name:"Delfzijl",gemeente:"Eemsdelta",province:"Groningen",pop:24000,lat:53.326,lng:6.927},
+  {name:"Appingedam",gemeente:"Eemsdelta",province:"Groningen",pop:12000,lat:53.321,lng:6.862},
+  {name:"Loppersum",gemeente:"Eemsdelta",province:"Groningen",pop:6000,lat:53.336,lng:6.749},
+  {name:"Leek",gemeente:"Westerkwartier",province:"Groningen",pop:20000,lat:53.164,lng:6.394},
+  {name:"Zuidhorn",gemeente:"Westerkwartier",province:"Groningen",pop:8000,lat:53.247,lng:6.407},
+  {name:"Ten Boer",gemeente:"Groningen",province:"Groningen",pop:7500,lat:53.261,lng:6.700},
+  {name:"Slochteren",gemeente:"Midden-Groningen",province:"Groningen",pop:5000,lat:53.222,lng:6.795},
+  {name:"Pekela",gemeente:"Pekela",province:"Groningen",pop:12000,lat:53.101,lng:6.979},
+  {name:"Bellingwolde",gemeente:"Westerwolde",province:"Groningen",pop:3000,lat:53.088,lng:7.163},
+  {name:"Vlagtwedde",gemeente:"Westerwolde",province:"Groningen",pop:4000,lat:52.999,lng:7.133},
+  {name:"Musselkanaal",gemeente:"Stadskanaal",province:"Groningen",pop:6000,lat:52.939,lng:7.023},
+  {name:"Ter Apel",gemeente:"Westerwolde",province:"Groningen",pop:4500,lat:52.881,lng:7.071},
+  // Drenthe
+  {name:"Emmen",gemeente:"Emmen",province:"Drenthe",pop:108000,lat:52.787,lng:6.899},
+  {name:"Assen",gemeente:"Assen",province:"Drenthe",pop:68000,lat:52.993,lng:6.563},
+  {name:"Hoogeveen",gemeente:"Hoogeveen",province:"Drenthe",pop:55000,lat:52.727,lng:6.479},
+  {name:"Meppel",gemeente:"Meppel",province:"Drenthe",pop:34000,lat:52.696,lng:6.194},
+  {name:"Coevorden",gemeente:"Coevorden",province:"Drenthe",pop:14000,lat:52.660,lng:6.742},
+  {name:"Beilen",gemeente:"Midden-Drenthe",province:"Drenthe",pop:10000,lat:52.861,lng:6.514},
+  {name:"Borger",gemeente:"Borger-Odoorn",province:"Drenthe",pop:5000,lat:52.922,lng:6.799},
+  {name:"Klazienaveen",gemeente:"Emmen",province:"Drenthe",pop:8000,lat:52.725,lng:7.006},
+  {name:"Emmer-Compascuum",gemeente:"Emmen",province:"Drenthe",pop:5000,lat:52.796,lng:7.046},
+  {name:"Dalen",gemeente:"Coevorden",province:"Drenthe",pop:4000,lat:52.688,lng:6.756},
+  {name:"Roden",gemeente:"Noordenveld",province:"Drenthe",pop:19000,lat:53.136,lng:6.432},
+  {name:"Vries",gemeente:"Tynaarlo",province:"Drenthe",pop:5000,lat:53.066,lng:6.590},
+  {name:"Eelde",gemeente:"Tynaarlo",province:"Drenthe",pop:7000,lat:53.129,lng:6.573},
+  {name:"Gieten",gemeente:"Aa en Hunze",province:"Drenthe",pop:6000,lat:52.983,lng:6.755},
+  {name:"Gasselte",gemeente:"Aa en Hunze",province:"Drenthe",pop:2800,lat:52.956,lng:6.791},
+  {name:"Zuidlaren",gemeente:"Tynaarlo",province:"Drenthe",pop:8000,lat:53.101,lng:6.676},
+  {name:"Westerbork",gemeente:"Midden-Drenthe",province:"Drenthe",pop:5500,lat:52.849,lng:6.609},
+  {name:"Ruinen",gemeente:"De Wolden",province:"Drenthe",pop:5000,lat:52.759,lng:6.356},
+  {name:"Dwingeloo",gemeente:"Westerveld",province:"Drenthe",pop:2500,lat:52.838,lng:6.368},
+  {name:"Diever",gemeente:"Westerveld",province:"Drenthe",pop:2000,lat:52.847,lng:6.313},
+  // Zeeland
+  {name:"Middelburg",gemeente:"Middelburg",province:"Zeeland",pop:48000,lat:51.499,lng:3.614},
+  {name:"Vlissingen",gemeente:"Vlissingen",province:"Zeeland",pop:45000,lat:51.443,lng:3.572},
+  {name:"Terneuzen",gemeente:"Terneuzen",province:"Zeeland",pop:54000,lat:51.335,lng:3.829},
+  {name:"Goes",gemeente:"Goes",province:"Zeeland",pop:37000,lat:51.506,lng:3.888},
+  {name:"Hulst",gemeente:"Hulst",province:"Zeeland",pop:7000,lat:51.279,lng:4.051},
+  {name:"Schouwen-Duiveland",gemeente:"Schouwen-Duiveland",province:"Zeeland",pop:7000,lat:51.707,lng:3.851},
+  {name:"Zierikzee",gemeente:"Schouwen-Duiveland",province:"Zeeland",pop:11000,lat:51.648,lng:3.919},
+  {name:"Brouwershaven",gemeente:"Schouwen-Duiveland",province:"Zeeland",pop:1800,lat:51.723,lng:3.816},
+  {name:"Bruinisse",gemeente:"Schouwen-Duiveland",province:"Zeeland",pop:3000,lat:51.662,lng:4.087},
+  {name:"Tholen",gemeente:"Tholen",province:"Zeeland",pop:4500,lat:51.531,lng:4.214},
+  {name:"Sint Annaland",gemeente:"Tholen",province:"Zeeland",pop:3000,lat:51.601,lng:4.130},
+  {name:"Kapelle",gemeente:"Kapelle",province:"Zeeland",pop:12000,lat:51.482,lng:3.959},
+  {name:"Yerseke",gemeente:"Reimerswaal",province:"Zeeland",pop:6500,lat:51.490,lng:4.054},
+  {name:"Kruiningen",gemeente:"Reimerswaal",province:"Zeeland",pop:5500,lat:51.450,lng:4.025},
+  {name:"Veere",gemeente:"Veere",province:"Zeeland",pop:1100,lat:51.554,lng:3.664},
+  {name:"Domburg",gemeente:"Veere",province:"Zeeland",pop:1500,lat:51.564,lng:3.498},
+  {name:"Westkapelle",gemeente:"Veere",province:"Zeeland",pop:1800,lat:51.549,lng:3.444},
+  {name:"Sluis",gemeente:"Sluis",province:"Zeeland",pop:2200,lat:51.309,lng:3.387},
+  {name:"Aardenburg",gemeente:"Sluis",province:"Zeeland",pop:4500,lat:51.273,lng:3.447},
+  {name:"Axel",gemeente:"Terneuzen",province:"Zeeland",pop:13000,lat:51.266,lng:3.899},
+  {name:"Sas van Gent",gemeente:"Terneuzen",province:"Zeeland",pop:6000,lat:51.227,lng:3.800},
+  // Limburg
+  {name:"Maastricht",gemeente:"Maastricht",province:"Limburg",pop:121000,lat:50.851,lng:5.690},
+  {name:"Venlo",gemeente:"Venlo",province:"Limburg",pop:101000,lat:51.370,lng:6.168},
+  {name:"Heerlen",gemeente:"Heerlen",province:"Limburg",pop:86000,lat:50.889,lng:5.979},
+  {name:"Sittard",gemeente:"Sittard-Geleen",province:"Limburg",pop:50000,lat:51.000,lng:5.870},
+  {name:"Geleen",gemeente:"Sittard-Geleen",province:"Limburg",pop:40000,lat:50.973,lng:5.838},
+  {name:"Roermond",gemeente:"Roermond",province:"Limburg",pop:57000,lat:51.193,lng:5.988},
+  {name:"Weert",gemeente:"Weert",province:"Limburg",pop:49000,lat:51.252,lng:5.707},
+  {name:"Kerkrade",gemeente:"Kerkrade",province:"Limburg",pop:46000,lat:50.867,lng:6.059},
+  {name:"Landgraaf",gemeente:"Landgraaf",province:"Limburg",pop:37000,lat:50.901,lng:6.023},
+  {name:"Brunssum",gemeente:"Brunssum",province:"Limburg",pop:29000,lat:50.950,lng:5.976},
+  {name:"Valkenburg",gemeente:"Valkenburg aan de Geul",province:"Limburg",pop:9000,lat:50.866,lng:5.833},
+  {name:"Venray",gemeente:"Venray",province:"Limburg",pop:43000,lat:51.526,lng:5.973},
+  {name:"Horst",gemeente:"Horst aan de Maas",province:"Limburg",pop:10000,lat:51.451,lng:6.059},
+  {name:"Panningen",gemeente:"Peel en Maas",province:"Limburg",pop:9000,lat:51.332,lng:5.979},
+  {name:"Tegelen",gemeente:"Venlo",province:"Limburg",pop:19000,lat:51.340,lng:6.138},
+  {name:"Bergen",gemeente:"Bergen",province:"Limburg",pop:14000,lat:51.600,lng:6.037},
+  {name:"Gennep",gemeente:"Gennep",province:"Limburg",pop:12000,lat:51.698,lng:5.974},
+  {name:"Echt",gemeente:"Echt-Susteren",province:"Limburg",pop:16000,lat:51.108,lng:5.876},
+  {name:"Susteren",gemeente:"Echt-Susteren",province:"Limburg",pop:6000,lat:51.059,lng:5.867},
+  {name:"Meerssen",gemeente:"Meerssen",province:"Limburg",pop:19000,lat:50.886,lng:5.750},
+  {name:"Gulpen",gemeente:"Gulpen-Wittem",province:"Limburg",pop:4500,lat:50.814,lng:5.892},
+  {name:"Wittem",gemeente:"Gulpen-Wittem",province:"Limburg",pop:1800,lat:50.789,lng:5.960},
+  {name:"Vaals",gemeente:"Vaals",province:"Limburg",pop:10000,lat:50.773,lng:6.019},
+  {name:"Eijsden",gemeente:"Eijsden-Margraten",province:"Limburg",pop:4000,lat:50.782,lng:5.706},
+  {name:"Margraten",gemeente:"Eijsden-Margraten",province:"Limburg",pop:5000,lat:50.828,lng:5.810},
+  {name:"Nuth",gemeente:"Beekdaelen",province:"Limburg",pop:7000,lat:50.912,lng:5.888},
+  {name:"Stein",gemeente:"Stein",province:"Limburg",pop:25000,lat:50.963,lng:5.773},
+  {name:"Beek",gemeente:"Beek",province:"Limburg",pop:16000,lat:50.937,lng:5.800},
+  {name:"Simpelveld",gemeente:"Simpelveld",province:"Limburg",pop:11000,lat:50.836,lng:5.987},
+  {name:"Schinnen",gemeente:"Beekdaelen",province:"Limburg",pop:6000,lat:50.952,lng:5.880},
+  // Flevoland
+  {name:"Almere",gemeente:"Almere",province:"Flevoland",pop:213000,lat:52.370,lng:5.217},
+  {name:"Lelystad",gemeente:"Lelystad",province:"Flevoland",pop:77000,lat:52.519,lng:5.471},
+  {name:"Dronten",gemeente:"Dronten",province:"Flevoland",pop:30000,lat:52.524,lng:5.716},
+  {name:"Emmeloord",gemeente:"Noordoostpolder",province:"Flevoland",pop:27000,lat:52.713,lng:5.750},
+  {name:"Urk",gemeente:"Urk",province:"Flevoland",pop:21000,lat:52.663,lng:5.601},
+  {name:"Zeewolde",gemeente:"Zeewolde",province:"Flevoland",pop:22000,lat:52.331,lng:5.541},
+  {name:"Biddinghuizen",gemeente:"Dronten",province:"Flevoland",pop:5000,lat:52.456,lng:5.688},
+  {name:"Swifterbant",gemeente:"Dronten",province:"Flevoland",pop:4000,lat:52.571,lng:5.600},
+  {name:"Nagele",gemeente:"Noordoostpolder",province:"Flevoland",pop:2000,lat:52.643,lng:5.726},
+  {name:"Almere-Haven",gemeente:"Almere",province:"Flevoland",pop:18000,lat:52.348,lng:5.232},
+  {name:"Almere-Buiten",gemeente:"Almere",province:"Flevoland",pop:55000,lat:52.398,lng:5.270},
+];
+
+// Dynamic filtering based on gameSettings thresholds
+function getNLMediumPlaces() {
+  const min = gameSettings.nl_medium_min_pop || 20000;
+  return NL_PLACES.filter(p => p.pop >= min);
+}
+function getNLJeroenPlaces() {
+  const min = gameSettings.nl_jeroen_min_pop || 2000;
+  return NL_PLACES.filter(p => p.pop >= min);
+}
+function getNLPopPlaces(pool) {
+  const min = gameSettings.nl_pop_question_min_pop || 5000;
+  return pool.filter(p => p.pop >= min);
+}
+
+// Scaled map threshold based on place size
+function getNLMapThreshold(place) {
+  const base = currentDiff === 'jeroen'
+    ? (gameSettings.nl_jeroen_map_threshold || 8)
+    : (gameSettings.nl_medium_map_threshold || 15);
+  const pop = place.pop;
+  if (pop >= 100000) return Math.max(3, Math.round(base * 0.4));
+  if (pop >= 50000)  return Math.max(4, Math.round(base * 0.6));
+  if (pop >= 20000)  return Math.max(6, Math.round(base * 0.8));
+  if (pop >= 5000)   return base;
+  if (pop >= 2000)   return Math.round(base * 1.5);
+  return Math.round(base * 2.5); // very small villages
+}
+
 let gameSettings = {
   easy_timer_simple: 5, easy_timer_match: 30, easy_timer_map: 0,
   medium_timer_simple: 0, medium_timer_match: 0, medium_timer_map: 0,
@@ -836,9 +1500,18 @@ let gameSettings = {
   jeroen_pop_margin: 10,
   medium_second_city: true,
   population_mc: true,
+  nl_medium_map_threshold: 15,
+  nl_jeroen_map_threshold: 8,
+  nl_medium_min_pop: 20000,
+  nl_jeroen_min_pop: 2000,
+  nl_pop_question_min_pop: 5000,
+  nl_medium_min_pop: 20000,
+  nl_jeroen_min_pop: 2000,
+  nl_pop_question_min_pop: 5000,
 };
 
 function getDiffConfig(diff) {
+  if (currentRegion === 'nl') return getNLDiffConfig(diff);
   if (currentGameMode === 'topo') return getTopoDiffConfig(diff);
   const easyCountries = EASY_COUNTRIES;
   const medCountries = [...EASY_COUNTRIES, ...MEDIUM_EXTRA];
@@ -914,6 +1587,32 @@ function getTopoDiffConfig(diff) {
   }[diff];
 }
 
+// ── NL REGION CONFIG ──
+function getNLDiffConfig(diff) {
+  const isTopo = currentGameMode === 'topo';
+  const places = diff === 'medium' ? getNLMediumPlaces() : getNLJeroenPlaces();
+  const worldQTypes = diff === 'medium'
+    ? ['nl-province','nl-province','nl-map','nl-map','nl-population','nl-match']
+    : ['nl-province','nl-province','nl-province','nl-map','nl-map','nl-population','nl-match'];
+  return {
+    label: diff === 'medium' ? 'Medium' : 'Jeroen Mode 💀',
+    badge: diff,
+    places,
+    questionTypes: isTopo ? ['nl-map','nl-map','nl-map','nl-map','nl-map'] : worldQTypes,
+    mapThreshold: diff === 'medium'
+      ? (gameSettings.nl_medium_map_threshold || 15)
+      : (gameSettings.nl_jeroen_map_threshold || 8),
+    nlMode: true,
+    timers: {
+      simple: diff === 'medium' ? (gameSettings.medium_timer_simple||null) : (gameSettings.jeroen_timer_simple||null),
+      map: diff === 'medium' ? (gameSettings.medium_timer_map||null) : (gameSettings.jeroen_timer_map||null),
+      match: diff === 'medium' ? (gameSettings.medium_timer_match||null) : (gameSettings.jeroen_timer_match||null),
+      typed: diff === 'jeroen' ? (gameSettings.jeroen_timer_typed||null) : null,
+      capitalmap: null,
+    },
+  };
+}
+
 // ════════════════════════════════════
 // STATE
 // ════════════════════════════════════
@@ -925,6 +1624,7 @@ let currentLang = localStorage.getItem('language') || 'en';
 let devMode = false;
 let streak = 0;
 let currentGameMode = 'world'; // 'world' | 'topo'
+let currentRegion = 'world';   // 'world' | 'nl'
 let currentDiff = 'easy';
 let currentStatTab = 'easy';
 let useTimer = false;
@@ -1241,8 +1941,12 @@ function showMenu() {
   document.getElementById('nav-username').textContent = username;
   document.getElementById('admin-nav-btn').style.display = isAdmin ? 'inline-block' : 'none';
   document.body.classList.remove('jeroen-mode');
+  updateDiffDescriptions();
+  // Switch to the tab matching the game just played
+  const tabToShow = (currentRegion === 'nl' || currentGameMode === 'topo') && currentDiff === 'easy' ? 'medium' : currentDiff;
+  switchStatTab(tabToShow);
   loadAllStats();
-  loadLeaderboard(currentStatTab);
+  loadLeaderboard(tabToShow);
 }
 
 // ════════════════════════════════════
@@ -1328,6 +2032,140 @@ async function setLanguage(lang) {
 // DIFFICULTY
 // ════════════════════════════════════
 
+// ════════════════════════════════════
+// GAME SETUP MODAL
+// ════════════════════════════════════
+
+let setupStep = 1;
+let setupRegion = 'world';
+let setupDiff = 'medium';
+
+function openGameSetup() {
+  setupStep = 1;
+  setupRegion = currentRegion;
+  setupDiff = currentDiff === 'easy' ? 'medium' : currentDiff;
+  renderSetupStep();
+  const modal = document.getElementById('setup-modal');
+  modal.style.display = 'flex';
+}
+
+function closeGameSetup() {
+  document.getElementById('setup-modal').style.display = 'none';
+}
+
+function setupBack() {
+  if (setupStep > 1) { setupStep--; renderSetupStep(); }
+}
+
+function renderSetupStep() {
+  // Update step indicators
+  [1,2,3].forEach(s => {
+    const el = document.querySelector(`.setup-step[data-step="${s}"]`);
+    el.classList.toggle('active', s === setupStep);
+    el.classList.toggle('done', s < setupStep);
+  });
+  document.getElementById('setup-back-btn').style.display = setupStep > 1 ? '' : 'none';
+  [1,2,3].forEach(s => document.getElementById(`setup-step-${s}`).style.display = s === setupStep ? '' : 'none');
+
+  // Update title
+  const titles = {
+    nl: { 1: 'Kies een regio', 2: 'Kies moeilijkheid', 3: 'Klaar om te spelen' },
+    en: { 1: 'Choose a region', 2: 'Choose difficulty', 3: 'Ready to play' },
+  };
+  const lang = currentLang === 'nl' ? 'nl' : 'en';
+  document.getElementById(`setup-step${setupStep}-label`).textContent = titles[lang][setupStep];
+
+  if (setupStep === 1) renderSetupRegions();
+  else if (setupStep === 2) renderSetupDifficulties();
+  else renderSetupSummary();
+}
+
+function renderSetupRegions() {
+  const grid = document.getElementById('setup-region-grid');
+  grid.innerHTML = '';
+  const regionDefs = [
+    { id: 'world', icon: '🌍', name: { nl: 'Wereld', en: 'World' } },
+    { id: 'nl', icon: '🇳🇱', name: { nl: 'Nederland', en: 'Netherlands' } },
+  ];
+  regionDefs.forEach(r => {
+    const card = document.createElement('div');
+    card.className = 'setup-region-card' + (setupRegion === r.id ? ' selected' : '');
+    card.innerHTML = `<div class="setup-region-icon">${r.icon}</div><div class="setup-region-name">${r.name[currentLang] || r.name.en}</div>`;
+    card.onclick = () => {
+      setupRegion = r.id;
+      // Auto-advance to step 2
+      setupStep = 2;
+      // NL has no easy mode
+      if (setupRegion === 'nl' && setupDiff === 'easy') setupDiff = 'medium';
+      renderSetupStep();
+    };
+    grid.appendChild(card);
+  });
+}
+
+function renderSetupDifficulties() {
+  const grid = document.getElementById('setup-diff-grid');
+  grid.innerHTML = '';
+  const isNL = setupRegion === 'nl';
+  const diffs = isNL
+    ? [
+        { id: 'medium', icon: '🗺️', name: 'Medium', desc: { nl: 'Steden 50k+ inwoners', en: 'Cities 50k+ inhabitants' } },
+        { id: 'jeroen', icon: '💀', name: 'Jeroen Mode', desc: { nl: 'Alle gemeenten', en: 'All municipalities' }, jeroen: true },
+      ]
+    : currentGameMode === 'topo'
+    ? [
+        { id: 'medium', icon: '🗺️', name: 'Medium', desc: { nl: 'Top 50 landen', en: 'Top 50 countries' } },
+        { id: 'jeroen', icon: '💀', name: 'Jeroen Mode', desc: { nl: 'Alle landen + eilandstaten', en: 'All countries + island states' }, jeroen: true },
+      ]
+    : [
+        { id: 'easy', icon: '🧠', name: 'Dumb Test', desc: { nl: 'Bekende landen · Geen kaart', en: 'Well-known countries · No map' } },
+        { id: 'medium', icon: '🗺️', name: 'Medium', desc: { nl: 'Alle landen · Alle vraagtypen', en: 'All countries · All question types' } },
+        { id: 'jeroen', icon: '💀', name: 'Jeroen Mode', desc: { nl: 'Betwiste gebieden · Alles', en: 'Disputed territories · Everything' }, jeroen: true },
+      ];
+
+  diffs.forEach(d => {
+    const row = document.createElement('div');
+    row.className = 'setup-diff-row' + (d.jeroen ? ' jeroen-row' : '') + (setupDiff === d.id ? ' selected' : '');
+    row.innerHTML = `<div class="setup-diff-icon">${d.icon}</div><div class="setup-diff-info"><div class="setup-diff-name">${d.name}</div><div class="setup-diff-desc">${d.desc[currentLang] || d.desc.en}</div></div>`;
+    row.onclick = () => {
+      setupDiff = d.id;
+      setupStep = 3;
+      renderSetupStep();
+    };
+    grid.appendChild(row);
+  });
+}
+
+function renderSetupSummary() {
+  const modeNames = {
+    world: { nl: 'Aardrijkskunde', en: 'Geography' },
+    nl: { nl: 'Nederland', en: 'Netherlands' },
+  };
+  const topoLabel = currentGameMode === 'topo'
+    ? (currentLang === 'nl' ? ' · Alleen Topografie' : ' · Map Only')
+    : '';
+  const diffNames = { easy: 'Dumb Test', medium: 'Medium', jeroen: 'Jeroen Mode 💀' };
+  const lang = currentLang;
+  document.getElementById('setup-summary').innerHTML = `
+    <div class="setup-summary-row">
+      <span class="setup-summary-label">${lang === 'nl' ? 'Modus' : 'Mode'}</span>
+      <span class="setup-summary-value">${modeNames[setupRegion]?.[lang] || setupRegion}${topoLabel}</span>
+    </div>
+    <div class="setup-summary-row">
+      <span class="setup-summary-label">${lang === 'nl' ? 'Moeilijkheid' : 'Difficulty'}</span>
+      <span class="setup-summary-value">${diffNames[setupDiff]}</span>
+    </div>`;
+  const playBtn = document.getElementById('setup-play-btn');
+  playBtn.className = 'play-btn' + (setupDiff === 'jeroen' ? ' jeroen-play' : '');
+}
+
+function confirmAndPlay() {
+  currentRegion = setupRegion;
+  currentDiff = setupDiff;
+  closeGameSetup();
+  startGame();
+}
+
 function selectGameMode(mode) {
   currentGameMode = mode;
   document.getElementById('mode-world').classList.toggle('active', mode === 'world');
@@ -1371,9 +2209,8 @@ function switchStatTab(diff) {
   const isJ = diff==='jeroen';
   document.getElementById('stat-card-best').classList.toggle('jeroen-stat', isJ);
   document.getElementById('stat-card-games').classList.toggle('jeroen-stat', isJ);
-  const mode = currentGameMode === 'topo' ? 'topo' : 'world';
-  const statsKey = mode + '_' + diff;
-  const s = allStats[statsKey] || allStats[diff] || {};
+  const key = `${currentRegion}_${currentGameMode}_${diff}`;
+  const s = allStats[key] || allStats[diff] || {};
   document.getElementById('stat-best').textContent = s.best_streak || '0';
   document.getElementById('stat-games').textContent = s.games_played || '0';
   loadLeaderboard(diff);
@@ -1387,16 +2224,20 @@ async function loadAllStats() {
   try {
     const res = await fetch('/api/me/stats', {headers:{Authorization:'Bearer '+token}});
     const raw = await res.json();
-    // Flatten into mode_diff keys for easy lookup
+    // Flatten into region_mode_diff keys
     allStats = {};
-    for (const [mode, diffs] of Object.entries(raw)) {
-      for (const [diff, data] of Object.entries(diffs)) {
-        allStats[mode + '_' + diff] = data;
-        allStats[diff] = data; // fallback for world mode
+    for (const [region, modes] of Object.entries(raw)) {
+      for (const [mode, diffs] of Object.entries(modes)) {
+        for (const [diff, data] of Object.entries(diffs)) {
+          allStats[`${region}_${mode}_${diff}`] = data;
+          // Backward compat flat keys
+          allStats[diff] = data;
+        }
       }
     }
-    const mode = currentGameMode === 'topo' ? 'topo' : 'world';
-    const s = allStats[mode + '_' + currentStatTab] || {};
+    const mode = currentGameMode;
+    const key = `${currentRegion}_${mode}_${currentStatTab}`;
+    const s = allStats[key] || allStats[currentStatTab] || {};
     document.getElementById('stat-best').textContent = s.best_streak || '0';
     document.getElementById('stat-games').textContent = s.games_played || '0';
   } catch {}
@@ -1404,16 +2245,17 @@ async function loadAllStats() {
 
 async function loadLeaderboard(diff) {
   const isTopo = currentGameMode === 'topo';
-  const mode = isTopo ? 'topo' : 'world';
+  const isNL = currentRegion === 'nl';
+  const mode = currentGameMode;
   const titles = {
     easy: '🧠 Dumb Test Leaderboard',
-    medium: isTopo ? '📍 Topo Medium Leaderboard' : '🗺️ Medium Leaderboard',
-    jeroen: isTopo ? '📍💀 Topo Jeroen Leaderboard' : '💀 Jeroen Mode Leaderboard'
+    medium: isNL ? '🇳🇱 NL Medium Leaderboard' : isTopo ? '📍 Topo Medium Leaderboard' : '🗺️ Medium Leaderboard',
+    jeroen: isNL ? '🇳🇱💀 NL Jeroen Leaderboard' : isTopo ? '📍💀 Topo Jeroen Leaderboard' : '💀 Jeroen Mode Leaderboard'
   };
   document.getElementById('lb-title').textContent = titles[diff];
   document.getElementById('lb-section-title').textContent = titles[diff];
   try {
-    const res = await fetch(`/api/leaderboard?difficulty=${diff}&mode=${mode}`);
+    const res = await fetch(`/api/leaderboard?difficulty=${diff}&mode=${mode}&region=${currentRegion}`);
     const data = await res.json();
     const body = document.getElementById('leaderboard-body');
     const isJ = diff==='jeroen';
@@ -1476,36 +2318,59 @@ function nextQuestion() {
   document.getElementById('historical-note').style.display='none';
 
   const cfg = getDiffConfig(currentDiff);
+
+  // ── NL region ──
+  if (cfg.nlMode) {
+    const type = cfg.questionTypes[Math.floor(Math.random()*cfg.questionTypes.length)];
+    const isNLMatch = type === 'nl-match';
+    let place;
+    if (!isNLMatch) {
+      if (countryQueue.length === 0) countryQueue = shuffle(cfg.places);
+      while (countryQueue.length > 0 && !cfg.places.includes(countryQueue[0])) countryQueue.shift();
+      if (countryQueue.length === 0) countryQueue = shuffle(cfg.places);
+      place = countryQueue.shift();
+    } else {
+      place = getRandom(cfg.places);
+    }
+    currentQ = {type, place};
+    const nlBadges = {'nl-province':'🗺 Provincie','nl-map':'📍 Kaart','nl-population':'👥 Inwoners','nl-match':'🔗 Koppelen'};
+    document.getElementById('q-type-badge').textContent = nlBadges[type] || type;
+    const area = document.getElementById('answer-area');
+    area.innerHTML=''; area.classList.remove('map-mode','match-mode');
+    const submitContainer = document.getElementById('match-submit-container');
+    submitContainer.innerHTML=''; submitContainer.classList.remove('visible');
+    if (type==='nl-province') buildNLProvinceQ(place, area);
+    else if (type==='nl-map') buildNLMapQ(place, area);
+    else if (type==='nl-population') buildNLPopulationQ(place, area, cfg.places);
+    else if (type==='nl-match') buildNLMatchQ(cfg.places, area);
+    if (useTimer) startTimer(type);
+    return;
+  }
+
+  // ── World region ──
   const pool = cfg.countries.filter(c => !c.historical || currentDiff==='jeroen');
   const nonHistoricalPool = pool.filter(c => !c.historical);
   const capitalPool = gameSettings.jeroen_historical_capitals ? pool : nonHistoricalPool;
   const extraPool = nonHistoricalPool.filter(c => COUNTRY_EXTRA[c.name]);
 
-  // Pick question type
   const type = cfg.questionTypes[Math.floor(Math.random()*cfg.questionTypes.length)];
-
-  // Determine which pool this question type draws from
   const isMatch = type === 'match-flags' || type === 'match-capitals' || type === 'match-population';
   const qPool = type === 'flag' ? pool
     : type === 'capital' ? capitalPool
     : (type === 'second-city' || type === 'population') ? (extraPool.length >= 4 ? extraPool : nonHistoricalPool)
     : nonHistoricalPool;
 
-  // Use queue for non-match questions
   let country;
   if (!isMatch) {
-    // Refill queue when empty
     if (countryQueue.length === 0) countryQueue = shuffle(qPool);
-    // Pop from queue, skip if doesn't fit current pool (e.g. pool changed)
     while (countryQueue.length > 0 && !qPool.includes(countryQueue[0])) countryQueue.shift();
     if (countryQueue.length === 0) countryQueue = shuffle(qPool);
     country = countryQueue.shift();
   } else {
-    country = getRandom(nonHistoricalPool); // match questions manage their own selection
+    country = getRandom(nonHistoricalPool);
   }
 
   currentQ = {type, country};
-
   const badges = {capital:'🏛 Capital', flag:'🚩 Flag', map:'🗺 Map', continent:'🌍 Continent', 'match-flags':'🚩 Match Flags', 'match-capitals':'🏛 Match Capitals', 'capital-map':'🗺 Capital → Map', 'second-city':'🏙 Second City', 'population':'👥 Population', 'match-population':'👥 Match Population'};
   document.getElementById('q-type-badge').textContent = badges[type] || type;
 
@@ -2419,6 +3284,340 @@ function buildMatchPopulationQ(pool, area) {
 }
 
 // Point-in-polygon using ray casting — works on Polygon and MultiPolygon
+// ════════════════════════════════════
+// NL QUESTION BUILDERS
+// ════════════════════════════════════
+
+function buildNLProvinceQ(place, area) {
+  document.getElementById('question-text').innerHTML =
+    currentLang === 'nl'
+      ? `In welke <span>provincie</span> ligt ${place.name}?`
+      : `In which <span>province</span> is ${place.name} located?`;
+
+  if (currentDiff === 'jeroen') {
+    buildTypedInput(area, place.province, place.province,
+      currentLang === 'nl' ? 'Typ de provincie' : 'Type the province');
+  } else {
+    const wrongs = shuffle(NL_PROVINCES.filter(p => p !== place.province)).slice(0, 3);
+    const choices = shuffle([place.province, ...wrongs]);
+    const grid = document.createElement('div'); grid.className = 'choices-grid';
+    ['A','B','C','D'].forEach((letter, i) => {
+      const btn = document.createElement('button'); btn.className = 'choice-btn';
+      btn.innerHTML = `<span class="choice-letter">${letter}</span>${choices[i]}`;
+      btn.onclick = () => {
+        if (awaitingNext) return; stopTimer();
+        grid.querySelectorAll('.choice-btn').forEach(b => {
+          b.disabled = true;
+          if (b.textContent.trim().endsWith(place.province)) b.classList.add('correct');
+        });
+        if (choices[i] !== place.province) btn.classList.add('wrong');
+        showFeedback(choices[i] === place.province,
+          choices[i] === place.province
+            ? (currentLang === 'nl' ? 'Correct!' : 'Correct!')
+            : (currentLang === 'nl' ? `Antwoord: ${place.province}` : `Answer: ${place.province}`));
+      };
+      grid.appendChild(btn);
+    });
+    area.appendChild(grid);
+  }
+}
+
+function buildNLMapQ(place, area) {
+  const threshold = getNLMapThreshold(place);
+  document.getElementById('question-text').innerHTML =
+    currentLang === 'nl'
+      ? `Klik op het <span>midden van ${place.name}</span> — binnen ${threshold}km om te scoren`
+      : `Click the <span>centre of ${place.name}</span> — within ${threshold}km to score`;
+
+  const container = document.createElement('div'); container.id = 'map-container';
+  const mapDiv = document.createElement('div'); mapDiv.id = 'map';
+  const hint = document.createElement('div'); hint.className = 'map-hint';
+  hint.textContent = currentLang === 'nl' ? 'Klik om je pin te plaatsen' : 'Click to place your pin';
+  const submitBtn = document.createElement('button'); submitBtn.id = 'map-submit';
+  submitBtn.textContent = currentLang === 'nl' ? 'Pin bevestigen' : 'Submit Pin';
+  submitBtn.onclick = () => submitNLMapAnswer(place);
+  submitBtn.style.display = 'none';
+  const badge = document.createElement('div'); badge.className = 'distance-badge'; badge.id = 'distance-badge';
+
+  container.appendChild(mapDiv); container.appendChild(hint);
+  container.appendChild(submitBtn); container.appendChild(badge);
+  area.classList.add('map-mode');
+  area.appendChild(container);
+  marker = null;
+  mapMarkerEl = null; mapMarkerObj = null;
+
+  const nlCfg = REGIONS.nl.mapConfig;
+
+  setTimeout(() => {
+    if (map) { map.remove(); map = null; }
+    mapboxgl.accessToken = '__MAPBOX_TOKEN__';
+    map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/mapbox/dark-v11',
+      center: nlCfg.center,
+      zoom: nlCfg.zoom,
+      minZoom: nlCfg.minZoom,
+      maxZoom: nlCfg.maxZoom,
+      maxBounds: nlCfg.maxBounds,
+      attributionControl: false,
+    });
+    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-left');
+    map.on('load', () => {
+      map.getStyle().layers.forEach(layer => {
+        if (layer.type === 'symbol') map.setLayoutProperty(layer.id, 'visibility', 'none');
+      });
+    });
+    map.on('click', e => {
+      if (awaitingNext) return;
+      marker = { lat: e.lngLat.lat, lng: e.lngLat.lng };
+      if (mapMarkerObj) mapMarkerObj.remove();
+      mapMarkerEl = document.createElement('div');
+      mapMarkerEl.style.cssText = `width:14px;height:14px;border-radius:50%;background:${currentDiff==='jeroen'?'#a855f7':'#f0b429'};border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.5);`;
+      mapMarkerObj = new mapboxgl.Marker({ element: mapMarkerEl, anchor: 'center' })
+        .setLngLat([e.lngLat.lng, e.lngLat.lat]).addTo(map);
+      submitBtn.style.display = 'block';
+      hint.textContent = currentLang === 'nl' ? 'Bevestig of klik ergens anders' : 'Confirm or click elsewhere to move';
+    });
+  }, 50);
+}
+
+function submitNLMapAnswer(place) {
+  if (!marker || awaitingNext) return;
+  stopTimer();
+  const dist = haversine(marker.lat, marker.lng, place.lat, place.lng);
+  const threshold = getNLMapThreshold(place);
+  const correct = dist <= threshold;
+
+  // Show correct marker
+  const correctEl = document.createElement('div');
+  correctEl.style.cssText = 'width:18px;height:18px;border-radius:50%;background:#22c55e;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.5);';
+  new mapboxgl.Marker({ element: correctEl, anchor: 'center' })
+    .setLngLat([place.lng, place.lat]).addTo(map);
+
+  if (!correct) {
+    if (map.getSource('answer-line')) {
+      map.removeLayer('answer-line-layer'); map.removeSource('answer-line');
+    }
+    map.addSource('answer-line', {
+      type: 'geojson',
+      data: { type: 'Feature', geometry: { type: 'LineString', coordinates: [[marker.lng, marker.lat],[place.lng, place.lat]] }}
+    });
+    map.addLayer({ id: 'answer-line-layer', type: 'line', source: 'answer-line',
+      paint: { 'line-color': '#f0b429', 'line-width': 2, 'line-dasharray': [4, 3] }
+    });
+  }
+
+  document.getElementById('map-submit').style.display = 'none';
+  const badge = document.getElementById('distance-badge');
+  badge.style.display = 'block';
+  badge.innerHTML = `
+    <div class="dist-value">${Math.round(dist)} km</div>
+    <div class="dist-label">${currentLang === 'nl' ? 'van' : 'from'} ${place.name}</div>
+    <div class="dist-verdict" style="color:${correct?'var(--success)':'var(--danger)'}">
+      ${correct
+        ? (currentLang === 'nl' ? `✓ Binnen ${threshold}km` : `✓ Within ${threshold}km`)
+        : (currentLang === 'nl' ? `✗ Limiet: ${threshold}km` : `✗ Limit: ${threshold}km`)}</div>`;
+  showFeedback(correct,
+    correct
+      ? (currentLang === 'nl' ? `${Math.round(dist)}km — goed genoeg!` : `${Math.round(dist)}km — close enough!`)
+      : (currentLang === 'nl' ? `${Math.round(dist)}km — te ver` : `${Math.round(dist)}km — too far`),
+    place.name);
+}
+
+function buildNLPopulationQ(place, area, pool) {
+  // Only ask for places above the configured threshold
+  const eligiblePool = getNLPopPlaces(pool);
+  if (!eligiblePool.includes(place)) { nextQuestion(); return; }
+  document.getElementById('question-text').innerHTML =
+    currentLang === 'nl'
+      ? `Hoeveel inwoners heeft <span>${place.name}</span>?`
+      : `How many inhabitants does <span>${place.name}</span> have?`;
+
+  const actual = place.pop;
+  const formatPop = (p) => {
+    if (p >= 500000) return `~${Math.round(p/100000)*100}k`;
+    if (p >= 100000) return `~${Math.round(p/10000)*10}k`;
+    if (p >= 10000)  return `~${Math.round(p/5000)*5}k`;
+    return `~${Math.round(p/1000)}k`;
+  };
+  const correctLabel = formatPop(actual);
+
+  // Wrong answers: other places sorted by closeness in population
+  const candidates = pool
+    .filter(p => p !== place)
+    .sort((a, b) => Math.abs(a.pop - actual) - Math.abs(b.pop - actual))
+    .map(p => formatPop(p.pop))
+    .filter(l => l !== correctLabel);
+
+  const wrongLabels = [];
+  for (const l of candidates) {
+    if (!wrongLabels.includes(l)) { wrongLabels.push(l); }
+    if (wrongLabels.length === 3) break;
+  }
+  while (wrongLabels.length < 3) wrongLabels.push(formatPop(actual * (wrongLabels.length % 2 === 0 ? 2 : 0.5)));
+
+  const choices = shuffle([correctLabel, ...wrongLabels]);
+  const grid = document.createElement('div'); grid.className = 'choices-grid';
+  ['A','B','C','D'].forEach((letter, i) => {
+    const btn = document.createElement('button'); btn.className = 'choice-btn';
+    btn.innerHTML = `<span class="choice-letter">${letter}</span>${choices[i]}`;
+    btn.onclick = () => {
+      if (awaitingNext) return; stopTimer();
+      grid.querySelectorAll('.choice-btn').forEach(b => {
+        b.disabled = true;
+        if (b.textContent.trim().endsWith(correctLabel)) b.classList.add('correct');
+      });
+      if (choices[i] !== correctLabel) btn.classList.add('wrong');
+      const actualStr = actual >= 1000 ? `${Math.round(actual/1000)}k` : actual;
+      showFeedback(choices[i] === correctLabel,
+        choices[i] === correctLabel
+          ? `✓ ${actual.toLocaleString()} ${currentLang === 'nl' ? 'inwoners' : 'inhabitants'}`
+          : `${actual.toLocaleString()} ${currentLang === 'nl' ? 'inwoners' : 'inhabitants'}`,
+        place.name);
+    };
+    grid.appendChild(btn);
+  });
+  area.appendChild(grid);
+}
+
+function buildNLMatchQ(pool, area) {
+  // Decide match target: Medium always province, Jeroen randomly gemeente or province
+  const useGemeente = currentDiff === 'jeroen' && Math.random() < 0.5;
+  const matchKey = useGemeente ? 'gemeente' : 'province';
+
+  // Pick 4 places with distinct match targets (no duplicate provincie/gemeente)
+  const freshPool = pool.filter(p => !lastMatchCountries.includes(p.name));
+  const pickPool = freshPool.length >= 4 ? freshPool : pool;
+
+  const picks = [];
+  const usedTargets = new Set();
+  const shuffledPool = shuffle(pickPool);
+  for (const p of shuffledPool) {
+    if (!usedTargets.has(p[matchKey])) {
+      picks.push(p);
+      usedTargets.add(p[matchKey]);
+    }
+    if (picks.length === 4) break;
+  }
+  // Fallback
+  while (picks.length < 4) {
+    const p = getRandom(pickPool, picks); if (p) picks.push(p); else break;
+  }
+  lastMatchCountries = picks.map(p => p.name);
+
+  const matchTargetLabel = useGemeente
+    ? (currentLang === 'nl' ? 'gemeente' : 'municipality')
+    : (currentLang === 'nl' ? 'provincie' : 'province');
+
+  document.getElementById('question-text').innerHTML =
+    currentLang === 'nl'
+      ? `Koppel elke <span>plaats</span> aan de juiste ${matchTargetLabel}`
+      : `Match each <span>city</span> to its ${matchTargetLabel}`;
+
+  const assignments = {};
+  let draggedItem = null;
+  const matchArea = document.createElement('div'); matchArea.className = 'match-area';
+  area.classList.add('match-mode');
+
+  const instructions = document.createElement('div'); instructions.className = 'match-instructions';
+  instructions.textContent = currentLang === 'nl' ? 'Sleep de plaatsen naar de juiste provincie' : 'Drag cities to the correct province';
+  matchArea.appendChild(instructions);
+
+  const cols = document.createElement('div'); cols.className = 'match-columns';
+  const leftCol = document.createElement('div'); leftCol.className = 'match-col';
+  const rightCol = document.createElement('div'); rightCol.className = 'match-col';
+
+  // Left: province names (the 4 provinces of selected places), Right: city names (shuffled)
+  const leftLabel = document.createElement('div'); leftLabel.className = 'match-col-label';
+  leftLabel.textContent = useGemeente
+    ? (currentLang === 'nl' ? 'GEMEENTE' : 'MUNICIPALITY')
+    : (currentLang === 'nl' ? 'PROVINCIE' : 'PROVINCE');
+  const rightLabel = document.createElement('div'); rightLabel.className = 'match-col-label';
+  rightLabel.textContent = currentLang === 'nl' ? 'PLAATSEN' : 'CITIES';
+  leftCol.appendChild(leftLabel); rightCol.appendChild(rightLabel);
+
+  const rightItems = shuffle(picks.map(p => ({ place: p, label: p.name })));
+
+  const leftSlots = picks.map((place, i) => {
+    const slot = document.createElement('div');
+    slot.className = 'match-item'; slot.dataset.index = i;
+    slot.textContent = place[matchKey]; // show province or gemeente
+    slot.addEventListener('dragover', e => { e.preventDefault(); slot.classList.add('drag-over'); });
+    slot.addEventListener('dragleave', () => slot.classList.remove('drag-over'));
+    slot.addEventListener('drop', e => {
+      e.preventDefault(); slot.classList.remove('drag-over');
+      if (!draggedItem) return;
+      const old = assignments[i];
+      assignments[i] = draggedItem;
+      slot.querySelector('.match-label')?.remove();
+      const lbl = document.createElement('span'); lbl.className = 'match-label';
+      lbl.style.cssText = 'font-size:12px;color:var(--text-muted);margin-left:6px;';
+      lbl.textContent = '→ ' + draggedItem.label;
+      slot.appendChild(lbl);
+      draggedItem._el.style.opacity = '0.35';
+      if (old) old._el.style.opacity = '1';
+      draggedItem = null;
+      submitBtn.disabled = !picks.every((_, j) => assignments[j]);
+    });
+    leftCol.appendChild(slot);
+    return slot;
+  });
+
+  rightItems.forEach(item => {
+    const el = document.createElement('div'); el.className = 'match-item';
+    el.textContent = item.label; el.draggable = true; item._el = el;
+    el.addEventListener('dragstart', () => { draggedItem = item; el.classList.add('dragging'); });
+    el.addEventListener('dragend', () => el.classList.remove('dragging'));
+    el.addEventListener('touchstart', () => { draggedItem = item; el.classList.add('dragging'); }, {passive:true});
+    el.addEventListener('touchend', e => {
+      el.classList.remove('dragging');
+      const touch = e.changedTouches[0];
+      const target = document.elementFromPoint(touch.clientX, touch.clientY);
+      const slot = target?.closest('[data-index]');
+      if (slot) slot.dispatchEvent(new DragEvent('drop', {bubbles:true}));
+      draggedItem = null;
+    });
+    rightCol.appendChild(el);
+  });
+
+  const submitBtn = document.createElement('button');
+  submitBtn.className = 'btn btn-primary match-submit';
+  submitBtn.textContent = currentLang === 'nl' ? 'Bevestig koppeling' : 'Submit'; submitBtn.disabled = true;
+  submitBtn.onclick = () => {
+    stopTimer(); let allCorrect = true;
+    picks.forEach((place, i) => {
+      const assigned = assignments[i];
+      const correct = assigned?.place === place;
+      if (!correct) allCorrect = false;
+      leftSlots[i].classList.add(correct ? 'matched' : 'wrong-match');
+      if (!correct) {
+        const el = document.createElement('div');
+        el.style.cssText = 'font-size:11px;color:var(--success);margin-top:4px;';
+        el.textContent = `✓ ${place.name}`;
+        leftSlots[i].appendChild(el);
+      }
+    showFeedback(allCorrect,
+      allCorrect ? (currentLang === 'nl' ? 'Perfecte koppeling! 🎯' : 'Perfect match! 🎯')
+                 : (currentLang === 'nl' ? 'Sommige koppelingen klopten niet' : 'Some matches were wrong'));
+  };
+
+  const resetBtn = document.createElement('button');
+  resetBtn.className = 'btn btn-ghost'; resetBtn.textContent = '↺ Reset';
+  resetBtn.onclick = () => {
+    picks.forEach((_, i) => { assignments[i] = null; });
+    rightItems.forEach(r => { r._el.style.opacity='1'; r._el.style.color='var(--text)'; });
+    leftSlots.forEach(slot => slot.querySelector('.match-label')?.remove());
+    submitBtn.disabled = true;
+  };
+
+  cols.appendChild(leftCol); cols.appendChild(rightCol);
+  matchArea.appendChild(cols); area.appendChild(matchArea);
+  const submitContainer = document.getElementById('match-submit-container');
+  submitContainer.innerHTML='';
+  submitContainer.appendChild(resetBtn); submitContainer.appendChild(submitBtn);
+  submitContainer.classList.add('visible');
+}
+
 function pointInGeoJSON(point, feature) {
   const [px, py] = point;
   function inRing(ring) {
@@ -2474,7 +3673,7 @@ async function endGame() {
       await fetch('/api/scores',{
         method:'POST',
         headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
-        body:JSON.stringify({streak, difficulty:currentDiff, mode:currentGameMode})
+        body:JSON.stringify({streak, difficulty:currentDiff, mode:currentGameMode, region:currentRegion})
       });
     }
   } catch {}
@@ -2556,6 +3755,11 @@ async function loadAdminSettings() {
     document.getElementById('setting-jeroen-pop-margin').value = s.jeroen_pop_margin || 10;
     document.getElementById('setting-medium-second-city').checked = s.medium_second_city !== false;
     document.getElementById('setting-population-mc').checked = s.population_mc !== false;
+    document.getElementById('setting-nl-medium-map').value = s.nl_medium_map_threshold || 15;
+    document.getElementById('setting-nl-jeroen-map').value = s.nl_jeroen_map_threshold || 8;
+    document.getElementById('setting-nl-medium-min-pop').value = s.nl_medium_min_pop || 20000;
+    document.getElementById('setting-nl-jeroen-min-pop').value = s.nl_jeroen_min_pop || 2000;
+    document.getElementById('setting-nl-pop-min-pop').value = s.nl_pop_question_min_pop || 5000;
   } catch {}
 }
 
@@ -2580,6 +3784,11 @@ async function saveSettings() {
     jeroen_pop_margin: parseInt(document.getElementById('setting-jeroen-pop-margin').value) || 10,
     medium_second_city: document.getElementById('setting-medium-second-city').checked ? '1' : '0',
     population_mc: document.getElementById('setting-population-mc').checked ? '1' : '0',
+    nl_medium_map_threshold: parseInt(document.getElementById('setting-nl-medium-map').value) || 15,
+    nl_jeroen_map_threshold: parseInt(document.getElementById('setting-nl-jeroen-map').value) || 8,
+    nl_medium_min_pop: parseInt(document.getElementById('setting-nl-medium-min-pop').value) || 20000,
+    nl_jeroen_min_pop: parseInt(document.getElementById('setting-nl-jeroen-min-pop').value) || 2000,
+    nl_pop_question_min_pop: parseInt(document.getElementById('setting-nl-pop-min-pop').value) || 5000,
   };
   try {
     await fetch('/api/admin/settings', {

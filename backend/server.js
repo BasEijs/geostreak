@@ -47,6 +47,7 @@ try { db.exec(`ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0`
 try { db.exec(`ALTER TABLE users ADD COLUMN temp_password TEXT`); } catch {}
 try { db.exec(`ALTER TABLE users ADD COLUMN language TEXT NOT NULL DEFAULT 'en'`); } catch {}
 try { db.exec(`ALTER TABLE scores ADD COLUMN mode TEXT NOT NULL DEFAULT 'world'`); } catch {}
+try { db.exec(`ALTER TABLE scores ADD COLUMN region TEXT NOT NULL DEFAULT 'world'`); } catch {}
 
 const DEFAULT_SETTINGS = {
   easy_timer_simple: '5', easy_timer_match: '30', easy_timer_map: '0',
@@ -59,6 +60,11 @@ const DEFAULT_SETTINGS = {
   jeroen_pop_margin: '10',
   medium_second_city: '1',
   population_mc: '1',
+  nl_medium_map_threshold: '15',
+  nl_jeroen_map_threshold: '8',
+  nl_medium_min_pop: '20000',
+  nl_jeroen_min_pop: '2000',
+  nl_pop_question_min_pop: '5000',
 };
 for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
   try { db.prepare('INSERT INTO settings (key, value) VALUES (?, ?)').run(key, value); } catch {}
@@ -118,6 +124,7 @@ app.post('/api/login', (req, res) => {
 
 const VALID_DIFFICULTIES = ['easy', 'medium', 'jeroen'];
 const VALID_MODES = ['world', 'topo'];
+const VALID_REGIONS = ['world', 'nl'];
 
 app.get('/api/settings', (req, res) => {
   res.json({
@@ -140,40 +147,50 @@ app.get('/api/settings', (req, res) => {
     jeroen_pop_margin: parseInt(getSetting('jeroen_pop_margin')),
     medium_second_city: getSetting('medium_second_city') !== '0',
     population_mc: getSetting('population_mc') !== '0',
+    nl_medium_map_threshold: parseInt(getSetting('nl_medium_map_threshold')),
+    nl_jeroen_map_threshold: parseInt(getSetting('nl_jeroen_map_threshold')),
+    nl_medium_min_pop: parseInt(getSetting('nl_medium_min_pop')),
+    nl_jeroen_min_pop: parseInt(getSetting('nl_jeroen_min_pop')),
+    nl_pop_question_min_pop: parseInt(getSetting('nl_pop_question_min_pop')),
   });
 });
 
 app.post('/api/scores', auth, (req, res) => {
-  const { streak, difficulty, mode } = req.body;
+  const { streak, difficulty, mode, region } = req.body;
   if (typeof streak !== 'number' || streak < 0) return res.status(400).json({ error: 'Invalid streak' });
   if (!VALID_DIFFICULTIES.includes(difficulty)) return res.status(400).json({ error: 'Invalid difficulty' });
   const gameMode = VALID_MODES.includes(mode) ? mode : 'world';
-  db.prepare('INSERT INTO scores (user_id, streak, difficulty, mode) VALUES (?, ?, ?, ?)').run(req.user.id, streak, difficulty, gameMode);
+  const gameRegion = VALID_REGIONS.includes(region) ? region : 'world';
+  db.prepare('INSERT INTO scores (user_id, streak, difficulty, mode, region) VALUES (?, ?, ?, ?, ?)').run(req.user.id, streak, difficulty, gameMode, gameRegion);
   res.json({ ok: true });
 });
 
 app.get('/api/leaderboard', (req, res) => {
   const difficulty = req.query.difficulty || 'medium';
   const mode = VALID_MODES.includes(req.query.mode) ? req.query.mode : 'world';
+  const region = VALID_REGIONS.includes(req.query.region) ? req.query.region : 'world';
   if (!VALID_DIFFICULTIES.includes(difficulty)) return res.status(400).json({ error: 'Invalid difficulty' });
   const rows = db.prepare(`
     SELECT u.username, MAX(s.streak) as best_streak, COUNT(s.id) as games_played
     FROM users u JOIN scores s ON s.user_id = u.id
-    WHERE s.difficulty = ? AND s.mode = ?
+    WHERE s.difficulty = ? AND s.mode = ? AND s.region = ?
     GROUP BY u.id ORDER BY best_streak DESC LIMIT 20
-  `).all(difficulty, mode);
+  `).all(difficulty, mode, region);
   res.json(rows);
 });
 
 app.get('/api/me/stats', auth, (req, res) => {
   const stats = {};
-  for (const mode of VALID_MODES) {
-    stats[mode] = {};
-    const diffs = mode === 'topo' ? ['medium', 'jeroen'] : VALID_DIFFICULTIES;
-    for (const diff of diffs) {
-      const best = db.prepare('SELECT MAX(streak) as best FROM scores WHERE user_id = ? AND difficulty = ? AND mode = ?').get(req.user.id, diff, mode);
-      const count = db.prepare('SELECT COUNT(*) as total FROM scores WHERE user_id = ? AND difficulty = ? AND mode = ?').get(req.user.id, diff, mode);
-      stats[mode][diff] = { best_streak: best?.best || 0, games_played: count?.total || 0 };
+  for (const region of VALID_REGIONS) {
+    stats[region] = {};
+    for (const mode of VALID_MODES) {
+      stats[region][mode] = {};
+      const diffs = (region === 'nl' || mode === 'topo') ? ['medium', 'jeroen'] : VALID_DIFFICULTIES;
+      for (const diff of diffs) {
+        const best = db.prepare('SELECT MAX(streak) as best FROM scores WHERE user_id = ? AND difficulty = ? AND mode = ? AND region = ?').get(req.user.id, diff, mode, region);
+        const count = db.prepare('SELECT COUNT(*) as total FROM scores WHERE user_id = ? AND difficulty = ? AND mode = ? AND region = ?').get(req.user.id, diff, mode, region);
+        stats[region][mode][diff] = { best_streak: best?.best || 0, games_played: count?.total || 0 };
+      }
     }
   }
   res.json(stats);
@@ -249,6 +266,8 @@ app.post('/api/admin/settings', auth, adminOnly, (req, res) => {
     'jeroen_timer_simple','jeroen_timer_match','jeroen_timer_map','jeroen_timer_typed','jeroen_timer_capitalmap',
     'jeroen_map_threshold','jeroen_show_historical_label','jeroen_historical_flags','jeroen_historical_capitals',
     'medium_pop_margin','jeroen_pop_margin','medium_second_city','population_mc',
+    'nl_medium_map_threshold','nl_jeroen_map_threshold',
+    'nl_medium_min_pop','nl_jeroen_min_pop','nl_pop_question_min_pop',
   ];
   for (const key of allowed) {
     if (req.body[key] !== undefined) {
