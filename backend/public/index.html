@@ -347,8 +347,8 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
 
     <!-- Game mode selector -->
     <div class="mode-selector">
-      <button class="mode-btn active" id="mode-world" onclick="selectGameMode('world')">🌍 Aardrijkskunde</button>
-      <button class="mode-btn" id="mode-topo" onclick="selectGameMode('topo')">📍 Alleen Topografie</button>
+      <button class="mode-btn active" id="mode-world" onclick="selectGameMode('world')"></button>
+      <button class="mode-btn" id="mode-topo" onclick="selectGameMode('topo')"></button>
     </div>
 
     <!-- World difficulty picker -->
@@ -375,12 +375,12 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
       <div class="diff-card" data-diff="medium" onclick="selectDiff('medium')">
         <div class="diff-icon">🗺️</div>
         <div class="diff-name">Medium</div>
-        <div class="diff-desc">Top 50 landen · Alleen kaart aanwijzen</div>
+        <div class="diff-desc" id="desc-topo-medium"></div>
       </div>
       <div class="diff-card jeroen-card" data-diff="jeroen" onclick="selectDiff('jeroen')">
         <div class="diff-icon">💀</div>
         <div class="diff-name">Jeroen Mode</div>
-        <div class="diff-desc">Alle landen + eilandstaten · Kaart + hoofdstad→kaart</div>
+        <div class="diff-desc" id="desc-topo-jeroen"></div>
       </div>
     </div>
 
@@ -527,6 +527,10 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
           <div class="setting-row">
             <div class="setting-label">Include second largest city questions<span>Ask players to identify the second largest city of a country by population.</span></div>
             <label class="switch"><input type="checkbox" id="setting-medium-second-city" checked><span class="slider"></span></label>
+          </div>
+          <div class="setting-row">
+            <div class="setting-label">Multiple choice population questions<span>Show 4 population options instead of open answer. Recommended — open answer is very hard.</span></div>
+            <label class="switch"><input type="checkbox" id="setting-population-mc" checked><span class="slider"></span></label>
           </div>
         </div>
         <div class="settings-group">
@@ -831,6 +835,7 @@ let gameSettings = {
   medium_pop_margin: 20,
   jeroen_pop_margin: 10,
   medium_second_city: true,
+  population_mc: true,
 };
 
 function getDiffConfig(diff) {
@@ -1030,6 +1035,16 @@ const NL = {
     confirmPin: "Bevestig je pin of klik ergens anders om te verplaatsen",
     submitPin: "Pin bevestigen",
     you: "jij",
+    modeWorld: "🌍 Aardrijkskunde",
+    modeTopo: "📍 Alleen Topografie",
+    topoMediumDesc: "Top 50 landen · Alleen kaart aanwijzen",
+    topoJeroenDesc: "Alle landen + eilandstaten · Kaart + hoofdstad→kaart",
+    secondCity: (c) => `Wat is de <span>tweede grootste stad</span> (qua inwoners) van ${c}?`,
+    population: (c) => `Hoeveel inwoners heeft <span>${c}</span>? (antwoord in miljoenen)`,
+    populationMC: (c) => `Hoeveel inwoners heeft <span>${c}</span>?`,
+    populationMarginHint: (m) => `Antwoord binnen ${m}% afwijking is goed`,
+    matchPopulation: `Koppel elk land aan het juiste <span>aantal inwoners</span> (in miljoenen)`,
+    dragPopulation: "Sleep de inwonertallen naar het juiste land",
   }
 };
 
@@ -1078,6 +1093,16 @@ const EN = {
     confirmPin: "Confirm your pin or click elsewhere to move it",
     submitPin: "Submit Pin",
     you: "you",
+    modeWorld: "🌍 Geography",
+    modeTopo: "📍 Map Only",
+    topoMediumDesc: "Top 50 countries · Click on map only",
+    topoJeroenDesc: "All countries + island states · Map + capital→map",
+    secondCity: (c) => `What is the <span>second largest city</span> (by population) of ${c}?`,
+    population: (c) => `How many people live in <span>${c}</span>? (answer in millions)`,
+    populationMC: (c) => `How many people live in <span>${c}</span>?`,
+    populationMarginHint: (m) => `Answer within ${m}% margin is correct`,
+    matchPopulation: `Match each country to its <span>population</span> (in millions)`,
+    dragPopulation: "Drag the population figures to the correct country",
   }
 };
 
@@ -1187,6 +1212,12 @@ function updateDiffDescriptions() {
   document.getElementById('desc-easy').textContent = t().ui.dumbTestDesc(es, jm);
   document.getElementById('desc-medium').textContent = t().ui.mediumDesc(ms, jm);
   document.getElementById('desc-jeroen').textContent = t().ui.jeroenDesc(jt, jm);
+  document.getElementById('mode-world').textContent = t().ui.modeWorld;
+  document.getElementById('mode-topo').textContent = t().ui.modeTopo;
+  const topoMed = document.getElementById('desc-topo-medium');
+  const topoJer = document.getElementById('desc-topo-jeroen');
+  if (topoMed) topoMed.textContent = t().ui.topoMediumDesc;
+  if (topoJer) topoJer.textContent = t().ui.topoJeroenDesc;
 }
 
 function applyLanguageUI() {
@@ -2056,8 +2087,7 @@ function submitMapAnswer(isCapitalMap) {
 function buildSecondCityQ(country, area, pool) {
   const extra = COUNTRY_EXTRA[country.name];
   if (!extra?.secondCity) { nextQuestion(); return; }
-  document.getElementById('question-text').innerHTML =
-    `Wat is de <span>tweede grootste stad</span> (qua inwoners) van ${localName(country)}?`;
+  document.getElementById('question-text').innerHTML = t().ui.secondCity(localName(country));
 
   if (currentDiff === 'jeroen') {
     buildTypedInput(area, extra.secondCity, extra.secondCity, 'Typ de stad');
@@ -2092,51 +2122,115 @@ function buildSecondCityQ(country, area, pool) {
 function buildPopulationQ(country, area) {
   const extra = COUNTRY_EXTRA[country.name];
   if (!extra?.pop) { nextQuestion(); return; }
-  document.getElementById('question-text').innerHTML =
-    `Hoeveel inwoners heeft <span>${localName(country)}</span>? (antwoord in miljoenen)`;
 
-  const margin = currentDiff === 'jeroen'
-    ? (gameSettings.jeroen_pop_margin || 10)
-    : (gameSettings.medium_pop_margin || 20);
+  const actual = extra.pop;
+  const useMC = gameSettings.population_mc;
 
-  const wrapper = document.createElement('div'); wrapper.className = 'typed-answer-area';
-  const row = document.createElement('div'); row.className = 'typed-input-row';
+  if (useMC) {
+    document.getElementById('question-text').innerHTML = t().ui.populationMC(localName(country));
 
-  const input = document.createElement('input');
-  input.type = 'number'; input.step = '0.1';
-  input.className = 'typed-input'; input.placeholder = 'bv. 17.9';
-  input.autocomplete = 'off';
+    // Generate 3 wrong answers close in magnitude to the real one
+    // Pick from other countries with similar population ranges
+    const allExtras = Object.entries(COUNTRY_EXTRA)
+      .filter(([name]) => name !== country.name && COUNTRY_EXTRA[name].pop)
+      .map(([name, data]) => data.pop);
 
-  const btn = document.createElement('button'); btn.className = 'typed-submit'; btn.textContent = 'Bevestigen';
-  const hint = document.createElement('div'); hint.className = 'typed-hint';
-  hint.textContent = `Antwoord binnen ${margin}% afwijking is goed`;
+    // Sort by closeness to actual, pick 3 from similar range but distinct labels
+    const formatPop = (pop) => {
+      if (pop >= 1000) return `~${Math.round(pop/100)*100}M`;
+      if (pop >= 100) return `~${Math.round(pop/10)*10}M`;
+      if (pop >= 10) return `~${Math.round(pop)}M`;
+      return `~${pop.toFixed(1)}M`;
+    };
+    const correctLabel = formatPop(actual);
 
-  const submit = () => {
-    if (awaitingNext || !input.value) return;
-    stopTimer();
-    const guess = parseFloat(input.value);
-    const actual = extra.pop;
-    const pctOff = Math.abs(guess - actual) / actual * 100;
-    const correct = pctOff <= margin;
-    input.disabled = true; btn.disabled = true;
-    input.classList.add(correct ? 'correct' : 'wrong');
-    hint.style.color = 'var(--success)';
-    if (correct) {
-      hint.textContent = `✓ Exact: ${actual}M — ${pctOff.toFixed(1)}% afwijking`;
-    } else {
-      hint.textContent = `Exact: ${actual}M inwoners (jij: ${guess}M, ${pctOff.toFixed(1)}% afwijking)`;
-      hint.style.color = 'var(--danger)';
+    // Pick wrong answers: candidates sorted by closeness, then filtered for unique labels
+    const candidates = allExtras
+      .sort((a, b) => Math.abs(a - actual) - Math.abs(b - actual))
+      .filter(p => formatPop(p) !== correctLabel);
+
+    const wrongLabels = [];
+    for (const p of candidates) {
+      const label = formatPop(p);
+      if (!wrongLabels.includes(label) && label !== correctLabel) {
+        wrongLabels.push(label);
+        if (wrongLabels.length === 3) break;
+      }
     }
-    showFeedback(correct,
-      correct ? `✓ ${actual}M inwoners — ${pctOff.toFixed(1)}% afwijking` : `${actual}M inwoners (${pctOff.toFixed(1)}% afwijking)`,
-      localName(country));
-  };
-  btn.onclick = submit;
-  input.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
-  row.appendChild(input); row.appendChild(btn);
-  wrapper.appendChild(row); wrapper.appendChild(hint);
-  area.appendChild(wrapper);
-  setTimeout(() => input.focus(), 100);
+
+    // Fallback if not enough unique labels — generate plausible variants
+    while (wrongLabels.length < 3) {
+      const factor = [0.4, 2.5, 5][wrongLabels.length] || 3;
+      const variant = formatPop(actual * factor);
+      if (!wrongLabels.includes(variant) && variant !== correctLabel) wrongLabels.push(variant);
+      else wrongLabels.push(formatPop(actual * (factor + 1)));
+    }
+
+    const choices = shuffle([correctLabel, ...wrongLabels]);
+    const grid = document.createElement('div'); grid.className = 'choices-grid';
+    ['A','B','C','D'].forEach((letter, i) => {
+      if (!choices[i]) return;
+      const btn = document.createElement('button'); btn.className = 'choice-btn';
+      btn.innerHTML = `<span class="choice-letter">${letter}</span>${choices[i]}`;
+      btn.onclick = () => {
+        if (awaitingNext) return; stopTimer();
+        grid.querySelectorAll('.choice-btn').forEach(b => {
+          b.disabled = true;
+          if (b.textContent.trim().endsWith(correctLabel)) b.classList.add('correct');
+        });
+        const chosen = choices[i];
+        if (chosen !== correctLabel) btn.classList.add('wrong');
+        showFeedback(chosen === correctLabel,
+          chosen === correctLabel
+            ? `✓ ${actual}M ${currentLang === 'nl' ? 'inwoners' : 'people'}`
+            : `${actual}M ${currentLang === 'nl' ? 'inwoners' : 'people'}`,
+          localName(country));
+      };
+      grid.appendChild(btn);
+    });
+    area.appendChild(grid);
+  } else {
+    // Open answer (typed)
+    document.getElementById('question-text').innerHTML = t().ui.population(localName(country));
+    const margin = currentDiff === 'jeroen'
+      ? (gameSettings.jeroen_pop_margin || 10)
+      : (gameSettings.medium_pop_margin || 20);
+
+    const wrapper = document.createElement('div'); wrapper.className = 'typed-answer-area';
+    const row = document.createElement('div'); row.className = 'typed-input-row';
+    const input = document.createElement('input');
+    input.type = 'number'; input.step = '0.1';
+    input.className = 'typed-input'; input.placeholder = 'bv. 17.9'; input.autocomplete = 'off';
+    const btn = document.createElement('button'); btn.className = 'typed-submit'; btn.textContent = t().ui.submitAnswer;
+    const hint = document.createElement('div'); hint.className = 'typed-hint';
+    hint.textContent = t().ui.populationMarginHint(margin);
+
+    const submit = () => {
+      if (awaitingNext || !input.value) return;
+      stopTimer();
+      const guess = parseFloat(input.value);
+      const pctOff = Math.abs(guess - actual) / actual * 100;
+      const correct = pctOff <= margin;
+      input.disabled = true; btn.disabled = true;
+      input.classList.add(correct ? 'correct' : 'wrong');
+      if (correct) {
+        hint.textContent = `✓ ${actual}M — ${pctOff.toFixed(1)}% ${currentLang === 'nl' ? 'afwijking' : 'margin'}`;
+        hint.style.color = 'var(--success)';
+      } else {
+        hint.textContent = `${actual}M (${pctOff.toFixed(1)}% ${currentLang === 'nl' ? 'afwijking' : 'margin'})`;
+        hint.style.color = 'var(--danger)';
+      }
+      showFeedback(correct,
+        correct ? `✓ ${actual}M — ${pctOff.toFixed(1)}%` : `${actual}M (${pctOff.toFixed(1)}%)`,
+        localName(country));
+    };
+    btn.onclick = submit;
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+    row.appendChild(input); row.appendChild(btn);
+    wrapper.appendChild(row); wrapper.appendChild(hint);
+    area.appendChild(wrapper);
+    setTimeout(() => input.focus(), 100);
+  }
 }
 
 // ── MATCH POPULATION (Jeroen only) ──
@@ -2217,8 +2311,7 @@ function buildMatchPopulationQ(pool, area) {
   picks = shuffle(picks);
   lastMatchCountries = picks.map(c => c.name);
 
-  document.getElementById('question-text').innerHTML =
-    `Koppel elk land aan het juiste <span>aantal inwoners</span> (in miljoenen)`;
+  document.getElementById('question-text').innerHTML = t().ui.matchPopulation;
 
   // Left: country names (fixed), Right: population labels (shuffled)
   const leftItems = picks;
@@ -2231,15 +2324,15 @@ function buildMatchPopulationQ(pool, area) {
   area.classList.add('match-mode');
 
   const instructions = document.createElement('div'); instructions.className = 'match-instructions';
-  instructions.textContent = 'Sleep de inwonertallen naar het juiste land';
+  instructions.textContent = t().ui.dragPopulation;
   matchArea.appendChild(instructions);
 
   const cols = document.createElement('div'); cols.className = 'match-columns';
   const leftCol = document.createElement('div'); leftCol.className = 'match-col';
   const rightCol = document.createElement('div'); rightCol.className = 'match-col';
 
-  const leftLabel = document.createElement('div'); leftLabel.className = 'match-col-label'; leftLabel.textContent = 'LANDEN';
-  const rightLabel = document.createElement('div'); rightLabel.className = 'match-col-label'; rightLabel.textContent = 'INWONERS';
+  const leftLabel = document.createElement('div'); leftLabel.className = 'match-col-label'; leftLabel.textContent = currentLang === 'nl' ? 'LANDEN' : 'COUNTRIES';
+  const rightLabel = document.createElement('div'); rightLabel.className = 'match-col-label'; rightLabel.textContent = currentLang === 'nl' ? 'INWONERS' : 'POPULATION';
   leftCol.appendChild(leftLabel); rightCol.appendChild(rightLabel);
 
   const leftSlots = leftItems.map((country, i) => {
@@ -2462,6 +2555,7 @@ async function loadAdminSettings() {
     document.getElementById('setting-medium-pop-margin').value = s.medium_pop_margin || 20;
     document.getElementById('setting-jeroen-pop-margin').value = s.jeroen_pop_margin || 10;
     document.getElementById('setting-medium-second-city').checked = s.medium_second_city !== false;
+    document.getElementById('setting-population-mc').checked = s.population_mc !== false;
   } catch {}
 }
 
@@ -2485,6 +2579,7 @@ async function saveSettings() {
     medium_pop_margin: parseInt(document.getElementById('setting-medium-pop-margin').value) || 20,
     jeroen_pop_margin: parseInt(document.getElementById('setting-jeroen-pop-margin').value) || 10,
     medium_second_city: document.getElementById('setting-medium-second-city').checked ? '1' : '0',
+    population_mc: document.getElementById('setting-population-mc').checked ? '1' : '0',
   };
   try {
     await fetch('/api/admin/settings', {

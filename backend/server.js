@@ -58,6 +58,7 @@ const DEFAULT_SETTINGS = {
   medium_pop_margin: '20',
   jeroen_pop_margin: '10',
   medium_second_city: '1',
+  population_mc: '1',
 };
 for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
   try { db.prepare('INSERT INTO settings (key, value) VALUES (?, ?)').run(key, value); } catch {}
@@ -138,6 +139,7 @@ app.get('/api/settings', (req, res) => {
     medium_pop_margin: parseInt(getSetting('medium_pop_margin')),
     jeroen_pop_margin: parseInt(getSetting('jeroen_pop_margin')),
     medium_second_city: getSetting('medium_second_city') !== '0',
+    population_mc: getSetting('population_mc') !== '0',
   });
 });
 
@@ -246,7 +248,7 @@ app.post('/api/admin/settings', auth, adminOnly, (req, res) => {
     'medium_timer_simple','medium_timer_match','medium_timer_map',
     'jeroen_timer_simple','jeroen_timer_match','jeroen_timer_map','jeroen_timer_typed','jeroen_timer_capitalmap',
     'jeroen_map_threshold','jeroen_show_historical_label','jeroen_historical_flags','jeroen_historical_capitals',
-    'medium_pop_margin','jeroen_pop_margin','medium_second_city',
+    'medium_pop_margin','jeroen_pop_margin','medium_second_city','population_mc',
   ];
   for (const key of allowed) {
     if (req.body[key] !== undefined) {
