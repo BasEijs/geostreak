@@ -69,6 +69,10 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 /* MENU */
 #menu-screen { min-height: 100vh; flex-direction: column; }
 .menu-content { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 28px 24px; gap: 24px; overflow-y: auto; }
+.mode-selector { display: flex; gap: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 6px; width: 100%; max-width: 540px; }
+.mode-btn { flex: 1; padding: 10px 20px; border: none; background: none; color: var(--text-muted); font-family: 'DM Sans',sans-serif; font-size: 14px; font-weight: 600; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+.mode-btn.active { background: var(--surface2); color: var(--text); }
+.mode-btn:hover:not(.active) { color: var(--text); }
 .difficulty-picker { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; width: 100%; }
 .diff-card { background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius); padding: 18px 16px; cursor: pointer; transition: all 0.2s; text-align: center; flex: 1; min-width: 120px; max-width: 200px; }
 .diff-card:hover { border-color: var(--accent); transform: translateY(-2px); }
@@ -339,7 +343,15 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
     </div>
   </nav>
   <div class="menu-content">
-    <div class="difficulty-picker">
+
+    <!-- Game mode selector -->
+    <div class="mode-selector">
+      <button class="mode-btn active" id="mode-world" onclick="selectGameMode('world')">🌍 Aardrijkskunde</button>
+      <button class="mode-btn" id="mode-topo" onclick="selectGameMode('topo')">📍 Alleen Topografie</button>
+    </div>
+
+    <!-- World difficulty picker -->
+    <div class="difficulty-picker" id="world-diff-picker">
       <div class="diff-card selected" data-diff="easy" onclick="selectDiff('easy')">
         <div class="diff-icon">🧠</div>
         <div class="diff-name">Dumb Test</div>
@@ -356,6 +368,21 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
         <div class="diff-desc" id="desc-jeroen">Disputed territories · 400km map limit</div>
       </div>
     </div>
+
+    <!-- Topo difficulty picker -->
+    <div class="difficulty-picker" id="topo-diff-picker" style="display:none">
+      <div class="diff-card" data-diff="medium" onclick="selectDiff('medium')">
+        <div class="diff-icon">🗺️</div>
+        <div class="diff-name">Medium</div>
+        <div class="diff-desc">Top 50 landen · Alleen kaart aanwijzen</div>
+      </div>
+      <div class="diff-card jeroen-card" data-diff="jeroen" onclick="selectDiff('jeroen')">
+        <div class="diff-icon">💀</div>
+        <div class="diff-name">Jeroen Mode</div>
+        <div class="diff-desc">Alle landen + eilandstaten · Kaart + hoofdstad→kaart</div>
+      </div>
+    </div>
+
     <button class="play-btn" id="play-btn" onclick="startGame()">PLAY</button>
     <div class="lb-section-header">
       <div class="lb-section-line"></div>
@@ -363,10 +390,14 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
       <div class="lb-section-line"></div>
     </div>
     <div class="stats-section">
-      <div class="stats-tabs">
+      <div class="stats-tabs" id="stats-tabs-world">
         <button class="stats-tab active" onclick="switchStatTab('easy')">Dumb Test</button>
         <button class="stats-tab" onclick="switchStatTab('medium')">Medium</button>
         <button class="stats-tab jeroen-tab" onclick="switchStatTab('jeroen')">Jeroen Mode</button>
+      </div>
+      <div class="stats-tabs" id="stats-tabs-topo" style="display:none">
+        <button class="stats-tab active" onclick="switchStatTab('medium')">Topo Medium</button>
+        <button class="stats-tab jeroen-tab" onclick="switchStatTab('jeroen')">Topo Jeroen</button>
       </div>
       <div class="stats-row">
         <div class="stat-card" id="stat-card-best"><div class="value" id="stat-best">—</div><div class="label">Best Streak</div></div>
@@ -803,6 +834,7 @@ let gameSettings = {
 };
 
 function getDiffConfig(diff) {
+  if (currentGameMode === 'topo') return getTopoDiffConfig(diff);
   const easyCountries = EASY_COUNTRIES;
   const medCountries = [...EASY_COUNTRIES, ...MEDIUM_EXTRA];
   const jeroenCountries = [...EASY_COUNTRIES, ...MEDIUM_EXTRA, ...JEROEN_EXTRA];
@@ -847,6 +879,36 @@ function getDiffConfig(diff) {
   }[diff];
 }
 
+// ── TOPO MODE CONFIG ──
+// Top 50 countries by area/recognisability for medium
+const TOPO_MEDIUM_COUNTRIES = [
+  ...EASY_COUNTRIES.filter(c => !c.historical),
+  ...MEDIUM_EXTRA.filter(c => ['Algeria','Sudan','Kazakhstan','Iran','Mexico','Peru','Colombia','Ethiopia','Nigeria','Mozambique','Venezuela','Turkey','Saudi Arabia','Vietnam','Thailand','Ukraine','Romania','Poland','Czech Republic','Serbia','Bulgaria','Bangladesh','Pakistan','Algeria'].includes(c.name)),
+].filter((c, i, arr) => arr.findIndex(x => x.name === c.name) === i); // dedupe
+
+// Jeroen: all countries + disputed + territories (no historical, those have no map coords)
+function getTopoDiffConfig(diff) {
+  const jeroenCountries = [...EASY_COUNTRIES, ...MEDIUM_EXTRA, ...JEROEN_EXTRA].filter(c => !c.historical);
+  return {
+    medium: {
+      label: "Topografie Medium", badge: "medium",
+      countries: TOPO_MEDIUM_COUNTRIES,
+      questionTypes: ["map","map","map","map","map"],
+      mapThreshold: 800,
+      topoMode: true,
+      timers: { simple: null, map: gameSettings.medium_timer_map||null, match: null, typed: null, capitalmap: null },
+    },
+    jeroen: {
+      label: "Topografie Jeroen 💀", badge: "jeroen",
+      countries: jeroenCountries,
+      questionTypes: ["map","map","map","map","capital-map"],
+      mapThreshold: gameSettings.jeroen_map_threshold,
+      topoMode: true,
+      timers: { simple: null, map: gameSettings.jeroen_timer_map||null, match: null, typed: null, capitalmap: gameSettings.jeroen_timer_capitalmap||null },
+    },
+  }[diff];
+}
+
 // ════════════════════════════════════
 // STATE
 // ════════════════════════════════════
@@ -857,6 +919,7 @@ let isAdmin = localStorage.getItem('is_admin') === '1';
 let currentLang = localStorage.getItem('language') || 'en';
 let devMode = false;
 let streak = 0;
+let currentGameMode = 'world'; // 'world' | 'topo'
 let currentDiff = 'easy';
 let currentStatTab = 'easy';
 let useTimer = false;
@@ -1233,11 +1296,32 @@ async function setLanguage(lang) {
 // DIFFICULTY
 // ════════════════════════════════════
 
+function selectGameMode(mode) {
+  currentGameMode = mode;
+  document.getElementById('mode-world').classList.toggle('active', mode === 'world');
+  document.getElementById('mode-topo').classList.toggle('active', mode === 'topo');
+  document.getElementById('world-diff-picker').style.display = mode === 'world' ? 'flex' : 'none';
+  document.getElementById('topo-diff-picker').style.display = mode === 'topo' ? 'flex' : 'none';
+  document.getElementById('stats-tabs-world').style.display = mode === 'world' ? 'flex' : 'none';
+  document.getElementById('stats-tabs-topo').style.display = mode === 'topo' ? 'flex' : 'none';
+  const defaultDiff = mode === 'topo' ? 'medium' : 'easy';
+  document.querySelectorAll('.diff-card').forEach(c => c.classList.remove('selected'));
+  const picker = mode === 'topo'
+    ? document.getElementById('topo-diff-picker')
+    : document.getElementById('world-diff-picker');
+  picker.querySelector(`[data-diff="${defaultDiff}"]`)?.classList.add('selected');
+  currentDiff = defaultDiff;
+  document.getElementById('play-btn').className = 'play-btn' + (currentDiff === 'jeroen' ? ' jeroen-play' : '');
+  switchStatTab(defaultDiff);
+}
+
 function selectDiff(diff) {
   currentDiff = diff;
-  document.querySelectorAll('.diff-card').forEach(c => c.classList.toggle('selected', c.dataset.diff===diff));
-  const btn = document.getElementById('play-btn');
-  btn.className = 'play-btn' + (diff==='jeroen' ? ' jeroen-play' : '');
+  const picker = currentGameMode === 'topo'
+    ? document.getElementById('topo-diff-picker')
+    : document.getElementById('world-diff-picker');
+  picker.querySelectorAll('.diff-card').forEach(c => c.classList.toggle('selected', c.dataset.diff === diff));
+  document.getElementById('play-btn').className = 'play-btn' + (diff === 'jeroen' ? ' jeroen-play' : '');
   switchStatTab(diff);
 }
 
@@ -1274,7 +1358,12 @@ async function loadAllStats() {
 }
 
 async function loadLeaderboard(diff) {
-  const titles = {easy:'🧠 Dumb Test Leaderboard', medium:'🗺️ Medium Leaderboard', jeroen:'💀 Jeroen Mode Leaderboard'};
+  const isTopo = currentGameMode === 'topo';
+  const titles = {
+    easy: '🧠 Dumb Test Leaderboard',
+    medium: isTopo ? '📍 Topo Medium Leaderboard' : '🗺️ Medium Leaderboard',
+    jeroen: isTopo ? '📍💀 Topo Jeroen Leaderboard' : '💀 Jeroen Mode Leaderboard'
+  };
   document.getElementById('lb-title').textContent = titles[diff];
   document.getElementById('lb-section-title').textContent = titles[diff];
   try {
@@ -1874,7 +1963,25 @@ function submitMapAnswer(isCapitalMap) {
   const cfg = getDiffConfig(currentDiff);
   const dist = haversine(marker.lat, marker.lng, country.lat, country.lng);
   const effectiveThreshold = Math.max(cfg.mapThreshold, country.extraRadius || 0);
-  const correct = dist <= effectiveThreshold;
+
+  // Use Mapbox queryRenderedFeatures for border detection
+  let insideBorder = false;
+  if (map) {
+    try {
+      const point = map.project([marker.lng, marker.lat]);
+      const features = map.queryRenderedFeatures(point, { layers: ['country-boundaries', 'admin-0-boundary', 'country_fill', 'land'] });
+      if (features.length > 0) {
+        // Check if any feature matches the country by name
+        insideBorder = features.some(f => {
+          const name = f.properties?.name_en || f.properties?.NAME_EN || f.properties?.name || '';
+          return name.toLowerCase().includes(country.name.toLowerCase()) ||
+                 country.name.toLowerCase().includes(name.toLowerCase().split(' ')[0]);
+        });
+      }
+    } catch {}
+  }
+
+  const correct = insideBorder || dist <= effectiveThreshold;
 
   // Show correct location marker
   const correctEl = document.createElement('div');
@@ -1903,10 +2010,10 @@ function submitMapAnswer(isCapitalMap) {
     <div class="dist-value">${Math.round(dist)} km</div>
     <div class="dist-label">from ${localName(country)}</div>
     <div class="dist-verdict" style="color:${correct ? 'var(--success)' : 'var(--danger)'}">
-      ${correct ? t().ui.withinKm(effectiveThreshold) : t().ui.tooFar(effectiveThreshold)}</div>`;
+      ${insideBorder ? '✓ Binnen de grenzen' : (correct ? t().ui.withinKm(effectiveThreshold) : t().ui.tooFar(effectiveThreshold))}</div>`;
   showFeedback(correct,
-    correct ? t().ui.closeEnough(Math.round(dist)) : t().ui.tooFarDist(Math.round(dist)),
-    localName(country));
+    insideBorder ? `✓ Binnen de grenzen van ${localName(country)}!` : (correct ? t().ui.closeEnough(Math.round(dist)) : t().ui.tooFarDist(Math.round(dist))),
+    insideBorder ? '' : localName(country));
 }
 
 // ── SECOND CITY ──
