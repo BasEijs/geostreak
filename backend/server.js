@@ -67,7 +67,7 @@ function getSetting(key) {
 }
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 app.use('/api/login', authLimiter);
 app.use('/api/register', authLimiter);
 app.use('/api/', apiLimiter);
