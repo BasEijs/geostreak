@@ -3451,6 +3451,8 @@ function buildNLMatchQ(pool, area) {
         el.textContent = `✓ ${place.name}`;
         leftSlots[i].appendChild(el);
       }
+    });
+    rightItems.forEach(r => { r._el.draggable=false; r._el.style.pointerEvents='none'; });
     showFeedback(allCorrect,
       allCorrect ? (currentLang === 'nl' ? 'Perfecte koppeling! 🎯' : 'Perfect match! 🎯')
                  : (currentLang === 'nl' ? 'Sommige koppelingen klopten niet' : 'Some matches were wrong'));
