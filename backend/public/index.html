@@ -114,6 +114,13 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .lb-me { background: rgba(240,180,41,0.05) !important; }
 .lb-me.jeroen-row { background: rgba(168,85,247,0.06) !important; }
 
+.game-intro { width: 100%; max-width: 700px; display: flex; flex-direction: column; gap: 14px; }
+.game-intro-title { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 2px; color: var(--accent); }
+.game-intro-text { font-size: 14px; color: var(--text-muted); line-height: 1.7; }
+.game-intro-modes { display: flex; flex-direction: column; gap: 8px; }
+.game-intro-mode { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; }
+.game-intro-mode-name { font-weight: 700; font-size: 14px; margin-bottom: 3px; }
+.game-intro-mode-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
 .game-config-panel { width: 100%; max-width: 700px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; display: flex; flex-direction: column; gap: 6px; }
 .config-panel-row { display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
 .config-panel-label { color: var(--text-muted); }
@@ -381,21 +388,7 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
   </nav>
   <div class="menu-content">
 
-    <div class="game-config-panel" id="game-config-panel">
-      <div class="config-panel-row">
-        <span class="config-panel-label" id="config-label-mode"></span>
-        <span class="config-panel-value" id="config-value-mode"></span>
-      </div>
-      <div class="config-panel-row">
-        <span class="config-panel-label" id="config-label-region"></span>
-        <span class="config-panel-value" id="config-value-region"></span>
-      </div>
-      <div class="config-panel-row">
-        <span class="config-panel-label" id="config-label-diff"></span>
-        <span class="config-panel-value" id="config-value-diff"></span>
-      </div>
-      <div class="config-panel-hint" id="config-panel-hint"></div>
-    </div>
+    <div class="game-intro" id="game-intro"></div>
 
     <button class="play-btn" id="play-btn" onclick="openGameSetup()"></button>
     <div class="lb-section-header">
@@ -1761,22 +1754,40 @@ function updateDiffDescriptions() {
   if (topoJer) topoJer.textContent = t().ui.topoJeroenDesc;
   const playBtn = document.getElementById('play-btn');
   if (playBtn) playBtn.textContent = currentLang === 'nl' ? 'NIEUW SPEL →' : 'NEW GAME →';
-  // Update config panel
-  const modeNames = { world: { nl: 'Aardrijkskunde', en: 'Geography' }, topo: { nl: 'Alleen Topografie', en: 'Map Only' } };
-  const regionNames = { world: { nl: 'Wereld', en: 'World' }, nl: { nl: 'Nederland', en: 'Netherlands' } };
-  const diffNames = { easy: 'Dumb Test', medium: 'Medium', jeroen: 'Jeroen Mode 💀' };
-  const lang = currentLang;
-  const modeEl = document.getElementById('config-label-mode');
-  if (modeEl) {
-    document.getElementById('config-label-mode').textContent = lang === 'nl' ? 'Modus' : 'Mode';
-    document.getElementById('config-value-mode').textContent = modeNames[currentGameMode]?.[lang] || currentGameMode;
-    document.getElementById('config-label-region').textContent = lang === 'nl' ? 'Regio' : 'Region';
-    document.getElementById('config-value-region').textContent = regionNames[currentRegion]?.[lang] || currentRegion;
-    document.getElementById('config-label-diff').textContent = lang === 'nl' ? 'Moeilijkheid' : 'Difficulty';
-    document.getElementById('config-value-diff').textContent = diffNames[currentDiff] || currentDiff;
-    document.getElementById('config-panel-hint').textContent = lang === 'nl'
-      ? 'Gebruik "Nieuw Spel" om regio en moeilijkheid te wijzigen'
-      : 'Use "New Game" to change region and difficulty';
+
+  const intro = document.getElementById('game-intro');
+  if (intro) {
+    if (currentLang === 'nl') {
+      intro.innerHTML = `
+        <div class="game-intro-title">Hoe ver kom jij?</div>
+        <div class="game-intro-text">Test je aardrijkskennis door vragen te beantwoorden over landen, hoofdsteden, vlaggen en kaarten. Houd je reeks zo lang mogelijk gaande — één fout en het is voorbij.</div>
+        <div class="game-intro-modes">
+          <div class="game-intro-mode">
+            <div class="game-intro-mode-name">🌍 Aardrijkskunde</div>
+            <div class="game-intro-mode-desc">Landen, hoofdsteden, vlaggen, kaarten en meer. Kies tussen Wereld of Nederland als regio.</div>
+          </div>
+          <div class="game-intro-mode">
+            <div class="game-intro-mode-name">📍 Alleen Topografie</div>
+            <div class="game-intro-mode-desc">Puur kaart aanwijzen. Klik landen of plaatsen zo precies mogelijk aan op de kaart.</div>
+          </div>
+        </div>
+        <div class="game-intro-text" style="font-size:12px">Klik op <strong>Nieuw Spel</strong> om regio en moeilijkheid te kiezen.</div>`;
+    } else {
+      intro.innerHTML = `
+        <div class="game-intro-title">How far can you go?</div>
+        <div class="game-intro-text">Test your geography knowledge by answering questions about countries, capitals, flags and maps. Keep your streak going as long as possible — one mistake and it's over.</div>
+        <div class="game-intro-modes">
+          <div class="game-intro-mode">
+            <div class="game-intro-mode-name">🌍 Geography</div>
+            <div class="game-intro-mode-desc">Countries, capitals, flags, maps and more. Choose between World or Netherlands as your region.</div>
+          </div>
+          <div class="game-intro-mode">
+            <div class="game-intro-mode-name">📍 Map Only</div>
+            <div class="game-intro-mode-desc">Pure geography. Click countries or cities as precisely as possible on the map.</div>
+          </div>
+        </div>
+        <div class="game-intro-text" style="font-size:12px">Click <strong>New Game</strong> to choose your region and difficulty.</div>`;
+    }
   }
 }
 
