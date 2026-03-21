@@ -69,7 +69,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 
 /* MENU */
 #menu-screen { min-height: 100vh; flex-direction: column; }
-.menu-content { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 24px 24px 40px; gap: 20px; overflow-y: auto; }
+.menu-content { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 32px 24px 48px; gap: 0; overflow-y: auto; }
 .mode-selector { display: flex; gap: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 6px; width: 100%; max-width: 700px; }
 .mode-btn { flex: 1; padding: 14px 20px; border: none; background: none; color: var(--text-muted); font-family: 'DM Sans',sans-serif; font-size: 16px; font-weight: 600; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
 .mode-btn.active { background: var(--surface2); color: var(--text); }
@@ -84,11 +84,13 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .diff-name { font-family: 'Bebas Neue',sans-serif; font-size: 26px; letter-spacing: 1px; margin-bottom: 6px; }
 .diff-card.jeroen-card .diff-name { background: linear-gradient(135deg,var(--jeroen),var(--jeroen2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 .diff-desc { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
-.play-btn { background: linear-gradient(135deg,var(--accent),var(--accent2)); color: #000; font-family: 'Bebas Neue',sans-serif; font-size: 26px; letter-spacing: 3px; padding: 15px 60px; border: none; border-radius: var(--radius); cursor: pointer; transition: all 0.2s; box-shadow: 0 6px 24px rgba(240,180,41,0.2); width: 100%; max-width: 700px; }
+.play-btn { background: linear-gradient(135deg,var(--accent),var(--accent2)); color: #000; font-family: 'Bebas Neue',sans-serif; font-size: 24px; letter-spacing: 3px; padding: 14px 48px; border: none; border-radius: var(--radius); cursor: pointer; transition: all 0.2s; box-shadow: 0 6px 24px rgba(240,180,41,0.2); width: auto; min-width: 280px; }
 .play-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(240,180,41,0.3); }
 .play-btn.jeroen-play { background: linear-gradient(135deg,var(--jeroen),var(--jeroen2)); color: #fff; box-shadow: 0 6px 24px rgba(168,85,247,0.25); }
 .play-btn.jeroen-play:hover { box-shadow: 0 10px 32px rgba(168,85,247,0.4); }
-.lb-section-header { display: flex; align-items: center; gap: 16px; width: 100%; max-width: 700px; margin-bottom: -4px; }
+.menu-intro-section { width: 100%; max-width: 700px; display: flex; flex-direction: column; align-items: center; gap: 20px; padding-bottom: 36px; }
+.menu-lb-section { width: 100%; max-width: 700px; border-top: 2px solid var(--border); padding-top: 32px; display: flex; flex-direction: column; gap: 12px; }
+.lb-section-header { display: flex; align-items: center; gap: 16px; width: 100%; }
 .lb-section-line { flex: 1; height: 1px; background: var(--border); }
 .lb-section-title { font-family: 'Bebas Neue',sans-serif; font-size: 22px; letter-spacing: 2px; color: var(--text-muted); white-space: nowrap; }
 .stats-section { width: 100%; max-width: 700px; display: flex; flex-direction: column; gap: 8px; }
@@ -105,7 +107,6 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .leaderboard-header { display: none; }
 .lb-meta-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; border-bottom: 1px solid var(--border); }
 .lb-meta-stat { font-family: 'Bebas Neue',sans-serif; font-size: 22px; color: var(--accent); display: flex; align-items: baseline; gap: 5px; }
-.lb-meta-stat.jeroen-stat { color: var(--jeroen); }
 .lb-meta-label { font-family: 'DM Sans',sans-serif; font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); font-weight: 400; }
 .leaderboard-active-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); text-align: center; }
 .leaderboard-cols { display: grid; grid-template-columns: 32px 1fr 70px 60px; gap: 8px; padding: 8px 20px; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); border-bottom: 1px solid var(--border); }
@@ -119,7 +120,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .lb-me { background: rgba(240,180,41,0.05) !important; }
 .lb-me.jeroen-row { background: rgba(168,85,247,0.06) !important; }
 
-.lb-controls { display: flex; gap: 8px; width: 100%; max-width: 700px; }
+.lb-controls { display: flex; gap: 8px; width: 100%; }
 .lb-toggle { display: flex; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 3px; flex: 1; }
 .lb-diff-toggle { flex: none; width: 100%; }
 .lb-toggle-btn { flex: 1; padding: 7px 10px; border: none; background: none; color: var(--text-muted); font-size: 13px; border-radius: calc(var(--radius) - 2px); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
@@ -127,11 +128,11 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .lb-diff-jeroen.active { background: rgba(168,85,247,0.15); color: var(--jeroen); }
 .lb-diff-select { width: 100%; max-width: 700px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); padding: 10px 14px; font-size: 14px; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239aadca' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; }
 .lb-diff-select:focus { outline: none; border-color: var(--accent); }
-.game-intro-title { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 2px; color: var(--accent); }
-.game-intro-text { font-size: 13px; color: var(--text-muted); line-height: 1.6; max-width: 560px; }
+.game-intro-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 2px; color: var(--accent); }
+.game-intro-text { font-size: 15px; color: var(--text-muted); line-height: 1.65; max-width: 560px; }
 .game-intro-modes { display: flex; gap: 10px; width: 100%; }
 .game-intro-mode { flex: 1; display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; }
-.game-intro-mode-name { font-weight: 600; font-size: 13px; }
+.game-intro-mode-name { font-weight: 600; font-size: 14px; }
 .game-intro-mode-desc { display: none; }
 .game-config-panel { width: 100%; max-width: 700px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; display: flex; flex-direction: column; gap: 6px; }
 .config-panel-row { display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
@@ -399,43 +400,41 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
     </div>
   </nav>
   <div class="menu-content">
-
-    <div class="game-intro" id="game-intro"></div>
-
-    <button class="play-btn" id="play-btn" onclick="openGameSetup()"></button>
-
-    <div class="lb-section-header">
-      <div class="lb-section-line"></div>
-      <div class="lb-section-title" id="lb-section-title">Leaderboards</div>
-      <div class="lb-section-line"></div>
+    <div class="menu-intro-section">
+      <div class="game-intro" id="game-intro"></div>
+      <button class="play-btn" id="play-btn" onclick="openGameSetup()"></button>
     </div>
-    <div class="stats-section">
-      <!-- Toggles row -->
-      <div class="lb-controls">
-        <div class="lb-toggle" id="lb-region-toggle">
-          <button class="lb-toggle-btn active" id="lb-region-world" onclick="switchLBRegion('world')">🌍 World</button>
-          <button class="lb-toggle-btn" id="lb-region-nl" onclick="switchLBRegion('nl')">🇳🇱 NL</button>
-        </div>
-        <div class="lb-toggle" id="lb-mode-toggle">
-          <button class="lb-toggle-btn active" id="lb-mode-world" onclick="switchLBMode('world')">🌍 Aardrijkskunde</button>
-          <button class="lb-toggle-btn" id="lb-mode-topo" onclick="switchLBMode('topo')">📍 Topografie</button>
-        </div>
+    <div class="menu-lb-section">
+      <div class="lb-section-header">
+        <div class="lb-section-line"></div>
+        <div class="lb-section-title" id="lb-section-title">Leaderboards</div>
+        <div class="lb-section-line"></div>
       </div>
-      <!-- Difficulty toggle -->
-      <div class="lb-toggle lb-diff-toggle" id="lb-diff-toggle">
-        <button class="lb-toggle-btn" id="lb-diff-easy" onclick="switchStatTab('easy')">🧠 Dumb Test</button>
-        <button class="lb-toggle-btn active" id="lb-diff-medium" onclick="switchStatTab('medium')">🗺️ Medium</button>
-        <button class="lb-toggle-btn lb-diff-jeroen" id="lb-diff-jeroen" onclick="switchStatTab('jeroen')">💀 Jeroen</button>
-      </div>
-      <!-- Inline stats + leaderboard -->
-      <div class="leaderboard">
-        <div class="lb-meta-row">
-          <div class="lb-meta-stat"><span id="stat-best">—</span> <span class="lb-meta-label" id="lb-stat-best-label"></span></div>
-          <div class="leaderboard-active-title" id="lb-title"></div>
-          <div class="lb-meta-stat"><span id="stat-games">—</span> <span class="lb-meta-label" id="lb-stat-games-label"></span></div>
+      <div class="stats-section">
+        <div class="lb-controls">
+          <div class="lb-toggle" id="lb-region-toggle">
+            <button class="lb-toggle-btn active" id="lb-region-world" onclick="switchLBRegion('world')">🌍 World</button>
+            <button class="lb-toggle-btn" id="lb-region-nl" onclick="switchLBRegion('nl')">🇳🇱 NL</button>
+          </div>
+          <div class="lb-toggle" id="lb-mode-toggle">
+            <button class="lb-toggle-btn active" id="lb-mode-world" onclick="switchLBMode('world')">🌍 Geography</button>
+            <button class="lb-toggle-btn" id="lb-mode-topo" onclick="switchLBMode('topo')">📍 Map Only</button>
+          </div>
         </div>
-        <div class="leaderboard-cols"><div>#</div><div>Player</div><div style="text-align:right">Best</div><div style="text-align:right">Games</div></div>
-        <div id="leaderboard-body"></div>
+        <div class="lb-toggle lb-diff-toggle" id="lb-diff-toggle">
+          <button class="lb-toggle-btn" id="lb-diff-easy" onclick="switchStatTab('easy')">🧠 Dumb Test</button>
+          <button class="lb-toggle-btn active" id="lb-diff-medium" onclick="switchStatTab('medium')">🗺️ Medium</button>
+          <button class="lb-toggle-btn lb-diff-jeroen" id="lb-diff-jeroen" onclick="switchStatTab('jeroen')">💀 Jeroen</button>
+        </div>
+        <div class="leaderboard">
+          <div class="lb-meta-row" id="lb-meta-row">
+            <div class="lb-meta-stat" id="lb-meta-best"><span id="stat-best">—</span> <span class="lb-meta-label" id="lb-stat-best-label"></span></div>
+            <div class="leaderboard-active-title" id="lb-title"></div>
+            <div class="lb-meta-stat" id="lb-meta-games"><span id="stat-games">—</span> <span class="lb-meta-label" id="lb-stat-games-label"></span></div>
+          </div>
+          <div class="leaderboard-cols"><div>#</div><div>Player</div><div style="text-align:right">Best</div><div style="text-align:right">Games</div></div>
+          <div id="leaderboard-body"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -2173,6 +2172,8 @@ function switchStatTab(diff) {
   const s = allStats[key] || allStats[diff] || {};
   const best = s.best_streak || 0;
   const games = s.games_played || 0;
+  const metaRow = document.getElementById('lb-meta-row');
+  if (metaRow) metaRow.style.display = (best || games) ? 'flex' : 'none';
   document.getElementById('stat-best').textContent = best || '—';
   document.getElementById('stat-games').textContent = games || '—';
   const metaBest = document.getElementById('lb-stat-best-label');
