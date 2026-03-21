@@ -146,6 +146,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .config-panel-label { color: var(--text-muted); }
 .config-panel-value { font-weight: 600; color: var(--text); }
 .config-panel-hint { font-size: 11px; color: var(--text-muted); margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border); }
+@keyframes toastIn { from { opacity:0; transform:translateX(-50%) translateY(12px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
 .setup-step { width:28px;height:28px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--text-muted);transition:all 0.2s; }
 .setup-step.active { border-color:var(--accent);color:var(--accent);background:rgba(240,180,41,0.1); }
 .setup-step.done { border-color:var(--success);color:var(--success);background:rgba(34,197,94,0.1); }
@@ -1861,6 +1862,12 @@ async function submitAuth() {
   const uname = document.getElementById('auth-username').value.trim();
   const pass = document.getElementById('auth-password').value;
   if (!uname || !pass) return showAuthError('Please fill in all fields');
+
+  // 🥚 Easter egg: block Jeroen
+  if (!isLoginTab() && uname.toLowerCase() === 'jeroen') {
+    return showAuthError('Jij mag niet meedoen, dan is het voor niemand meer leuk 😅');
+  }
+
   try {
     const res = await fetch(isLoginTab() ? '/api/login' : '/api/register', {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -2315,6 +2322,43 @@ async function loadLeaderboard(diff) {
 // GAME
 // ════════════════════════════════════
 
+// 🥚 Easter egg: "Ga werken man!"
+let sessionStartTime = null;
+let workingHoursInterval = null;
+
+function startWorkingHoursWatch() {
+  sessionStartTime = Date.now();
+  if (workingHoursInterval) clearInterval(workingHoursInterval);
+  workingHoursInterval = setInterval(() => {
+    const now = new Date();
+    const hour = now.getHours();
+    const elapsed = (Date.now() - sessionStartTime) / 1000 / 60; // minutes
+    if (elapsed >= 10 && hour >= 7 && hour < 17) {
+      showWorkEasterEgg();
+    }
+  }, 30000); // check every 30s
+}
+
+function stopWorkingHoursWatch() {
+  if (workingHoursInterval) { clearInterval(workingHoursInterval); workingHoursInterval = null; }
+}
+
+function showWorkEasterEgg() {
+  stopWorkingHoursWatch();
+  const toast = document.createElement('div');
+  toast.style.cssText = `position:fixed;bottom:32px;left:50%;transform:translateX(-50%);
+    background:var(--surface);border:1px solid var(--accent);border-radius:12px;
+    padding:14px 24px;font-size:15px;font-weight:600;z-index:9999;
+    box-shadow:0 8px 32px rgba(0,0,0,0.4);animation:toastIn 0.3s ease;white-space:nowrap;`;
+  toast.textContent = '💼 Ga werken man!';
+  document.body.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transition = 'opacity 0.5s';
+    setTimeout(() => toast.remove(), 500);
+  }, 5000);
+}
+
 function startGame() {
   streak=0; awaitingNext=false;
   const cfg = getDiffConfig(currentDiff);
@@ -2331,10 +2375,11 @@ function startGame() {
   const devBadge = document.getElementById('dev-mode-badge');
   if (devBadge) devBadge.style.display = devMode ? 'inline-block' : 'none';
   showScreen('game-screen');
+  startWorkingHoursWatch();
   nextQuestion();
 }
 
-function giveUp() { stopTimer(); endGame(); }
+function giveUp() { stopTimer(); stopWorkingHoursWatch(); endGame(); }
 function updateStreakDisplay() { document.getElementById('streak-count').textContent = streak; }
 
 function getRandom(arr, exclude=[]) {

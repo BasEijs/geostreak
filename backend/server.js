@@ -101,6 +101,7 @@ app.post('/api/register', (req, res) => {
   if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
   if (username.length < 2 || username.length > 20) return res.status(400).json({ error: 'Username must be 2-20 characters' });
   if (password.length < 4) return res.status(400).json({ error: 'Password must be at least 4 characters' });
+  if (username.trim().toLowerCase() === 'jeroen') return res.status(400).json({ error: 'Jij mag niet meedoen, dan is het voor niemand meer leuk 😅' });
   const hash = bcrypt.hashSync(password, 10);
   try {
     const result = db.prepare('INSERT INTO users (username, password_hash) VALUES (?, ?)').run(username.trim(), hash);
