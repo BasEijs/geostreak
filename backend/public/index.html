@@ -443,10 +443,17 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
         <div class="setup-step" data-step="3">3</div>
       </div>
     </div>
-    <!-- Step 1: Region -->
+    <!-- Step 1: Mode + Region -->
     <div id="setup-step-1" class="setup-pane">
-      <div class="setup-pane-title" id="setup-step1-label">Kies een regio</div>
-      <div class="setup-region-grid" id="setup-region-grid"></div>
+      <div class="setup-pane-title" id="setup-step1-label"></div>
+      <div style="margin-bottom:16px;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);margin-bottom:8px;" id="setup-mode-label"></div>
+        <div id="setup-mode-grid" style="display:flex;gap:10px;"></div>
+      </div>
+      <div>
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);margin-bottom:8px;" id="setup-region-label"></div>
+        <div class="setup-region-grid" id="setup-region-grid"></div>
+      </div>
     </div>
     <!-- Step 2: Difficulty -->
     <div id="setup-step-2" class="setup-pane" style="display:none">
@@ -1826,11 +1833,10 @@ function showMenu() {
   document.getElementById('admin-nav-btn').style.display = isAdmin ? 'inline-block' : 'none';
   document.body.classList.remove('jeroen-mode');
   updateDiffDescriptions();
-  // Switch leaderboard to region of game just played, then refresh
   currentLBRegion = currentRegion;
-  switchLBRegion(currentLBRegion);
+  const diff = (currentDiff === 'easy' && currentRegion === 'nl') ? 'medium' : currentDiff;
+  switchLBRegion(currentLBRegion, diff);
   loadAllStats();
-  loadLeaderboard(currentDiff === 'easy' && currentLBRegion === 'nl' ? 'medium' : currentDiff);
 }
 
 // ════════════════════════════════════
@@ -1922,6 +1928,7 @@ async function setLanguage(lang) {
 
 let setupStep = 1;
 let setupRegion = 'world';
+let setupMode = 'world'; // 'world' | 'topo'
 let setupDiff = 'medium';
 
 function openGameSetupWithDiff(diff) {
@@ -1937,6 +1944,7 @@ function openGameSetupWithDiff(diff) {
 function openGameSetup() {
   setupStep = 1;
   setupRegion = currentRegion;
+  setupMode = currentGameMode;
   setupDiff = currentDiff === 'easy' ? 'medium' : currentDiff;
   renderSetupStep();
   const modal = document.getElementById('setup-modal');
@@ -1976,25 +1984,49 @@ function renderSetupStep() {
 }
 
 function renderSetupRegions() {
-  const grid = document.getElementById('setup-region-grid');
-  grid.innerHTML = '';
-  const regionDefs = [
+  const lang = currentLang;
+  document.getElementById('setup-step1-label').textContent = lang === 'nl' ? 'Kies je speltype' : 'Choose your game type';
+  document.getElementById('setup-mode-label').textContent = lang === 'nl' ? 'Modus' : 'Mode';
+  document.getElementById('setup-region-label').textContent = lang === 'nl' ? 'Regio' : 'Region';
+
+  // Mode cards
+  const modeGrid = document.getElementById('setup-mode-grid');
+  modeGrid.innerHTML = '';
+  const modes = [
+    { id: 'world', icon: '🌍', name: { nl: 'Aardrijkskunde', en: 'Geography' } },
+    { id: 'topo', icon: '📍', name: { nl: 'Alleen Topografie', en: 'Map Only' } },
+  ];
+  modes.forEach(m => {
+    const card = document.createElement('div');
+    card.className = 'setup-region-card' + (setupMode === m.id ? ' selected' : '');
+    card.style.flex = '1';
+    card.innerHTML = `<div class="setup-region-icon">${m.icon}</div><div class="setup-region-name" style="font-size:16px">${m.name[lang] || m.name.en}</div>`;
+    card.onclick = () => {
+      setupMode = m.id;
+      renderSetupRegions();
+    };
+    modeGrid.appendChild(card);
+  });
+
+  // Region cards
+  const regionGrid = document.getElementById('setup-region-grid');
+  regionGrid.innerHTML = '';
+  const regions = [
     { id: 'world', icon: '🌍', name: { nl: 'Wereld', en: 'World' } },
     { id: 'nl', icon: '🇳🇱', name: { nl: 'Nederland', en: 'Netherlands' } },
   ];
-  regionDefs.forEach(r => {
+  regions.forEach(r => {
     const card = document.createElement('div');
     card.className = 'setup-region-card' + (setupRegion === r.id ? ' selected' : '');
-    card.innerHTML = `<div class="setup-region-icon">${r.icon}</div><div class="setup-region-name">${r.name[currentLang] || r.name.en}</div>`;
+    card.innerHTML = `<div class="setup-region-icon">${r.icon}</div><div class="setup-region-name">${r.name[lang] || r.name.en}</div>`;
     card.onclick = () => {
       setupRegion = r.id;
+      if (setupRegion === 'nl' && setupDiff === 'easy') setupDiff = 'medium';
       // Auto-advance to step 2
       setupStep = 2;
-      // NL has no easy mode
-      if (setupRegion === 'nl' && setupDiff === 'easy') setupDiff = 'medium';
       renderSetupStep();
     };
-    grid.appendChild(card);
+    regionGrid.appendChild(card);
   });
 }
 
@@ -2007,7 +2039,7 @@ function renderSetupDifficulties() {
         { id: 'medium', icon: '🗺️', name: 'Medium', desc: { nl: 'Steden 50k+ inwoners', en: 'Cities 50k+ inhabitants' } },
         { id: 'jeroen', icon: '💀', name: 'Jeroen Mode', desc: { nl: 'Alle gemeenten', en: 'All municipalities' }, jeroen: true },
       ]
-    : currentGameMode === 'topo'
+    : setupMode === 'topo'
     ? [
         { id: 'medium', icon: '🗺️', name: 'Medium', desc: { nl: 'Top 50 landen', en: 'Top 50 countries' } },
         { id: 'jeroen', icon: '💀', name: 'Jeroen Mode', desc: { nl: 'Alle landen + eilandstaten', en: 'All countries + island states' }, jeroen: true },
@@ -2036,7 +2068,7 @@ function renderSetupSummary() {
     world: { nl: 'Aardrijkskunde', en: 'Geography' },
     nl: { nl: 'Nederland', en: 'Netherlands' },
   };
-  const topoLabel = currentGameMode === 'topo'
+  const topoLabel = setupMode === 'topo'
     ? (currentLang === 'nl' ? ' · Alleen Topografie' : ' · Map Only')
     : '';
   const diffNames = { easy: 'Dumb Test', medium: 'Medium', jeroen: 'Jeroen Mode 💀' };
@@ -2057,6 +2089,7 @@ function renderSetupSummary() {
 function confirmAndPlay() {
   currentRegion = setupRegion;
   currentLBRegion = setupRegion;
+  currentGameMode = setupMode;
   currentDiff = setupDiff;
   closeGameSetup();
   updateDiffDescriptions();
@@ -2065,18 +2098,15 @@ function confirmAndPlay() {
 
 let currentLBRegion = 'world';
 
-function switchLBRegion(region) {
+function switchLBRegion(region, forceDiff) {
   currentLBRegion = region;
-  // Update region tab active state
   document.getElementById('lb-region-world').classList.toggle('active', region === 'world');
   document.getElementById('lb-region-nl').classList.toggle('active', region === 'nl');
-  // Show correct diff tabs
   document.getElementById('stats-tabs-world').style.display = (region === 'world' && currentGameMode !== 'topo') ? 'flex' : 'none';
   document.getElementById('stats-tabs-topo').style.display = (region === 'world' && currentGameMode === 'topo') ? 'flex' : 'none';
   document.getElementById('stats-tabs-nl').style.display = region === 'nl' ? 'flex' : 'none';
-  // Default diff for this region
-  const defaultDiff = region === 'nl' ? 'medium' : (currentGameMode === 'topo' ? 'medium' : 'easy');
-  switchStatTab(defaultDiff);
+  const diff = forceDiff || (region === 'nl' ? 'medium' : (currentGameMode === 'topo' ? 'medium' : 'easy'));
+  switchStatTab(diff);
 }
 
 function selectGameMode(mode) {
