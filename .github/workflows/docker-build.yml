@@ -22,9 +22,22 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Get version
+        id: version
+        run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          echo "sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+          echo "tag=0.5.${{ github.run_number }}" >> $GITHUB_OUTPUT
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: ./backend
           push: true
-          tags: ghcr.io/baseijs/geostreak:latest
+          tags: |
+            ghcr.io/baseijs/geostreak:latest
+            ghcr.io/baseijs/geostreak:${{ steps.version.outputs.tag }}
+            ghcr.io/baseijs/geostreak:${{ steps.version.outputs.sha }}
+          build-args: |
+            APP_VERSION=${{ steps.version.outputs.tag }}
+            GIT_SHA=${{ steps.version.outputs.sha }}
