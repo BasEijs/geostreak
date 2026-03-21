@@ -1967,7 +1967,7 @@ function renderSetupStep() {
   [1,2,3].forEach(s => document.getElementById(`setup-step-${s}`).style.display = s === setupStep ? '' : 'none');
   document.getElementById('setup-title').textContent = currentLang === 'nl' ? 'NIEUW SPEL' : 'NEW GAME';
 
-  const lang = currentLang;
+  const lang = currentLang === 'nl' ? 'nl' : 'en';
   const backLabel = document.getElementById('setup-back-label');
   const nextLabel = document.getElementById('setup-next-label');
   if (backLabel) backLabel.textContent = lang === 'nl' ? 'Terug' : 'Back';
@@ -1990,7 +1990,6 @@ function renderSetupStep() {
     nl: { 1: 'Kies een regio', 2: 'Kies moeilijkheid', 3: 'Klaar om te spelen' },
     en: { 1: 'Choose a region', 2: 'Choose difficulty', 3: 'Ready to play' },
   };
-  const lang = currentLang === 'nl' ? 'nl' : 'en';
   document.getElementById(`setup-step${setupStep}-label`).textContent = titles[lang][setupStep];
 
   if (setupStep === 1) renderSetupRegions();
