@@ -8,6 +8,7 @@ const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
 
 const app = express();
+app.set('trust proxy', 1);
 const PORT = 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 
@@ -45,6 +46,7 @@ db.exec(`
 try { db.exec(`ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0`); } catch {}
 try { db.exec(`ALTER TABLE users ADD COLUMN temp_password TEXT`); } catch {}
 try { db.exec(`ALTER TABLE users ADD COLUMN language TEXT NOT NULL DEFAULT 'en'`); } catch {}
+try { db.exec(`ALTER TABLE scores ADD COLUMN mode TEXT NOT NULL DEFAULT 'world'`); } catch {}
 
 const DEFAULT_SETTINGS = {
   easy_timer_simple: '5', easy_timer_match: '30', easy_timer_map: '0',
@@ -114,6 +116,7 @@ app.post('/api/login', (req, res) => {
 });
 
 const VALID_DIFFICULTIES = ['easy', 'medium', 'jeroen'];
+const VALID_MODES = ['world', 'topo'];
 
 app.get('/api/settings', (req, res) => {
   res.json({
@@ -139,31 +142,37 @@ app.get('/api/settings', (req, res) => {
 });
 
 app.post('/api/scores', auth, (req, res) => {
-  const { streak, difficulty } = req.body;
+  const { streak, difficulty, mode } = req.body;
   if (typeof streak !== 'number' || streak < 0) return res.status(400).json({ error: 'Invalid streak' });
   if (!VALID_DIFFICULTIES.includes(difficulty)) return res.status(400).json({ error: 'Invalid difficulty' });
-  db.prepare('INSERT INTO scores (user_id, streak, difficulty) VALUES (?, ?, ?)').run(req.user.id, streak, difficulty);
+  const gameMode = VALID_MODES.includes(mode) ? mode : 'world';
+  db.prepare('INSERT INTO scores (user_id, streak, difficulty, mode) VALUES (?, ?, ?, ?)').run(req.user.id, streak, difficulty, gameMode);
   res.json({ ok: true });
 });
 
 app.get('/api/leaderboard', (req, res) => {
   const difficulty = req.query.difficulty || 'medium';
+  const mode = VALID_MODES.includes(req.query.mode) ? req.query.mode : 'world';
   if (!VALID_DIFFICULTIES.includes(difficulty)) return res.status(400).json({ error: 'Invalid difficulty' });
   const rows = db.prepare(`
     SELECT u.username, MAX(s.streak) as best_streak, COUNT(s.id) as games_played
     FROM users u JOIN scores s ON s.user_id = u.id
-    WHERE s.difficulty = ?
+    WHERE s.difficulty = ? AND s.mode = ?
     GROUP BY u.id ORDER BY best_streak DESC LIMIT 20
-  `).all(difficulty);
+  `).all(difficulty, mode);
   res.json(rows);
 });
 
 app.get('/api/me/stats', auth, (req, res) => {
   const stats = {};
-  for (const diff of VALID_DIFFICULTIES) {
-    const best = db.prepare('SELECT MAX(streak) as best FROM scores WHERE user_id = ? AND difficulty = ?').get(req.user.id, diff);
-    const count = db.prepare('SELECT COUNT(*) as total FROM scores WHERE user_id = ? AND difficulty = ?').get(req.user.id, diff);
-    stats[diff] = { best_streak: best?.best || 0, games_played: count?.total || 0 };
+  for (const mode of VALID_MODES) {
+    stats[mode] = {};
+    const diffs = mode === 'topo' ? ['medium', 'jeroen'] : VALID_DIFFICULTIES;
+    for (const diff of diffs) {
+      const best = db.prepare('SELECT MAX(streak) as best FROM scores WHERE user_id = ? AND difficulty = ? AND mode = ?').get(req.user.id, diff, mode);
+      const count = db.prepare('SELECT COUNT(*) as total FROM scores WHERE user_id = ? AND difficulty = ? AND mode = ?').get(req.user.id, diff, mode);
+      stats[mode][diff] = { best_streak: best?.best || 0, games_played: count?.total || 0 };
+    }
   }
   res.json(stats);
 });

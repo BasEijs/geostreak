@@ -1331,13 +1331,17 @@ function selectDiff(diff) {
 
 function switchStatTab(diff) {
   currentStatTab = diff;
-  document.querySelectorAll('.stats-tab').forEach((t,i) =>
-    t.classList.toggle('active', ['easy','medium','jeroen'][i]===diff)
-  );
+  // Update active tab in whichever picker is visible
+  document.querySelectorAll('.stats-tab').forEach(t => {
+    const tabDiff = t.getAttribute('onclick').match(/'(\w+)'/)?.[1];
+    t.classList.toggle('active', tabDiff === diff);
+  });
   const isJ = diff==='jeroen';
   document.getElementById('stat-card-best').classList.toggle('jeroen-stat', isJ);
   document.getElementById('stat-card-games').classList.toggle('jeroen-stat', isJ);
-  const s = allStats[diff] || {};
+  const mode = currentGameMode === 'topo' ? 'topo' : 'world';
+  const statsKey = mode + '_' + diff;
+  const s = allStats[statsKey] || allStats[diff] || {};
   document.getElementById('stat-best').textContent = s.best_streak || '0';
   document.getElementById('stat-games').textContent = s.games_played || '0';
   loadLeaderboard(diff);
@@ -1350,8 +1354,17 @@ function switchStatTab(diff) {
 async function loadAllStats() {
   try {
     const res = await fetch('/api/me/stats', {headers:{Authorization:'Bearer '+token}});
-    allStats = await res.json();
-    const s = allStats[currentStatTab] || {};
+    const raw = await res.json();
+    // Flatten into mode_diff keys for easy lookup
+    allStats = {};
+    for (const [mode, diffs] of Object.entries(raw)) {
+      for (const [diff, data] of Object.entries(diffs)) {
+        allStats[mode + '_' + diff] = data;
+        allStats[diff] = data; // fallback for world mode
+      }
+    }
+    const mode = currentGameMode === 'topo' ? 'topo' : 'world';
+    const s = allStats[mode + '_' + currentStatTab] || {};
     document.getElementById('stat-best').textContent = s.best_streak || '0';
     document.getElementById('stat-games').textContent = s.games_played || '0';
   } catch {}
@@ -1359,6 +1372,7 @@ async function loadAllStats() {
 
 async function loadLeaderboard(diff) {
   const isTopo = currentGameMode === 'topo';
+  const mode = isTopo ? 'topo' : 'world';
   const titles = {
     easy: '🧠 Dumb Test Leaderboard',
     medium: isTopo ? '📍 Topo Medium Leaderboard' : '🗺️ Medium Leaderboard',
@@ -1367,7 +1381,7 @@ async function loadLeaderboard(diff) {
   document.getElementById('lb-title').textContent = titles[diff];
   document.getElementById('lb-section-title').textContent = titles[diff];
   try {
-    const res = await fetch('/api/leaderboard?difficulty='+diff);
+    const res = await fetch(`/api/leaderboard?difficulty=${diff}&mode=${mode}`);
     const data = await res.json();
     const body = document.getElementById('leaderboard-body');
     const isJ = diff==='jeroen';
@@ -1969,13 +1983,15 @@ function submitMapAnswer(isCapitalMap) {
   if (map) {
     try {
       const point = map.project([marker.lng, marker.lat]);
-      const features = map.queryRenderedFeatures(point, { layers: ['country-boundaries', 'admin-0-boundary', 'country_fill', 'land'] });
+      // Query all features at the clicked point, no layer filter
+      const features = map.queryRenderedFeatures(point);
       if (features.length > 0) {
-        // Check if any feature matches the country by name
         insideBorder = features.some(f => {
-          const name = f.properties?.name_en || f.properties?.NAME_EN || f.properties?.name || '';
-          return name.toLowerCase().includes(country.name.toLowerCase()) ||
-                 country.name.toLowerCase().includes(name.toLowerCase().split(' ')[0]);
+          const props = f.properties || {};
+          const name = (props.name_en || props.NAME_EN || props.name || props.NAME || '').toLowerCase();
+          const countryName = country.name.toLowerCase();
+          // Match if name contains country name or vice versa
+          return name && (name.includes(countryName) || countryName.includes(name));
         });
       }
     } catch {}
@@ -2310,7 +2326,7 @@ async function endGame() {
       await fetch('/api/scores',{
         method:'POST',
         headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
-        body:JSON.stringify({streak,difficulty:currentDiff})
+        body:JSON.stringify({streak, difficulty:currentDiff, mode:currentGameMode})
       });
     }
   } catch {}
