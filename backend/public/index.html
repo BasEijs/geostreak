@@ -1751,8 +1751,10 @@ function updateDiffDescriptions() {
   if (descEasy) descEasy.textContent = t().ui.dumbTestDesc(es, jm);
   if (descMed) descMed.textContent = t().ui.mediumDesc(ms, jm);
   if (descJer) descJer.textContent = t().ui.jeroenDesc(jt, jm);
-  document.getElementById('mode-world').textContent = t().ui.modeWorld;
-  document.getElementById('mode-topo').textContent = t().ui.modeTopo;
+  const modeWorldBtn = document.getElementById('mode-world');
+  const modeTopoBtn = document.getElementById('mode-topo');
+  if (modeWorldBtn) modeWorldBtn.textContent = t().ui.modeWorld;
+  if (modeTopoBtn) modeTopoBtn.textContent = t().ui.modeTopo;
   const topoMed = document.getElementById('desc-topo-medium');
   const topoJer = document.getElementById('desc-topo-jeroen');
   if (topoMed) topoMed.textContent = t().ui.topoMediumDesc;
