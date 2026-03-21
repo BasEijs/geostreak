@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+<script src="https://unpkg.com/topojson@3/dist/topojson.min.js"></script>
 <style>
 :root {
   --bg: #0a0e1a; --surface: #111827; --surface2: #1a2235; --border: #1e2d45;
@@ -629,132 +630,131 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
 // ════════════════════════════════════
 
 const EASY_COUNTRIES = [
-  {name:"France",capital:"Paris",flag:"fr",lat:46.23,lng:2.21,continent:"Europe"},
-  {name:"Germany",capital:"Berlin",flag:"de",lat:51.17,lng:10.45,continent:"Europe"},
-  {name:"United Kingdom",capital:"London",flag:"gb",lat:55.38,lng:-3.44,continent:"Europe"},
-  {name:"Italy",capital:"Rome",flag:"it",lat:41.87,lng:12.57,continent:"Europe"},
-  {name:"Spain",capital:"Madrid",flag:"es",lat:40.46,lng:-3.75,continent:"Europe"},
-  {name:"Netherlands",capital:"Amsterdam",flag:"nl",lat:52.13,lng:5.29,continent:"Europe"},
-  {name:"Belgium",capital:"Brussels",flag:"be",lat:50.50,lng:4.47,continent:"Europe"},
-  {name:"Portugal",capital:"Lisbon",flag:"pt",lat:39.40,lng:-8.22,continent:"Europe"},
-  {name:"Sweden",capital:"Stockholm",flag:"se",lat:60.13,lng:18.64,continent:"Europe",extraRadius:700},
-  {name:"Norway",capital:"Oslo",flag:"no",lat:60.47,lng:8.47,continent:"Europe",extraRadius:700},
-  {name:"Denmark",capital:"Copenhagen",flag:"dk",lat:56.26,lng:9.50,continent:"Europe"},
-  {name:"Finland",capital:"Helsinki",flag:"fi",lat:61.92,lng:25.75,continent:"Europe",extraRadius:600},
-  {name:"Poland",capital:"Warsaw",flag:"pl",lat:51.92,lng:19.15,continent:"Europe"},
-  {name:"Switzerland",capital:"Bern",flag:"ch",lat:46.82,lng:8.23,continent:"Europe"},
-  {name:"Austria",capital:"Vienna",flag:"at",lat:47.52,lng:14.55,continent:"Europe"},
-  {name:"Greece",capital:"Athens",flag:"gr",lat:39.07,lng:21.82,continent:"Europe"},
-  {name:"Czech Republic",capital:"Prague",flag:"cz",lat:49.82,lng:15.47,continent:"Europe"},
-  {name:"Romania",capital:"Bucharest",flag:"ro",lat:45.94,lng:24.97,continent:"Europe"},
-  {name:"Hungary",capital:"Budapest",flag:"hu",lat:47.16,lng:19.50,continent:"Europe"},
-  {name:"Ireland",capital:"Dublin",flag:"ie",lat:53.41,lng:-8.24,continent:"Europe"},
-  {name:"Ukraine",capital:"Kyiv",flag:"ua",lat:48.38,lng:31.17,continent:"Europe"},
-  {name:"United States",capital:"Washington D.C.",flag:"us",lat:37.09,lng:-95.71,continent:"North America",extraRadius:2500},
-  {name:"Canada",capital:"Ottawa",flag:"ca",lat:56.13,lng:-106.35,continent:"North America",extraRadius:3000},
-  {name:"Mexico",capital:"Mexico City",flag:"mx",lat:23.63,lng:-102.55,continent:"North America",extraRadius:1200},
-  {name:"Brazil",capital:"Brasília",flag:"br",lat:-14.24,lng:-51.93,continent:"South America",extraRadius:2000},
-  {name:"Argentina",capital:"Buenos Aires",flag:"ar",lat:-38.42,lng:-63.62,continent:"South America"},
-  {name:"China",capital:"Beijing",flag:"cn",lat:35.86,lng:104.20,continent:"Asia",extraRadius:2500},
-  {name:"Japan",capital:"Tokyo",flag:"jp",lat:36.20,lng:138.25,continent:"Asia"},
-  {name:"India",capital:"New Delhi",flag:"in",lat:20.59,lng:78.96,continent:"Asia",extraRadius:1500},
-  {name:"South Korea",capital:"Seoul",flag:"kr",lat:35.91,lng:127.77,continent:"Asia"},
-  {name:"Indonesia",capital:"Jakarta",flag:"id",lat:-0.79,lng:113.92,continent:"Asia",extraRadius:2000},
-  {name:"Turkey",capital:"Ankara",flag:"tr",lat:38.96,lng:35.24,continent:"Asia"},
-  {name:"Saudi Arabia",capital:"Riyadh",flag:"sa",lat:23.89,lng:45.08,continent:"Asia"},
-  {name:"Israel",capital:"Jerusalem",flag:"il",lat:31.05,lng:34.85,continent:"Asia"},
-  {name:"Russia",capital:"Moscow",flag:"ru",lat:61.52,lng:105.32,continent:"Europe",extraRadius:4000},
-  {name:"Australia",capital:"Canberra",flag:"au",lat:-25.27,lng:133.78,continent:"Oceania",extraRadius:2000},
-  {name:"New Zealand",capital:"Wellington",flag:"nz",lat:-40.90,lng:174.89,continent:"Oceania"},
-  {name:"South Africa",capital:"Pretoria",flag:"za",lat:-30.56,lng:22.94,continent:"Africa"},
-  {name:"Egypt",capital:"Cairo",flag:"eg",lat:26.82,lng:30.80,continent:"Africa"},
-  {name:"Nigeria",capital:"Abuja",flag:"ng",lat:9.08,lng:8.68,continent:"Africa"},
+  {name:"France",capital:"Paris",flag:"fr",lat:46.23,lng:2.21,continent:"Europe",iso:250},
+  {name:"Germany",capital:"Berlin",flag:"de",lat:51.17,lng:10.45,continent:"Europe",iso:276},
+  {name:"United Kingdom",capital:"London",flag:"gb",lat:55.38,lng:-3.44,continent:"Europe",iso:826},
+  {name:"Italy",capital:"Rome",flag:"it",lat:41.87,lng:12.57,continent:"Europe",iso:380},
+  {name:"Spain",capital:"Madrid",flag:"es",lat:40.46,lng:-3.75,continent:"Europe",iso:724},
+  {name:"Netherlands",capital:"Amsterdam",flag:"nl",lat:52.13,lng:5.29,continent:"Europe",iso:528},
+  {name:"Belgium",capital:"Brussels",flag:"be",lat:50.50,lng:4.47,continent:"Europe",iso:56},
+  {name:"Portugal",capital:"Lisbon",flag:"pt",lat:39.40,lng:-8.22,continent:"Europe",iso:620},
+  {name:"Sweden",capital:"Stockholm",flag:"se",lat:60.13,lng:18.64,continent:"Europe",extraRadius:700,iso:752},
+  {name:"Norway",capital:"Oslo",flag:"no",lat:60.47,lng:8.47,continent:"Europe",extraRadius:700,iso:578},
+  {name:"Denmark",capital:"Copenhagen",flag:"dk",lat:56.26,lng:9.50,continent:"Europe",iso:208},
+  {name:"Finland",capital:"Helsinki",flag:"fi",lat:61.92,lng:25.75,continent:"Europe",extraRadius:600,iso:246},
+  {name:"Poland",capital:"Warsaw",flag:"pl",lat:51.92,lng:19.15,continent:"Europe",iso:616},
+  {name:"Switzerland",capital:"Bern",flag:"ch",lat:46.82,lng:8.23,continent:"Europe",iso:756},
+  {name:"Austria",capital:"Vienna",flag:"at",lat:47.52,lng:14.55,continent:"Europe",iso:40},
+  {name:"Greece",capital:"Athens",flag:"gr",lat:39.07,lng:21.82,continent:"Europe",iso:300},
+  {name:"Czech Republic",capital:"Prague",flag:"cz",lat:49.82,lng:15.47,continent:"Europe",iso:203},
+  {name:"Romania",capital:"Bucharest",flag:"ro",lat:45.94,lng:24.97,continent:"Europe",iso:642},
+  {name:"Hungary",capital:"Budapest",flag:"hu",lat:47.16,lng:19.50,continent:"Europe",iso:348},
+  {name:"Ireland",capital:"Dublin",flag:"ie",lat:53.41,lng:-8.24,continent:"Europe",iso:372},
+  {name:"Ukraine",capital:"Kyiv",flag:"ua",lat:48.38,lng:31.17,continent:"Europe",iso:804},
+  {name:"United States",capital:"Washington D.C.",flag:"us",lat:37.09,lng:-95.71,continent:"North America",extraRadius:2500,iso:840},
+  {name:"Canada",capital:"Ottawa",flag:"ca",lat:56.13,lng:-106.35,continent:"North America",extraRadius:3000,iso:124},
+  {name:"Mexico",capital:"Mexico City",flag:"mx",lat:23.63,lng:-102.55,continent:"North America",extraRadius:1200,iso:484},
+  {name:"Brazil",capital:"Brasília",flag:"br",lat:-14.24,lng:-51.93,continent:"South America",extraRadius:2000,iso:76},
+  {name:"Argentina",capital:"Buenos Aires",flag:"ar",lat:-38.42,lng:-63.62,continent:"South America",iso:32},
+  {name:"China",capital:"Beijing",flag:"cn",lat:35.86,lng:104.20,continent:"Asia",extraRadius:2500,iso:156},
+  {name:"Japan",capital:"Tokyo",flag:"jp",lat:36.20,lng:138.25,continent:"Asia",iso:392},
+  {name:"India",capital:"New Delhi",flag:"in",lat:20.59,lng:78.96,continent:"Asia",extraRadius:1500,iso:356},
+  {name:"South Korea",capital:"Seoul",flag:"kr",lat:35.91,lng:127.77,continent:"Asia",iso:410},
+  {name:"Indonesia",capital:"Jakarta",flag:"id",lat:-0.79,lng:113.92,continent:"Asia",extraRadius:2000,iso:360},
+  {name:"Turkey",capital:"Ankara",flag:"tr",lat:38.96,lng:35.24,continent:"Asia",iso:792},
+  {name:"Saudi Arabia",capital:"Riyadh",flag:"sa",lat:23.89,lng:45.08,continent:"Asia",iso:682},
+  {name:"Israel",capital:"Jerusalem",flag:"il",lat:31.05,lng:34.85,continent:"Asia",iso:376},
+  {name:"Russia",capital:"Moscow",flag:"ru",lat:61.52,lng:105.32,continent:"Europe",extraRadius:4000,iso:643},
+  {name:"Australia",capital:"Canberra",flag:"au",lat:-25.27,lng:133.78,continent:"Oceania",extraRadius:2000,iso:36},
+  {name:"New Zealand",capital:"Wellington",flag:"nz",lat:-40.90,lng:174.89,continent:"Oceania",iso:554},
+  {name:"South Africa",capital:"Pretoria",flag:"za",lat:-30.56,lng:22.94,continent:"Africa",iso:710},
+  {name:"Egypt",capital:"Cairo",flag:"eg",lat:26.82,lng:30.80,continent:"Africa",iso:818},
+  {name:"Nigeria",capital:"Abuja",flag:"ng",lat:9.08,lng:8.68,continent:"Africa",iso:566},
 ];
 
 const MEDIUM_EXTRA = [
-  {name:"Afghanistan",capital:"Kabul",flag:"af",lat:33.93,lng:67.71,continent:"Asia"},
-  {name:"Albania",capital:"Tirana",flag:"al",lat:41.15,lng:20.17,continent:"Europe"},
-  {name:"Algeria",capital:"Algiers",flag:"dz",lat:28.03,lng:1.66,continent:"Africa",extraRadius:1800},
-  {name:"Bangladesh",capital:"Dhaka",flag:"bd",lat:23.68,lng:90.36,continent:"Asia"},
-  {name:"Bolivia",capital:"Sucre",flag:"bo",lat:-16.29,lng:-63.59,continent:"South America"},
-  {name:"Bulgaria",capital:"Sofia",flag:"bg",lat:42.73,lng:25.49,continent:"Europe"},
-  {name:"Cambodia",capital:"Phnom Penh",flag:"kh",lat:12.57,lng:104.99,continent:"Asia"},
-  {name:"Chile",capital:"Santiago",flag:"cl",lat:-35.68,lng:-71.54,continent:"South America"},
-  {name:"Colombia",capital:"Bogotá",flag:"co",lat:4.57,lng:-74.30,continent:"South America"},
-  {name:"Croatia",capital:"Zagreb",flag:"hr",lat:45.10,lng:15.20,continent:"Europe"},
-  {name:"Ecuador",capital:"Quito",flag:"ec",lat:-1.83,lng:-78.18,continent:"South America"},
-  {name:"Ethiopia",capital:"Addis Ababa",flag:"et",lat:9.15,lng:40.49,continent:"Africa"},
-  {name:"Ghana",capital:"Accra",flag:"gh",lat:7.95,lng:-1.02,continent:"Africa"},
-  {name:"Iran",capital:"Tehran",flag:"ir",lat:32.43,lng:53.69,continent:"Asia"},
-  {name:"Iraq",capital:"Baghdad",flag:"iq",lat:33.22,lng:43.68,continent:"Asia"},
-  {name:"Jordan",capital:"Amman",flag:"jo",lat:30.59,lng:36.24,continent:"Asia"},
-  {name:"Kazakhstan",capital:"Astana",flag:"kz",lat:48.02,lng:66.92,continent:"Asia",extraRadius:1500},
-  {name:"Kenya",capital:"Nairobi",flag:"ke",lat:-0.02,lng:37.91,continent:"Africa"},
-  {name:"Malaysia",capital:"Kuala Lumpur",flag:"my",lat:4.21,lng:108.96,continent:"Asia"},
-  {name:"Morocco",capital:"Rabat",flag:"ma",lat:31.79,lng:-7.09,continent:"Africa"},
-  {name:"Mozambique",capital:"Maputo",flag:"mz",lat:-18.67,lng:35.53,continent:"Africa"},
-  {name:"Myanmar",capital:"Naypyidaw",flag:"mm",lat:16.87,lng:96.21,continent:"Asia"},
-  {name:"Nepal",capital:"Kathmandu",flag:"np",lat:28.39,lng:84.12,continent:"Asia"},
-  {name:"North Korea",capital:"Pyongyang",flag:"kp",lat:40.34,lng:127.51,continent:"Asia"},
-  {name:"Pakistan",capital:"Islamabad",flag:"pk",lat:30.38,lng:69.35,continent:"Asia"},
-  {name:"Peru",capital:"Lima",flag:"pe",lat:-9.19,lng:-75.02,continent:"South America"},
-  {name:"Philippines",capital:"Manila",flag:"ph",lat:12.88,lng:121.77,continent:"Asia"},
-  {name:"Serbia",capital:"Belgrade",flag:"rs",lat:44.02,lng:21.01,continent:"Europe"},
-  {name:"Sri Lanka",capital:"Colombo",flag:"lk",lat:7.87,lng:80.77,continent:"Asia"},
-  {name:"Sudan",capital:"Khartoum",flag:"sd",lat:12.86,lng:30.22,continent:"Africa",extraRadius:1000},
-  {name:"Syria",capital:"Damascus",flag:"sy",lat:34.80,lng:38.10,continent:"Asia"},
-  {name:"Tanzania",capital:"Dodoma",flag:"tz",lat:-6.37,lng:34.89,continent:"Africa"},
-  {name:"Thailand",capital:"Bangkok",flag:"th",lat:15.87,lng:100.99,continent:"Asia"},
-  {name:"Uganda",capital:"Kampala",flag:"ug",lat:1.37,lng:32.29,continent:"Africa"},
-  {name:"United Arab Emirates",capital:"Abu Dhabi",flag:"ae",lat:23.42,lng:53.85,continent:"Asia"},
-  {name:"Uzbekistan",capital:"Tashkent",flag:"uz",lat:41.38,lng:64.59,continent:"Asia"},
-  {name:"Venezuela",capital:"Caracas",flag:"ve",lat:6.42,lng:-66.59,continent:"South America"},
-  {name:"Vietnam",capital:"Hanoi",flag:"vn",lat:14.06,lng:108.28,continent:"Asia"},
-  {name:"Yemen",capital:"Sana'a",flag:"ye",lat:15.55,lng:48.52,continent:"Asia"},
-  {name:"Zimbabwe",capital:"Harare",flag:"zw",lat:-19.02,lng:29.15,continent:"Africa"},
-  // Harder options with similar-looking capitals
-  {name:"Slovakia",capital:"Bratislava",flag:"sk",lat:48.67,lng:19.70,continent:"Europe"},
-  {name:"Slovenia",capital:"Ljubljana",flag:"si",lat:46.15,lng:14.99,continent:"Europe"},
-  {name:"Lithuania",capital:"Vilnius",flag:"lt",lat:55.17,lng:23.88,continent:"Europe"},
-  {name:"Latvia",capital:"Riga",flag:"lv",lat:56.88,lng:24.60,continent:"Europe"},
-  {name:"Estonia",capital:"Tallinn",flag:"ee",lat:58.60,lng:25.01,continent:"Europe"},
-  {name:"Belarus",capital:"Minsk",flag:"by",lat:53.71,lng:27.97,continent:"Europe"},
-  {name:"Moldova",capital:"Chișinău",flag:"md",lat:47.41,lng:28.37,continent:"Europe"},
-  {name:"Georgia",capital:"Tbilisi",flag:"ge",lat:41.69,lng:44.03,continent:"Asia"},
-  {name:"Armenia",capital:"Yerevan",flag:"am",lat:40.07,lng:44.50,continent:"Asia"},
-  {name:"Azerbaijan",capital:"Baku",flag:"az",lat:40.14,lng:47.58,continent:"Asia"},
-  {name:"Tunisia",capital:"Tunis",flag:"tn",lat:33.89,lng:9.54,continent:"Africa"},
-  {name:"Libya",capital:"Tripoli",flag:"ly",lat:26.34,lng:17.23,continent:"Africa"},
-  {name:"Angola",capital:"Luanda",flag:"ao",lat:-11.20,lng:17.87,continent:"Africa"},
-  {name:"Zambia",capital:"Lusaka",flag:"zm",lat:-13.13,lng:27.85,continent:"Africa"},
-  {name:"Senegal",capital:"Dakar",flag:"sn",lat:14.50,lng:-14.45,continent:"Africa"},
+  {name:"Afghanistan",capital:"Kabul",flag:"af",lat:33.93,lng:67.71,continent:"Asia",iso:4},
+  {name:"Albania",capital:"Tirana",flag:"al",lat:41.15,lng:20.17,continent:"Europe",iso:8},
+  {name:"Algeria",capital:"Algiers",flag:"dz",lat:28.03,lng:1.66,continent:"Africa",extraRadius:1800,iso:12},
+  {name:"Bangladesh",capital:"Dhaka",flag:"bd",lat:23.68,lng:90.36,continent:"Asia",iso:50},
+  {name:"Bolivia",capital:"Sucre",flag:"bo",lat:-16.29,lng:-63.59,continent:"South America",iso:68},
+  {name:"Bulgaria",capital:"Sofia",flag:"bg",lat:42.73,lng:25.49,continent:"Europe",iso:100},
+  {name:"Cambodia",capital:"Phnom Penh",flag:"kh",lat:12.57,lng:104.99,continent:"Asia",iso:116},
+  {name:"Chile",capital:"Santiago",flag:"cl",lat:-35.68,lng:-71.54,continent:"South America",iso:152},
+  {name:"Colombia",capital:"Bogotá",flag:"co",lat:4.57,lng:-74.30,continent:"South America",iso:170},
+  {name:"Croatia",capital:"Zagreb",flag:"hr",lat:45.10,lng:15.20,continent:"Europe",iso:191},
+  {name:"Ecuador",capital:"Quito",flag:"ec",lat:-1.83,lng:-78.18,continent:"South America",iso:218},
+  {name:"Ethiopia",capital:"Addis Ababa",flag:"et",lat:9.15,lng:40.49,continent:"Africa",iso:231},
+  {name:"Ghana",capital:"Accra",flag:"gh",lat:7.95,lng:-1.02,continent:"Africa",iso:288},
+  {name:"Iran",capital:"Tehran",flag:"ir",lat:32.43,lng:53.69,continent:"Asia",iso:364},
+  {name:"Iraq",capital:"Baghdad",flag:"iq",lat:33.22,lng:43.68,continent:"Asia",iso:368},
+  {name:"Jordan",capital:"Amman",flag:"jo",lat:30.59,lng:36.24,continent:"Asia",iso:400},
+  {name:"Kazakhstan",capital:"Astana",flag:"kz",lat:48.02,lng:66.92,continent:"Asia",extraRadius:1500,iso:398},
+  {name:"Kenya",capital:"Nairobi",flag:"ke",lat:-0.02,lng:37.91,continent:"Africa",iso:404},
+  {name:"Malaysia",capital:"Kuala Lumpur",flag:"my",lat:4.21,lng:108.96,continent:"Asia",iso:458},
+  {name:"Morocco",capital:"Rabat",flag:"ma",lat:31.79,lng:-7.09,continent:"Africa",iso:504},
+  {name:"Mozambique",capital:"Maputo",flag:"mz",lat:-18.67,lng:35.53,continent:"Africa",iso:508},
+  {name:"Myanmar",capital:"Naypyidaw",flag:"mm",lat:16.87,lng:96.21,continent:"Asia",iso:104},
+  {name:"Nepal",capital:"Kathmandu",flag:"np",lat:28.39,lng:84.12,continent:"Asia",iso:524},
+  {name:"North Korea",capital:"Pyongyang",flag:"kp",lat:40.34,lng:127.51,continent:"Asia",iso:408},
+  {name:"Pakistan",capital:"Islamabad",flag:"pk",lat:30.38,lng:69.35,continent:"Asia",iso:586},
+  {name:"Peru",capital:"Lima",flag:"pe",lat:-9.19,lng:-75.02,continent:"South America",iso:604},
+  {name:"Philippines",capital:"Manila",flag:"ph",lat:12.88,lng:121.77,continent:"Asia",iso:608},
+  {name:"Serbia",capital:"Belgrade",flag:"rs",lat:44.02,lng:21.01,continent:"Europe",iso:688},
+  {name:"Sri Lanka",capital:"Colombo",flag:"lk",lat:7.87,lng:80.77,continent:"Asia",iso:144},
+  {name:"Sudan",capital:"Khartoum",flag:"sd",lat:12.86,lng:30.22,continent:"Africa",extraRadius:1000,iso:729},
+  {name:"Syria",capital:"Damascus",flag:"sy",lat:34.80,lng:38.10,continent:"Asia",iso:760},
+  {name:"Tanzania",capital:"Dodoma",flag:"tz",lat:-6.37,lng:34.89,continent:"Africa",iso:834},
+  {name:"Thailand",capital:"Bangkok",flag:"th",lat:15.87,lng:100.99,continent:"Asia",iso:764},
+  {name:"Uganda",capital:"Kampala",flag:"ug",lat:1.37,lng:32.29,continent:"Africa",iso:800},
+  {name:"United Arab Emirates",capital:"Abu Dhabi",flag:"ae",lat:23.42,lng:53.85,continent:"Asia",iso:784},
+  {name:"Uzbekistan",capital:"Tashkent",flag:"uz",lat:41.38,lng:64.59,continent:"Asia",iso:860},
+  {name:"Venezuela",capital:"Caracas",flag:"ve",lat:6.42,lng:-66.59,continent:"South America",iso:862},
+  {name:"Vietnam",capital:"Hanoi",flag:"vn",lat:14.06,lng:108.28,continent:"Asia",iso:704},
+  {name:"Yemen",capital:"Sana'a",flag:"ye",lat:15.55,lng:48.52,continent:"Asia",iso:887},
+  {name:"Zimbabwe",capital:"Harare",flag:"zw",lat:-19.02,lng:29.15,continent:"Africa",iso:716},
+  {name:"Slovakia",capital:"Bratislava",flag:"sk",lat:48.67,lng:19.70,continent:"Europe",iso:703},
+  {name:"Slovenia",capital:"Ljubljana",flag:"si",lat:46.15,lng:14.99,continent:"Europe",iso:705},
+  {name:"Lithuania",capital:"Vilnius",flag:"lt",lat:55.17,lng:23.88,continent:"Europe",iso:440},
+  {name:"Latvia",capital:"Riga",flag:"lv",lat:56.88,lng:24.60,continent:"Europe",iso:428},
+  {name:"Estonia",capital:"Tallinn",flag:"ee",lat:58.60,lng:25.01,continent:"Europe",iso:233},
+  {name:"Belarus",capital:"Minsk",flag:"by",lat:53.71,lng:27.97,continent:"Europe",iso:112},
+  {name:"Moldova",capital:"Chișinău",flag:"md",lat:47.41,lng:28.37,continent:"Europe",iso:498},
+  {name:"Georgia",capital:"Tbilisi",flag:"ge",lat:41.69,lng:44.03,continent:"Asia",iso:268},
+  {name:"Armenia",capital:"Yerevan",flag:"am",lat:40.07,lng:44.50,continent:"Asia",iso:51},
+  {name:"Azerbaijan",capital:"Baku",flag:"az",lat:40.14,lng:47.58,continent:"Asia",iso:31},
+  {name:"Tunisia",capital:"Tunis",flag:"tn",lat:33.89,lng:9.54,continent:"Africa",iso:788},
+  {name:"Libya",capital:"Tripoli",flag:"ly",lat:26.34,lng:17.23,continent:"Africa",iso:434},
+  {name:"Angola",capital:"Luanda",flag:"ao",lat:-11.20,lng:17.87,continent:"Africa",iso:24},
+  {name:"Zambia",capital:"Lusaka",flag:"zm",lat:-13.13,lng:27.85,continent:"Africa",iso:894},
+  {name:"Senegal",capital:"Dakar",flag:"sn",lat:14.50,lng:-14.45,continent:"Africa",iso:686},
 ];
 
 const JEROEN_EXTRA = [
-  {name:"Kosovo",capital:"Pristina",flag:"xk",lat:42.60,lng:20.90,continent:"Europe"},
-  {name:"Taiwan",capital:"Taipei",flag:"tw",lat:23.70,lng:121.00,continent:"Asia"},
-  {name:"Palestine",capital:"Ramallah",flag:"ps",lat:31.95,lng:35.23,continent:"Asia"},
-  {name:"Western Sahara",capital:"El Aaiún",flag:"eh",lat:24.22,lng:-12.89,continent:"Africa"},
-  {name:"Greenland",capital:"Nuuk",flag:"gl",lat:71.71,lng:-42.60,continent:"North America",extraRadius:2000},
-  {name:"Faroe Islands",capital:"Tórshavn",flag:"fo",lat:62.00,lng:-6.79,continent:"Europe"},
-  {name:"Hong Kong",capital:"Hong Kong",flag:"hk",lat:22.35,lng:114.18,continent:"Asia"},
-  {name:"Macau",capital:"Macau",flag:"mo",lat:22.17,lng:113.55,continent:"Asia"},
-  {name:"New Caledonia",capital:"Nouméa",flag:"nc",lat:-20.90,lng:165.62,continent:"Oceania"},
-  {name:"Puerto Rico",capital:"San Juan",flag:"pr",lat:18.22,lng:-66.59,continent:"North America"},
-  {name:"Somaliland",capital:"Hargeisa",flag:"so",lat:9.56,lng:44.08,continent:"Africa"},
-  {name:"Transnistria",capital:"Tiraspol",flag:"md",lat:46.84,lng:29.64,continent:"Europe"},
-  {name:"Abkhazia",capital:"Sukhumi",flag:"ge",lat:43.00,lng:41.02,continent:"Asia"},
-  {name:"South Ossetia",capital:"Tskhinvali",flag:"ge",lat:42.23,lng:43.97,continent:"Asia"},
-  {name:"Northern Cyprus",capital:"Nicosia (North)",flag:"cy",lat:35.25,lng:33.03,continent:"Europe"},
-  {name:"Åland Islands",capital:"Mariehamn",flag:"ax",lat:60.10,lng:19.94,continent:"Europe"},
-  {name:"Gibraltar",capital:"Gibraltar",flag:"gi",lat:36.14,lng:-5.35,continent:"Europe"},
-  {name:"Isle of Man",capital:"Douglas",flag:"im",lat:54.24,lng:-4.55,continent:"Europe"},
-  {name:"Guam",capital:"Hagåtña",flag:"gu",lat:13.44,lng:144.79,continent:"Oceania"},
-  {name:"Falkland Islands",capital:"Stanley",flag:"fk",lat:-51.80,lng:-59.52,continent:"South America"},
-  {name:"Svalbard",capital:"Longyearbyen",flag:"sj",lat:77.87,lng:20.95,continent:"Europe"},
-  {name:"Cayman Islands",capital:"George Town",flag:"ky",lat:19.31,lng:-81.25,continent:"North America"},
-  {name:"Bermuda",capital:"Hamilton",flag:"bm",lat:32.30,lng:-64.75,continent:"North America"},
-  {name:"French Polynesia",capital:"Papeete",flag:"pf",lat:-17.68,lng:-149.41,continent:"Oceania"},
+  {name:"Kosovo",capital:"Pristina",flag:"xk",lat:42.60,lng:20.90,continent:"Europe",iso:null},
+  {name:"Taiwan",capital:"Taipei",flag:"tw",lat:23.70,lng:121.00,continent:"Asia",iso:158},
+  {name:"Palestine",capital:"Ramallah",flag:"ps",lat:31.95,lng:35.23,continent:"Asia",iso:275},
+  {name:"Western Sahara",capital:"El Aaiún",flag:"eh",lat:24.22,lng:-12.89,continent:"Africa",iso:732},
+  {name:"Greenland",capital:"Nuuk",flag:"gl",lat:71.71,lng:-42.60,continent:"North America",extraRadius:2000,iso:304},
+  {name:"Faroe Islands",capital:"Tórshavn",flag:"fo",lat:62.00,lng:-6.79,continent:"Europe",iso:234},
+  {name:"Hong Kong",capital:"Hong Kong",flag:"hk",lat:22.35,lng:114.18,continent:"Asia",iso:344},
+  {name:"Macau",capital:"Macau",flag:"mo",lat:22.17,lng:113.55,continent:"Asia",iso:446},
+  {name:"New Caledonia",capital:"Nouméa",flag:"nc",lat:-20.90,lng:165.62,continent:"Oceania",iso:540},
+  {name:"Puerto Rico",capital:"San Juan",flag:"pr",lat:18.22,lng:-66.59,continent:"North America",iso:630},
+  {name:"Somaliland",capital:"Hargeisa",flag:"so",lat:9.56,lng:44.08,continent:"Africa",iso:null},
+  {name:"Transnistria",capital:"Tiraspol",flag:"md",lat:46.84,lng:29.64,continent:"Europe",iso:null},
+  {name:"Abkhazia",capital:"Sukhumi",flag:"ge",lat:43.00,lng:41.02,continent:"Asia",iso:null},
+  {name:"South Ossetia",capital:"Tskhinvali",flag:"ge",lat:42.23,lng:43.97,continent:"Asia",iso:null},
+  {name:"Northern Cyprus",capital:"Nicosia (North)",flag:"cy",lat:35.25,lng:33.03,continent:"Europe",iso:null},
+  {name:"Åland Islands",capital:"Mariehamn",flag:"ax",lat:60.10,lng:19.94,continent:"Europe",iso:248},
+  {name:"Gibraltar",capital:"Gibraltar",flag:"gi",lat:36.14,lng:-5.35,continent:"Europe",iso:292},
+  {name:"Isle of Man",capital:"Douglas",flag:"im",lat:54.24,lng:-4.55,continent:"Europe",iso:833},
+  {name:"Guam",capital:"Hagåtña",flag:"gu",lat:13.44,lng:144.79,continent:"Oceania",iso:316},
+  {name:"Falkland Islands",capital:"Stanley",flag:"fk",lat:-51.80,lng:-59.52,continent:"South America",iso:238},
+  {name:"Svalbard",capital:"Longyearbyen",flag:"sj",lat:77.87,lng:20.95,continent:"Europe",iso:744},
+  {name:"Cayman Islands",capital:"George Town",flag:"ky",lat:19.31,lng:-81.25,continent:"North America",iso:136},
+  {name:"Bermuda",capital:"Hamilton",flag:"bm",lat:32.30,lng:-64.75,continent:"North America",iso:60},
+  {name:"French Polynesia",capital:"Papeete",flag:"pf",lat:-17.68,lng:-149.41,continent:"Oceania",iso:258},
 ];
 
 // Historical flags for Jeroen mode — these are mixed in with a note
@@ -1936,6 +1936,14 @@ function buildMapQ(country, area, isCapitalMap) {
 
     map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-left');
 
+    // Load TopoJSON for border detection (cached after first load)
+    if (!geoJsonCache) {
+      fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
+        .then(r => r.json())
+        .then(topo => { geoJsonCache = topojson.feature(topo, topo.objects.countries); })
+        .catch(() => {});
+    }
+
     map.on('load', () => {
       // Hide all label/text layers
       map.getStyle().layers.forEach(layer => {
@@ -1978,21 +1986,15 @@ function submitMapAnswer(isCapitalMap) {
   const dist = haversine(marker.lat, marker.lng, country.lat, country.lng);
   const effectiveThreshold = Math.max(cfg.mapThreshold, country.extraRadius || 0);
 
-  // Use Mapbox queryRenderedFeatures for border detection
+  // Border detection: load TopoJSON and match by ISO numeric code
   let insideBorder = false;
-  if (map) {
+  if (country.iso && geoJsonCache) {
     try {
-      const point = map.project([marker.lng, marker.lat]);
-      // Query all features at the clicked point, no layer filter
-      const features = map.queryRenderedFeatures(point);
-      if (features.length > 0) {
-        insideBorder = features.some(f => {
-          const props = f.properties || {};
-          const name = (props.name_en || props.NAME_EN || props.name || props.NAME || '').toLowerCase();
-          const countryName = country.name.toLowerCase();
-          // Match if name contains country name or vice versa
-          return name && (name.includes(countryName) || countryName.includes(name));
-        });
+      const clickCoords = [marker.lng, marker.lat];
+      // Find the feature whose ID matches the country's ISO numeric code
+      const feature = geoJsonCache.features.find(f => parseInt(f.id) === country.iso);
+      if (feature) {
+        insideBorder = pointInGeoJSON(clickCoords, feature);
       }
     } catch {}
   }
@@ -2292,6 +2294,30 @@ function buildMatchPopulationQ(pool, area) {
   submitContainer.innerHTML = '';
   submitContainer.appendChild(resetBtn); submitContainer.appendChild(submitBtn);
   submitContainer.classList.add('visible');
+}
+
+// Point-in-polygon using ray casting — works on Polygon and MultiPolygon
+function pointInGeoJSON(point, feature) {
+  const [px, py] = point;
+  function inRing(ring) {
+    let inside = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const [xi, yi] = ring[i], [xj, yj] = ring[j];
+      if (((yi > py) !== (yj > py)) && (px < (xj - xi) * (py - yi) / (yj - yi) + xi))
+        inside = !inside;
+    }
+    return inside;
+  }
+  function inPolygon(coords) {
+    if (!inRing(coords[0])) return false;
+    for (let i = 1; i < coords.length; i++) if (inRing(coords[i])) return false;
+    return true;
+  }
+  const g = feature.geometry;
+  if (!g) return false;
+  if (g.type === 'Polygon') return inPolygon(g.coordinates);
+  if (g.type === 'MultiPolygon') return g.coordinates.some(inPolygon);
+  return false;
 }
 
 function haversine(lat1,lng1,lat2,lng2) {
