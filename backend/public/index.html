@@ -422,6 +422,10 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
         <button class="stats-tab active" onclick="switchStatTab('medium')">NL Medium</button>
         <button class="stats-tab jeroen-tab" onclick="switchStatTab('jeroen')">NL Jeroen</button>
       </div>
+      <div class="stats-tabs" id="stats-tabs-nl-topo" style="display:none">
+        <button class="stats-tab active" onclick="switchStatTab('medium')">NL Topo Medium</button>
+        <button class="stats-tab jeroen-tab" onclick="switchStatTab('jeroen')">NL Topo Jeroen</button>
+      </div>
       <div class="stats-row">
         <div class="stat-card" id="stat-card-best"><div class="value" id="stat-best">—</div><div class="label">Best Streak</div></div>
         <div class="stat-card" id="stat-card-games"><div class="value" id="stat-games">—</div><div class="label">Games Played</div></div>
@@ -2104,13 +2108,21 @@ function confirmAndPlay() {
 let currentLBRegion = 'world';
 let currentLBMode = 'world'; // 'world' | 'topo' — for leaderboard viewing only
 
+function showCorrectDiffTabs() {
+  const isNL = currentLBRegion === 'nl';
+  const isTopo = currentLBMode === 'topo';
+  document.getElementById('stats-tabs-world').style.display = (!isNL && !isTopo) ? 'flex' : 'none';
+  document.getElementById('stats-tabs-topo').style.display = (!isNL && isTopo) ? 'flex' : 'none';
+  document.getElementById('stats-tabs-nl').style.display = (isNL && !isTopo) ? 'flex' : 'none';
+  document.getElementById('stats-tabs-nl-topo').style.display = (isNL && isTopo) ? 'flex' : 'none';
+}
+
 function switchLBMode(mode) {
   currentLBMode = mode;
   document.getElementById('lb-mode-world').classList.toggle('active', mode === 'world');
   document.getElementById('lb-mode-topo').classList.toggle('active', mode === 'topo');
-  document.getElementById('stats-tabs-world').style.display = mode === 'world' ? 'flex' : 'none';
-  document.getElementById('stats-tabs-topo').style.display = mode === 'topo' ? 'flex' : 'none';
-  const defaultDiff = mode === 'topo' ? 'medium' : 'easy';
+  showCorrectDiffTabs();
+  const defaultDiff = mode === 'topo' ? 'medium' : (currentLBRegion === 'nl' ? 'medium' : 'easy');
   switchStatTab(defaultDiff);
 }
 
@@ -2118,12 +2130,8 @@ function switchLBRegion(region, forceDiff) {
   currentLBRegion = region;
   document.getElementById('lb-region-world').classList.toggle('active', region === 'world');
   document.getElementById('lb-region-nl').classList.toggle('active', region === 'nl');
-  // Mode tabs only visible for World region
-  document.getElementById('lb-mode-tabs').style.display = region === 'world' ? 'flex' : 'none';
-  document.getElementById('stats-tabs-world').style.display = (region === 'world' && currentLBMode === 'world') ? 'flex' : 'none';
-  document.getElementById('stats-tabs-topo').style.display = (region === 'world' && currentLBMode === 'topo') ? 'flex' : 'none';
-  document.getElementById('stats-tabs-nl').style.display = region === 'nl' ? 'flex' : 'none';
-  const diff = forceDiff || (region === 'nl' ? 'medium' : (currentLBMode === 'topo' ? 'medium' : 'easy'));
+  showCorrectDiffTabs();
+  const diff = forceDiff || (region === 'nl' || currentLBMode === 'topo' ? 'medium' : 'easy');
   switchStatTab(diff);
 }
 
@@ -2192,14 +2200,20 @@ async function loadAllStats() {
 
 async function loadLeaderboard(diff) {
   const isNL = currentLBRegion === 'nl';
-  const isTopo = !isNL && currentLBMode === 'topo';
+  const isTopo = currentLBMode === 'topo';
   const mode = currentLBMode;
   const titles = {
-    easy: '🧠 Dumb Test Leaderboard',
-    medium: isNL ? '🇳🇱 NL Medium Leaderboard' : isTopo ? '📍 Topo Medium Leaderboard' : '🗺️ Medium Leaderboard',
-    jeroen: isNL ? '🇳🇱💀 NL Jeroen Leaderboard' : isTopo ? '📍💀 Topo Jeroen Leaderboard' : '💀 Jeroen Mode Leaderboard'
+    easy:   '🧠 Dumb Test Leaderboard',
+    medium: isNL && isTopo ? '🇳🇱📍 NL Topo Medium'
+          : isNL           ? '🇳🇱 NL Medium Leaderboard'
+          : isTopo         ? '📍 Topo Medium Leaderboard'
+                           : '🗺️ Medium Leaderboard',
+    jeroen: isNL && isTopo ? '🇳🇱📍💀 NL Topo Jeroen'
+          : isNL           ? '🇳🇱💀 NL Jeroen Leaderboard'
+          : isTopo         ? '📍💀 Topo Jeroen Leaderboard'
+                           : '💀 Jeroen Mode Leaderboard',
   };
-  document.getElementById('lb-title').textContent = titles[diff];
+  document.getElementById('lb-title').textContent = titles[diff] || '';
   try {
     const res = await fetch(`/api/leaderboard?difficulty=${diff}&mode=${mode}&region=${currentLBRegion}`);
     const data = await res.json();
