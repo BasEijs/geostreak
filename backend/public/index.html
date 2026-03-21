@@ -114,7 +114,11 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .lb-me { background: rgba(240,180,41,0.05) !important; }
 .lb-me.jeroen-row { background: rgba(168,85,247,0.06) !important; }
 
-/* GAME SETUP MODAL */
+.game-config-panel { width: 100%; max-width: 700px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; display: flex; flex-direction: column; gap: 6px; }
+.config-panel-row { display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+.config-panel-label { color: var(--text-muted); }
+.config-panel-value { font-weight: 600; color: var(--text); }
+.config-panel-hint { font-size: 11px; color: var(--text-muted); margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border); }
 .setup-step { width:28px;height:28px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--text-muted);transition:all 0.2s; }
 .setup-step.active { border-color:var(--accent);color:var(--accent);background:rgba(240,180,41,0.1); }
 .setup-step.done { border-color:var(--success);color:var(--success);background:rgba(34,197,94,0.1); }
@@ -377,46 +381,23 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
   </nav>
   <div class="menu-content">
 
-    <!-- Game mode selector -->
-    <div class="mode-selector">
-      <button class="mode-btn active" id="mode-world" onclick="selectGameMode('world')"></button>
-      <button class="mode-btn" id="mode-topo" onclick="selectGameMode('topo')"></button>
+    <div class="game-config-panel" id="game-config-panel">
+      <div class="config-panel-row">
+        <span class="config-panel-label" id="config-label-mode"></span>
+        <span class="config-panel-value" id="config-value-mode"></span>
+      </div>
+      <div class="config-panel-row">
+        <span class="config-panel-label" id="config-label-region"></span>
+        <span class="config-panel-value" id="config-value-region"></span>
+      </div>
+      <div class="config-panel-row">
+        <span class="config-panel-label" id="config-label-diff"></span>
+        <span class="config-panel-value" id="config-value-diff"></span>
+      </div>
+      <div class="config-panel-hint" id="config-panel-hint"></div>
     </div>
 
-    <!-- World difficulty picker -->
-    <div class="difficulty-picker" id="world-diff-picker">
-      <div class="diff-card selected" data-diff="easy" onclick="selectDiff('easy')">
-        <div class="diff-icon">🧠</div>
-        <div class="diff-name">Dumb Test</div>
-        <div class="diff-desc" id="desc-easy">Well-known countries · No map</div>
-      </div>
-      <div class="diff-card" data-diff="medium" onclick="selectDiff('medium')">
-        <div class="diff-icon">🗺️</div>
-        <div class="diff-name">Medium</div>
-        <div class="diff-desc" id="desc-medium">All countries · All question types</div>
-      </div>
-      <div class="diff-card jeroen-card" data-diff="jeroen" onclick="selectDiff('jeroen')">
-        <div class="diff-icon">💀</div>
-        <div class="diff-name">Jeroen Mode</div>
-        <div class="diff-desc" id="desc-jeroen">Disputed territories · 400km map limit</div>
-      </div>
-    </div>
-
-    <!-- Topo difficulty picker -->
-    <div class="difficulty-picker" id="topo-diff-picker" style="display:none">
-      <div class="diff-card" data-diff="medium" onclick="selectDiff('medium')">
-        <div class="diff-icon">🗺️</div>
-        <div class="diff-name">Medium</div>
-        <div class="diff-desc" id="desc-topo-medium"></div>
-      </div>
-      <div class="diff-card jeroen-card" data-diff="jeroen" onclick="selectDiff('jeroen')">
-        <div class="diff-icon">💀</div>
-        <div class="diff-name">Jeroen Mode</div>
-        <div class="diff-desc" id="desc-topo-jeroen"></div>
-      </div>
-    </div>
-
-    <button class="play-btn" id="play-btn" onclick="openGameSetup()">NIEUW SPEL →</button>
+    <button class="play-btn" id="play-btn" onclick="openGameSetup()"></button>
     <div class="lb-section-header">
       <div class="lb-section-line"></div>
       <div class="lb-section-title" id="lb-section-title">🧠 Dumb Test Leaderboard</div>
@@ -449,7 +430,7 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
 <div id="setup-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px;">
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;width:100%;max-width:560px;overflow:hidden;">
     <div style="padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;" id="setup-title">NIEUW SPEL</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;" id="setup-title"></div>
       <div style="display:flex;gap:8px;" id="setup-steps">
         <div class="setup-step active" data-step="1">1</div>
         <div class="setup-step" data-step="2">2</div>
@@ -1764,15 +1745,37 @@ function updateDiffDescriptions() {
   const ms = gameSettings.medium_timer_simple;
   const jt = gameSettings.jeroen_timer_simple;
   const jm = gameSettings.jeroen_map_threshold;
-  document.getElementById('desc-easy').textContent = t().ui.dumbTestDesc(es, jm);
-  document.getElementById('desc-medium').textContent = t().ui.mediumDesc(ms, jm);
-  document.getElementById('desc-jeroen').textContent = t().ui.jeroenDesc(jt, jm);
+  const descEasy = document.getElementById('desc-easy');
+  const descMed = document.getElementById('desc-medium');
+  const descJer = document.getElementById('desc-jeroen');
+  if (descEasy) descEasy.textContent = t().ui.dumbTestDesc(es, jm);
+  if (descMed) descMed.textContent = t().ui.mediumDesc(ms, jm);
+  if (descJer) descJer.textContent = t().ui.jeroenDesc(jt, jm);
   document.getElementById('mode-world').textContent = t().ui.modeWorld;
   document.getElementById('mode-topo').textContent = t().ui.modeTopo;
   const topoMed = document.getElementById('desc-topo-medium');
   const topoJer = document.getElementById('desc-topo-jeroen');
   if (topoMed) topoMed.textContent = t().ui.topoMediumDesc;
   if (topoJer) topoJer.textContent = t().ui.topoJeroenDesc;
+  const playBtn = document.getElementById('play-btn');
+  if (playBtn) playBtn.textContent = currentLang === 'nl' ? 'NIEUW SPEL →' : 'NEW GAME →';
+  // Update config panel
+  const modeNames = { world: { nl: 'Aardrijkskunde', en: 'Geography' }, topo: { nl: 'Alleen Topografie', en: 'Map Only' } };
+  const regionNames = { world: { nl: 'Wereld', en: 'World' }, nl: { nl: 'Nederland', en: 'Netherlands' } };
+  const diffNames = { easy: 'Dumb Test', medium: 'Medium', jeroen: 'Jeroen Mode 💀' };
+  const lang = currentLang;
+  const modeEl = document.getElementById('config-label-mode');
+  if (modeEl) {
+    document.getElementById('config-label-mode').textContent = lang === 'nl' ? 'Modus' : 'Mode';
+    document.getElementById('config-value-mode').textContent = modeNames[currentGameMode]?.[lang] || currentGameMode;
+    document.getElementById('config-label-region').textContent = lang === 'nl' ? 'Regio' : 'Region';
+    document.getElementById('config-value-region').textContent = regionNames[currentRegion]?.[lang] || currentRegion;
+    document.getElementById('config-label-diff').textContent = lang === 'nl' ? 'Moeilijkheid' : 'Difficulty';
+    document.getElementById('config-value-diff').textContent = diffNames[currentDiff] || currentDiff;
+    document.getElementById('config-panel-hint').textContent = lang === 'nl'
+      ? 'Gebruik "Nieuw Spel" om regio en moeilijkheid te wijzigen'
+      : 'Use "New Game" to change region and difficulty';
+  }
 }
 
 function applyLanguageUI() {
@@ -1895,6 +1898,16 @@ let setupStep = 1;
 let setupRegion = 'world';
 let setupDiff = 'medium';
 
+function openGameSetupWithDiff(diff) {
+  // Skip to step 3 (confirm) with current region + chosen diff
+  setupRegion = currentRegion;
+  setupDiff = diff;
+  if (setupRegion === 'nl' && diff === 'easy') setupDiff = 'medium';
+  setupStep = 3;
+  renderSetupStep();
+  document.getElementById('setup-modal').style.display = 'flex';
+}
+
 function openGameSetup() {
   setupStep = 1;
   setupRegion = currentRegion;
@@ -1921,6 +1934,7 @@ function renderSetupStep() {
   });
   document.getElementById('setup-back-btn').style.display = setupStep > 1 ? '' : 'none';
   [1,2,3].forEach(s => document.getElementById(`setup-step-${s}`).style.display = s === setupStep ? '' : 'none');
+  document.getElementById('setup-title').textContent = currentLang === 'nl' ? 'NIEUW SPEL' : 'NEW GAME';
 
   // Update title
   const titles = {
@@ -2016,37 +2030,24 @@ function renderSetupSummary() {
 
 function confirmAndPlay() {
   currentRegion = setupRegion;
+  currentGameMode = setupRegion === 'nl' ? currentGameMode : currentGameMode; // keep mode
   currentDiff = setupDiff;
   closeGameSetup();
+  updateDiffDescriptions();
   startGame();
 }
 
 function selectGameMode(mode) {
   currentGameMode = mode;
-  document.getElementById('mode-world').classList.toggle('active', mode === 'world');
-  document.getElementById('mode-topo').classList.toggle('active', mode === 'topo');
-  document.getElementById('world-diff-picker').style.display = mode === 'world' ? 'flex' : 'none';
-  document.getElementById('topo-diff-picker').style.display = mode === 'topo' ? 'flex' : 'none';
-  document.getElementById('stats-tabs-world').style.display = mode === 'world' ? 'flex' : 'none';
-  document.getElementById('stats-tabs-topo').style.display = mode === 'topo' ? 'flex' : 'none';
-  const defaultDiff = mode === 'topo' ? 'medium' : 'easy';
-  document.querySelectorAll('.diff-card').forEach(c => c.classList.remove('selected'));
-  const picker = mode === 'topo'
-    ? document.getElementById('topo-diff-picker')
-    : document.getElementById('world-diff-picker');
-  picker.querySelector(`[data-diff="${defaultDiff}"]`)?.classList.add('selected');
+  const defaultDiff = (mode === 'topo' && currentDiff === 'easy') ? 'medium' : currentDiff;
   currentDiff = defaultDiff;
-  document.getElementById('play-btn').className = 'play-btn' + (currentDiff === 'jeroen' ? ' jeroen-play' : '');
+  updateDiffDescriptions();
   switchStatTab(defaultDiff);
 }
 
 function selectDiff(diff) {
   currentDiff = diff;
-  const picker = currentGameMode === 'topo'
-    ? document.getElementById('topo-diff-picker')
-    : document.getElementById('world-diff-picker');
-  picker.querySelectorAll('.diff-card').forEach(c => c.classList.toggle('selected', c.dataset.diff === diff));
-  document.getElementById('play-btn').className = 'play-btn' + (diff === 'jeroen' ? ' jeroen-play' : '');
+  updateDiffDescriptions();
   switchStatTab(diff);
 }
 
