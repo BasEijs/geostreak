@@ -280,7 +280,7 @@ app.post('/api/admin/settings', auth, adminOnly, (req, res) => {
 app.get('*', (req, res) => {
   const html = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
   const token = process.env.MAPBOX_TOKEN || '';
-  res.send(html.replace('__MAPBOX_TOKEN__', token));
+  res.send(html.replaceAll('__MAPBOX_TOKEN__', token));
 });
 
 app.listen(PORT, () => console.log(`GeoGame running on port ${PORT}`));
