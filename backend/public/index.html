@@ -714,6 +714,19 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
         </div>
       </details>
 
+      <details class="settings-details">
+        <summary class="settings-summary">🥚 Easter Eggs</summary>
+        <div class="settings-grid">
+          <div class="settings-group">
+            <div class="settings-group-title">Work Hours Warning</div>
+            <div class="setting-row">
+              <div class="setting-label">Enable "Ga werken man!"<span>Shows a toast after 10 minutes of play between 07:00–17:00 local time.</span></div>
+              <label class="switch"><input type="checkbox" id="setting-easter-ga-werken" checked><span class="slider"></span></label>
+            </div>
+          </div>
+        </div>
+      </details>
+
       <div class="settings-save">
         <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
         <div class="save-success" id="save-success">✓ Settings saved!</div>
@@ -1369,9 +1382,7 @@ let gameSettings = {
   nl_medium_min_pop: 20000,
   nl_jeroen_min_pop: 2000,
   nl_pop_question_min_pop: 5000,
-  nl_medium_min_pop: 20000,
-  nl_jeroen_min_pop: 2000,
-  nl_pop_question_min_pop: 5000,
+  easter_ga_werken: true,
 };
 
 function getDiffConfig(diff) {
@@ -2333,7 +2344,7 @@ function startWorkingHoursWatch() {
     const now = new Date();
     const hour = now.getHours();
     const elapsed = (Date.now() - sessionStartTime) / 1000 / 60; // minutes
-    if (elapsed >= 10 && hour >= 7 && hour < 17) {
+    if (elapsed >= 10 && hour >= 7 && hour < 17 && gameSettings.easter_ga_werken !== false) {
       showWorkEasterEgg();
     }
   }, 30000); // check every 30s
@@ -3847,6 +3858,7 @@ async function loadAdminSettings() {
     document.getElementById('setting-nl-medium-min-pop').value = s.nl_medium_min_pop || 20000;
     document.getElementById('setting-nl-jeroen-min-pop').value = s.nl_jeroen_min_pop || 2000;
     document.getElementById('setting-nl-pop-min-pop').value = s.nl_pop_question_min_pop || 5000;
+    document.getElementById('setting-easter-ga-werken').checked = s.easter_ga_werken !== false;
   } catch {}
 }
 
@@ -3876,6 +3888,7 @@ async function saveSettings() {
     nl_medium_min_pop: parseInt(document.getElementById('setting-nl-medium-min-pop').value) || 20000,
     nl_jeroen_min_pop: parseInt(document.getElementById('setting-nl-jeroen-min-pop').value) || 2000,
     nl_pop_question_min_pop: parseInt(document.getElementById('setting-nl-pop-min-pop').value) || 5000,
+    easter_ga_werken: document.getElementById('setting-easter-ga-werken').checked ? '1' : '0',
   };
   try {
     await fetch('/api/admin/settings', {
