@@ -69,48 +69,48 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 
 /* MENU */
 #menu-screen { min-height: 100vh; flex-direction: column; }
-.menu-content { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 28px 24px; gap: 24px; overflow-y: auto; }
-.mode-selector { display: flex; gap: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 6px; width: 100%; max-width: 540px; }
-.mode-btn { flex: 1; padding: 10px 20px; border: none; background: none; color: var(--text-muted); font-family: 'DM Sans',sans-serif; font-size: 14px; font-weight: 600; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+.menu-content { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 32px 24px; gap: 28px; overflow-y: auto; }
+.mode-selector { display: flex; gap: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 6px; width: 100%; max-width: 700px; }
+.mode-btn { flex: 1; padding: 14px 20px; border: none; background: none; color: var(--text-muted); font-family: 'DM Sans',sans-serif; font-size: 16px; font-weight: 600; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
 .mode-btn.active { background: var(--surface2); color: var(--text); }
 .mode-btn:hover:not(.active) { color: var(--text); }
-.difficulty-picker { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; width: 100%; }
-.diff-card { background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius); padding: 18px 16px; cursor: pointer; transition: all 0.2s; text-align: center; flex: 1; min-width: 120px; max-width: 200px; }
+.difficulty-picker { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; width: 100%; }
+.diff-card { background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius); padding: 26px 20px; cursor: pointer; transition: all 0.2s; text-align: center; flex: 1; min-width: 160px; max-width: 260px; }
 .diff-card:hover { border-color: var(--accent); transform: translateY(-2px); }
 .diff-card.selected { border-color: var(--accent); background: var(--surface2); }
 .diff-card.jeroen-card:hover { border-color: var(--jeroen); }
 .diff-card.jeroen-card.selected { border-color: var(--jeroen); background: rgba(168,85,247,0.08); }
-.diff-icon { font-size: 26px; margin-bottom: 6px; }
-.diff-name { font-family: 'Bebas Neue',sans-serif; font-size: 20px; letter-spacing: 1px; margin-bottom: 4px; }
+.diff-icon { font-size: 34px; margin-bottom: 10px; }
+.diff-name { font-family: 'Bebas Neue',sans-serif; font-size: 26px; letter-spacing: 1px; margin-bottom: 6px; }
 .diff-card.jeroen-card .diff-name { background: linear-gradient(135deg,var(--jeroen),var(--jeroen2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-.diff-desc { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
-.play-btn { background: linear-gradient(135deg,var(--accent),var(--accent2)); color: #000; font-family: 'Bebas Neue',sans-serif; font-size: 26px; letter-spacing: 3px; padding: 17px 52px; border: none; border-radius: var(--radius); cursor: pointer; transition: all 0.2s; box-shadow: 0 8px 32px rgba(240,180,41,0.2); }
+.diff-desc { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+.play-btn { background: linear-gradient(135deg,var(--accent),var(--accent2)); color: #000; font-family: 'Bebas Neue',sans-serif; font-size: 32px; letter-spacing: 3px; padding: 20px 80px; border: none; border-radius: var(--radius); cursor: pointer; transition: all 0.2s; box-shadow: 0 8px 32px rgba(240,180,41,0.2); width: 100%; max-width: 700px; }
 .play-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(240,180,41,0.3); }
 .play-btn.jeroen-play { background: linear-gradient(135deg,var(--jeroen),var(--jeroen2)); color: #fff; box-shadow: 0 8px 32px rgba(168,85,247,0.25); }
 .play-btn.jeroen-play:hover { box-shadow: 0 12px 40px rgba(168,85,247,0.4); }
-.lb-section-header { display: flex; align-items: center; gap: 16px; width: 100%; max-width: 540px; }
+.lb-section-header { display: flex; align-items: center; gap: 16px; width: 100%; max-width: 700px; }
 .lb-section-line { flex: 1; height: 1px; background: var(--border); }
-.lb-section-title { font-family: 'Bebas Neue',sans-serif; font-size: 26px; letter-spacing: 2px; color: var(--text); white-space: nowrap; }
-.stats-section { width: 100%; max-width: 540px; }
+.lb-section-title { font-family: 'Bebas Neue',sans-serif; font-size: 28px; letter-spacing: 2px; color: var(--text); white-space: nowrap; }
+.stats-section { width: 100%; max-width: 700px; }
 .stats-tabs { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 4px; margin-bottom: 14px; }
-.stats-tab { flex: 1; padding: 7px; border: none; background: none; color: var(--text-muted); font-family: 'DM Sans',sans-serif; font-size: 13px; font-weight: 500; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+.stats-tab { flex: 1; padding: 9px; border: none; background: none; color: var(--text-muted); font-family: 'DM Sans',sans-serif; font-size: 14px; font-weight: 500; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
 .stats-tab.active { background: var(--surface2); color: var(--text); }
 .stats-tab.jeroen-tab.active { background: rgba(168,85,247,0.15); color: var(--jeroen); }
 .stats-row { display: flex; gap: 12px; margin-bottom: 14px; }
-.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 20px; text-align: center; flex: 1; }
-.stat-card .value { font-family: 'Bebas Neue',sans-serif; font-size: 38px; color: var(--accent); line-height: 1; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; text-align: center; flex: 1; }
+.stat-card .value { font-family: 'Bebas Neue',sans-serif; font-size: 48px; color: var(--accent); line-height: 1; }
 .stat-card.jeroen-stat .value { color: var(--jeroen); }
 .stat-card .label { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); margin-top: 4px; }
 .leaderboard { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
 .leaderboard-header { display: none; }
-.leaderboard-cols { display: grid; grid-template-columns: 32px 1fr 70px 60px; gap: 8px; padding: 6px 20px; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); border-bottom: 1px solid var(--border); }
-.leaderboard-row { display: grid; grid-template-columns: 32px 1fr 70px 60px; gap: 8px; align-items: center; padding: 10px 20px; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 14px; transition: background 0.15s; }
+.leaderboard-cols { display: grid; grid-template-columns: 32px 1fr 70px 60px; gap: 8px; padding: 8px 20px; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); border-bottom: 1px solid var(--border); }
+.leaderboard-row { display: grid; grid-template-columns: 32px 1fr 70px 60px; gap: 8px; align-items: center; padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 14px; transition: background 0.15s; }
 .leaderboard-row:hover { background: var(--surface2); }
 .leaderboard-row:last-child { border-bottom: none; }
-.lb-streak { font-family: 'Bebas Neue',sans-serif; font-size: 20px; color: var(--accent); text-align: right; }
+.lb-streak { font-family: 'Bebas Neue',sans-serif; font-size: 22px; color: var(--accent); text-align: right; }
 .lb-streak.jeroen-streak { color: var(--jeroen); }
 .lb-games { font-size: 12px; color: var(--text-muted); text-align: right; }
-.lb-empty { padding: 28px; text-align: center; color: var(--text-muted); font-size: 14px; }
+.lb-empty { padding: 32px; text-align: center; color: var(--text-muted); font-size: 14px; }
 .lb-me { background: rgba(240,180,41,0.05) !important; }
 .lb-me.jeroen-row { background: rgba(168,85,247,0.06) !important; }
 
@@ -122,10 +122,10 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .streak-number { font-family: 'Bebas Neue',sans-serif; font-size: 34px; color: var(--accent); line-height: 1; }
 .jeroen-mode .streak-number { color: var(--jeroen); }
 .streak-label { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); }
-.timer-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
-.timer-bar-bg { width: 100%; max-width: 220px; height: 7px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
-.timer-bar { height: 100%; background: var(--jeroen); border-radius: 4px; transition: width 1s linear, background 0.5s; }
-.timer-count { font-family: 'Bebas Neue',sans-serif; font-size: 32px; color: var(--jeroen); line-height: 1; letter-spacing: 1px; }
+.timer-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%; padding: 6px 16px 0; }
+.timer-bar-bg { width: 100%; height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+.timer-bar { height: 100%; background: var(--jeroen); border-radius: 3px; transition: width 1s linear, background 0.5s; }
+.timer-count { font-family: 'Bebas Neue',sans-serif; font-size: 28px; color: var(--jeroen); line-height: 1; letter-spacing: 1px; }
 .timer-count.urgent { color: var(--danger); animation: pulse 0.5s infinite; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 .header-right { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
@@ -421,10 +421,6 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
       <div class="streak-number" id="streak-count">0</div>
       <div class="streak-label" id="streak-label-el">streak</div>
     </div>
-    <div class="timer-wrap" id="timer-wrap" style="display:none">
-      <div class="timer-count" id="timer-count">15</div>
-      <div class="timer-bar-bg"><div class="timer-bar" id="timer-bar"></div></div>
-    </div>
     <div class="header-right">
       <div class="question-badge" id="q-type-badge">—</div>
       <div class="diff-badge" id="diff-badge">—</div>
@@ -436,6 +432,10 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
     <div class="question-area">
       <div class="question-text" id="question-text"></div>
       <div class="historical-note" id="historical-note" style="display:none">⚠️ This is a historical flag no longer in use</div>
+      <div class="timer-wrap" id="timer-wrap" style="display:none">
+        <div class="timer-count" id="timer-count">15</div>
+        <div class="timer-bar-bg"><div class="timer-bar" id="timer-bar"></div></div>
+      </div>
     </div>
     <div class="answer-area" id="answer-area"></div>
     <div id="match-submit-container"></div>
@@ -992,7 +992,7 @@ const NL = {
     whatCapital: (c) => `Wat is de hoofdstad van <span>${c}</span>?`,
     whichCountryFlag: "Van welk land is deze vlag?",
     whichContinent: (c) => `Op welk continent ligt <span>${c}</span>?`,
-    clickCountry: (c, km) => `Klik op <span>${c}</span> — binnen ${km}km om te scoren`,
+    clickCountry: (c, km) => `Klik op het <span>midden van ${c}</span> — binnen ${km}km van het middelpunt om te scoren`,
     capitalMap: (c) => `<span>${c}</span> is de hoofdstad van welk land? Klik het op de kaart.`,
     matchFlags: "Koppel elke <span>vlag</span> aan het juiste land",
     matchCapitals: "Koppel elke <span>hoofdstad</span> aan het juiste land",
@@ -1040,7 +1040,7 @@ const EN = {
     whatCapital: (c) => `What is the capital of <span>${c}</span>?`,
     whichCountryFlag: "Which country does this flag belong to?",
     whichContinent: (c) => `Which continent is <span>${c}</span> in?`,
-    clickCountry: (c, km) => `Click on <span>${c}</span> — within ${km}km to score`,
+    clickCountry: (c, km) => `Click the <span>centre of ${c}</span> — within ${km}km of the centre to score`,
     capitalMap: (c) => `<span>${c}</span> is the capital of which country? Click it on the map.`,
     matchFlags: "Match each <span>flag</span> to its country",
     matchCapitals: "Match each <span>capital</span> to its country",
@@ -2120,15 +2120,15 @@ function buildPopulationQ(country, area) {
     const correct = pctOff <= margin;
     input.disabled = true; btn.disabled = true;
     input.classList.add(correct ? 'correct' : 'wrong');
-    if (!correct) {
-      hint.textContent = `✓ ${actual} miljoen (jij: ${guess}M, ${pctOff.toFixed(1)}% afwijking)`;
-      hint.style.color = 'var(--success)';
+    hint.style.color = 'var(--success)';
+    if (correct) {
+      hint.textContent = `✓ Exact: ${actual}M — ${pctOff.toFixed(1)}% afwijking`;
     } else {
-      hint.textContent = `${pctOff.toFixed(1)}% afwijking — goed genoeg!`;
-      hint.style.color = 'var(--success)';
+      hint.textContent = `Exact: ${actual}M inwoners (jij: ${guess}M, ${pctOff.toFixed(1)}% afwijking)`;
+      hint.style.color = 'var(--danger)';
     }
     showFeedback(correct,
-      correct ? `${pctOff.toFixed(1)}% afwijking — goed!` : `${actual}M inwoners (${pctOff.toFixed(1)}% afwijking)`,
+      correct ? `✓ ${actual}M inwoners — ${pctOff.toFixed(1)}% afwijking` : `${actual}M inwoners (${pctOff.toFixed(1)}% afwijking)`,
       localName(country));
   };
   btn.onclick = submit;
