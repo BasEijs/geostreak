@@ -103,6 +103,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .stat-card .label { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); margin-top: 4px; }
 .leaderboard { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
 .leaderboard-header { display: none; }
+.leaderboard-active-title { padding: 12px 20px 10px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); border-bottom: 1px solid var(--border); }
 .leaderboard-cols { display: grid; grid-template-columns: 32px 1fr 70px 60px; gap: 8px; padding: 8px 20px; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); border-bottom: 1px solid var(--border); }
 .leaderboard-row { display: grid; grid-template-columns: 32px 1fr 70px 60px; gap: 8px; align-items: center; padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 14px; transition: background 0.15s; }
 .leaderboard-row:hover { background: var(--surface2); }
@@ -393,7 +394,7 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
     <button class="play-btn" id="play-btn" onclick="openGameSetup()"></button>
     <div class="lb-section-header">
       <div class="lb-section-line"></div>
-      <div class="lb-section-title" id="lb-section-title">🧠 Dumb Test Leaderboard</div>
+      <div class="lb-section-title" id="lb-section-title">Leaderboards</div>
       <div class="lb-section-line"></div>
     </div>
     <div class="stats-section">
@@ -423,7 +424,7 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
         <div class="stat-card" id="stat-card-games"><div class="value" id="stat-games">—</div><div class="label">Games Played</div></div>
       </div>
       <div class="leaderboard">
-        <div class="leaderboard-header" id="lb-title">🧠 Dumb Test Leaderboard</div>
+        <div class="leaderboard-active-title" id="lb-title"></div>
         <div class="leaderboard-cols"><div>#</div><div>Player</div><div style="text-align:right">Best</div><div style="text-align:right">Games</div></div>
         <div id="leaderboard-body"></div>
       </div>
@@ -2151,7 +2152,6 @@ async function loadLeaderboard(diff) {
     jeroen: isNL ? '🇳🇱💀 NL Jeroen Leaderboard' : isTopo ? '📍💀 Topo Jeroen Leaderboard' : '💀 Jeroen Mode Leaderboard'
   };
   document.getElementById('lb-title').textContent = titles[diff];
-  document.getElementById('lb-section-title').textContent = titles[diff];
   try {
     const res = await fetch(`/api/leaderboard?difficulty=${diff}&mode=${mode}&region=${currentLBRegion}`);
     const data = await res.json();
