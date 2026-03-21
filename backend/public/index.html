@@ -69,7 +69,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 
 /* MENU */
 #menu-screen { min-height: 100vh; flex-direction: column; }
-.menu-content { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 32px 24px; gap: 28px; overflow-y: auto; }
+.menu-content { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 24px 24px 40px; gap: 20px; overflow-y: auto; }
 .mode-selector { display: flex; gap: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 6px; width: 100%; max-width: 700px; }
 .mode-btn { flex: 1; padding: 14px 20px; border: none; background: none; color: var(--text-muted); font-family: 'DM Sans',sans-serif; font-size: 16px; font-weight: 600; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
 .mode-btn.active { background: var(--surface2); color: var(--text); }
@@ -84,14 +84,14 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .diff-name { font-family: 'Bebas Neue',sans-serif; font-size: 26px; letter-spacing: 1px; margin-bottom: 6px; }
 .diff-card.jeroen-card .diff-name { background: linear-gradient(135deg,var(--jeroen),var(--jeroen2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 .diff-desc { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
-.play-btn { background: linear-gradient(135deg,var(--accent),var(--accent2)); color: #000; font-family: 'Bebas Neue',sans-serif; font-size: 32px; letter-spacing: 3px; padding: 20px 80px; border: none; border-radius: var(--radius); cursor: pointer; transition: all 0.2s; box-shadow: 0 8px 32px rgba(240,180,41,0.2); width: 100%; max-width: 700px; }
-.play-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(240,180,41,0.3); }
-.play-btn.jeroen-play { background: linear-gradient(135deg,var(--jeroen),var(--jeroen2)); color: #fff; box-shadow: 0 8px 32px rgba(168,85,247,0.25); }
-.play-btn.jeroen-play:hover { box-shadow: 0 12px 40px rgba(168,85,247,0.4); }
-.lb-section-header { display: flex; align-items: center; gap: 16px; width: 100%; max-width: 700px; }
+.play-btn { background: linear-gradient(135deg,var(--accent),var(--accent2)); color: #000; font-family: 'Bebas Neue',sans-serif; font-size: 26px; letter-spacing: 3px; padding: 15px 60px; border: none; border-radius: var(--radius); cursor: pointer; transition: all 0.2s; box-shadow: 0 6px 24px rgba(240,180,41,0.2); width: 100%; max-width: 700px; }
+.play-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(240,180,41,0.3); }
+.play-btn.jeroen-play { background: linear-gradient(135deg,var(--jeroen),var(--jeroen2)); color: #fff; box-shadow: 0 6px 24px rgba(168,85,247,0.25); }
+.play-btn.jeroen-play:hover { box-shadow: 0 10px 32px rgba(168,85,247,0.4); }
+.lb-section-header { display: flex; align-items: center; gap: 16px; width: 100%; max-width: 700px; margin-bottom: -4px; }
 .lb-section-line { flex: 1; height: 1px; background: var(--border); }
-.lb-section-title { font-family: 'Bebas Neue',sans-serif; font-size: 28px; letter-spacing: 2px; color: var(--text); white-space: nowrap; }
-.stats-section { width: 100%; max-width: 700px; }
+.lb-section-title { font-family: 'Bebas Neue',sans-serif; font-size: 22px; letter-spacing: 2px; color: var(--text-muted); white-space: nowrap; }
+.stats-section { width: 100%; max-width: 700px; display: flex; flex-direction: column; gap: 8px; }
 .stats-tabs { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 4px; margin-bottom: 14px; }
 .stats-tab { flex: 1; padding: 9px; border: none; background: none; color: var(--text-muted); font-family: 'DM Sans',sans-serif; font-size: 14px; font-weight: 500; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
 .stats-tab.active { background: var(--surface2); color: var(--text); }
@@ -103,7 +103,11 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .stat-card .label { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); margin-top: 4px; }
 .leaderboard { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
 .leaderboard-header { display: none; }
-.leaderboard-active-title { padding: 12px 20px 10px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); border-bottom: 1px solid var(--border); }
+.lb-meta-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; border-bottom: 1px solid var(--border); }
+.lb-meta-stat { font-family: 'Bebas Neue',sans-serif; font-size: 22px; color: var(--accent); display: flex; align-items: baseline; gap: 5px; }
+.lb-meta-stat.jeroen-stat { color: var(--jeroen); }
+.lb-meta-label { font-family: 'DM Sans',sans-serif; font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); font-weight: 400; }
+.leaderboard-active-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); text-align: center; }
 .leaderboard-cols { display: grid; grid-template-columns: 32px 1fr 70px 60px; gap: 8px; padding: 8px 20px; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); border-bottom: 1px solid var(--border); }
 .leaderboard-row { display: grid; grid-template-columns: 32px 1fr 70px 60px; gap: 8px; align-items: center; padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 14px; transition: background 0.15s; }
 .leaderboard-row:hover { background: var(--surface2); }
@@ -115,18 +119,20 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .lb-me { background: rgba(240,180,41,0.05) !important; }
 .lb-me.jeroen-row { background: rgba(168,85,247,0.06) !important; }
 
-.lb-controls { display: flex; gap: 10px; width: 100%; max-width: 700px; }
+.lb-controls { display: flex; gap: 8px; width: 100%; max-width: 700px; }
 .lb-toggle { display: flex; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 3px; flex: 1; }
+.lb-diff-toggle { flex: none; width: 100%; }
 .lb-toggle-btn { flex: 1; padding: 7px 10px; border: none; background: none; color: var(--text-muted); font-size: 13px; border-radius: calc(var(--radius) - 2px); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
 .lb-toggle-btn.active { background: var(--surface2); color: var(--text); font-weight: 600; }
+.lb-diff-jeroen.active { background: rgba(168,85,247,0.15); color: var(--jeroen); }
 .lb-diff-select { width: 100%; max-width: 700px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); padding: 10px 14px; font-size: 14px; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239aadca' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; }
 .lb-diff-select:focus { outline: none; border-color: var(--accent); }
 .game-intro-title { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 2px; color: var(--accent); }
-.game-intro-text { font-size: 14px; color: var(--text-muted); line-height: 1.7; max-width: 560px; }
-.game-intro-modes { display: flex; flex-direction: column; gap: 8px; width: 100%; }
-.game-intro-mode { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; text-align: left; }
-.game-intro-mode-name { font-weight: 700; font-size: 14px; margin-bottom: 3px; }
-.game-intro-mode-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+.game-intro-text { font-size: 13px; color: var(--text-muted); line-height: 1.6; max-width: 560px; }
+.game-intro-modes { display: flex; gap: 10px; width: 100%; }
+.game-intro-mode { flex: 1; display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; }
+.game-intro-mode-name { font-weight: 600; font-size: 13px; }
+.game-intro-mode-desc { display: none; }
 .game-config-panel { width: 100%; max-width: 700px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; display: flex; flex-direction: column; gap: 6px; }
 .config-panel-row { display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
 .config-panel-label { color: var(--text-muted); }
@@ -397,6 +403,7 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
     <div class="game-intro" id="game-intro"></div>
 
     <button class="play-btn" id="play-btn" onclick="openGameSetup()"></button>
+
     <div class="lb-section-header">
       <div class="lb-section-line"></div>
       <div class="lb-section-title" id="lb-section-title">Leaderboards</div>
@@ -414,18 +421,19 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
           <button class="lb-toggle-btn" id="lb-mode-topo" onclick="switchLBMode('topo')">📍 Topografie</button>
         </div>
       </div>
-      <!-- Difficulty dropdown -->
-      <select class="lb-diff-select" id="lb-diff-select" onchange="switchStatTab(this.value)">
-        <option value="easy">🧠 Dumb Test</option>
-        <option value="medium" selected>🗺️ Medium</option>
-        <option value="jeroen">💀 Jeroen Mode</option>
-      </select>
-      <div class="stats-row">
-        <div class="stat-card" id="stat-card-best"><div class="value" id="stat-best">—</div><div class="label">Best Streak</div></div>
-        <div class="stat-card" id="stat-card-games"><div class="value" id="stat-games">—</div><div class="label">Games Played</div></div>
+      <!-- Difficulty toggle -->
+      <div class="lb-toggle lb-diff-toggle" id="lb-diff-toggle">
+        <button class="lb-toggle-btn" id="lb-diff-easy" onclick="switchStatTab('easy')">🧠 Dumb Test</button>
+        <button class="lb-toggle-btn active" id="lb-diff-medium" onclick="switchStatTab('medium')">🗺️ Medium</button>
+        <button class="lb-toggle-btn lb-diff-jeroen" id="lb-diff-jeroen" onclick="switchStatTab('jeroen')">💀 Jeroen</button>
       </div>
+      <!-- Inline stats + leaderboard -->
       <div class="leaderboard">
-        <div class="leaderboard-active-title" id="lb-title"></div>
+        <div class="lb-meta-row">
+          <div class="lb-meta-stat"><span id="stat-best">—</span> <span class="lb-meta-label" id="lb-stat-best-label"></span></div>
+          <div class="leaderboard-active-title" id="lb-title"></div>
+          <div class="lb-meta-stat"><span id="stat-games">—</span> <span class="lb-meta-label" id="lb-stat-games-label"></span></div>
+        </div>
         <div class="leaderboard-cols"><div>#</div><div>Player</div><div style="text-align:right">Best</div><div style="text-align:right">Games</div></div>
         <div id="leaderboard-body"></div>
       </div>
@@ -2105,18 +2113,13 @@ let currentLBMode = 'world'; // 'world' | 'topo' — for leaderboard viewing onl
 function showCorrectDiffTabs() {
   const isNL = currentLBRegion === 'nl';
   const isTopo = currentLBMode === 'topo';
-  // Update dropdown options — no Dumb Test for NL or Topo
-  const select = document.getElementById('lb-diff-select');
   const hasDumbTest = !isNL && !isTopo;
-  select.innerHTML = (hasDumbTest ? '<option value="easy">🧠 Dumb Test</option>' : '')
-    + '<option value="medium">🗺️ Medium</option>'
-    + '<option value="jeroen">💀 Jeroen Mode</option>';
-  // Reset to medium if current selection was easy but now unavailable
+  const easyBtn = document.getElementById('lb-diff-easy');
+  if (easyBtn) easyBtn.style.display = hasDumbTest ? '' : 'none';
   if (!hasDumbTest && currentStatTab === 'easy') {
-    select.value = 'medium';
     currentStatTab = 'medium';
-  } else {
-    select.value = currentStatTab;
+    document.getElementById('lb-diff-medium')?.classList.add('active');
+    document.getElementById('lb-diff-easy')?.classList.remove('active');
   }
 }
 
@@ -2159,15 +2162,28 @@ function selectDiff(diff) {
 
 function switchStatTab(diff) {
   currentStatTab = diff;
-  const select = document.getElementById('lb-diff-select');
-  if (select) select.value = diff;
-  const isJ = diff==='jeroen';
-  document.getElementById('stat-card-best').classList.toggle('jeroen-stat', isJ);
-  document.getElementById('stat-card-games').classList.toggle('jeroen-stat', isJ);
+  // Update difficulty pill toggle
+  ['easy','medium','jeroen'].forEach(d => {
+    const btn = document.getElementById(`lb-diff-${d}`);
+    if (btn) btn.classList.toggle('active', d === diff);
+  });
+  const isJ = diff === 'jeroen';
+  // Update meta-row stats
   const key = `${currentLBRegion}_${currentLBMode}_${diff}`;
   const s = allStats[key] || allStats[diff] || {};
-  document.getElementById('stat-best').textContent = s.best_streak || '0';
-  document.getElementById('stat-games').textContent = s.games_played || '0';
+  const best = s.best_streak || 0;
+  const games = s.games_played || 0;
+  document.getElementById('stat-best').textContent = best || '—';
+  document.getElementById('stat-games').textContent = games || '—';
+  const metaBest = document.getElementById('lb-stat-best-label');
+  const metaGames = document.getElementById('lb-stat-games-label');
+  if (metaBest) metaBest.textContent = currentLang === 'nl' ? 'beste reeks' : 'best streak';
+  if (metaGames) metaGames.textContent = currentLang === 'nl' ? 'gespeeld' : 'played';
+  // Jeroen colour on meta stats
+  const metaLeft = document.querySelector('.lb-meta-stat:first-child');
+  const metaRight = document.querySelector('.lb-meta-stat:last-child');
+  if (metaLeft) { metaLeft.style.color = isJ ? 'var(--jeroen)' : 'var(--accent)'; }
+  if (metaRight) { metaRight.style.color = isJ ? 'var(--jeroen)' : 'var(--accent)'; }
   loadLeaderboard(diff);
 }
 
