@@ -2937,7 +2937,7 @@ function buildMapQ(country, area, isCapitalMap) {
     mapboxgl.accessToken = '__MAPBOX_TOKEN__';
     map = new mapboxgl.Map({
       container: 'map',
-      style: 'mapbox://styles/mapbox/dark-v11',
+      style: 'mapbox://styles/mapbox/outdoors-v12',
       center: [0, 20],
       zoom: 1.5,
       maxZoom: 10,
@@ -3449,7 +3449,7 @@ function buildNLMapQ(place, area) {
     mapboxgl.accessToken = '__MAPBOX_TOKEN__';
     map = new mapboxgl.Map({
       container: 'map',
-      style: 'mapbox://styles/mapbox/dark-v11',
+      style: 'mapbox://styles/mapbox/outdoors-v12',
       center: nlCfg.center,
       zoom: nlCfg.zoom,
       minZoom: nlCfg.minZoom,
