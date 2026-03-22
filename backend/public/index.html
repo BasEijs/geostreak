@@ -2175,19 +2175,17 @@ const LB_REGIONS = [
   {
     id: 'world', icon: '🌍', label: { nl: 'Wereld', en: 'World' },
     modes: [
-      { id: 'world', icon: '🌍', label: { nl: 'Aardrijkskunde', en: 'Geography' } },
-      { id: 'topo',  icon: '📍', label: { nl: 'Topografie',     en: 'Map Only'  } },
+      { id: 'world', icon: '🌍', label: { nl: 'Aardrijkskunde', en: 'Geography' }, diffs: ['easy','medium','jeroen'], defaultDiff: 'easy' },
+      { id: 'topo',  icon: '📍', label: { nl: 'Topografie',     en: 'Map Only'  }, diffs: ['medium','jeroen'],       defaultDiff: 'medium' },
     ],
-    diffs: ['easy','medium','jeroen'],
     defaultMode: 'world', defaultDiff: 'easy',
   },
   {
     id: 'nl', icon: '🇳🇱', label: { nl: 'Nederland', en: 'Netherlands' },
     modes: [
-      { id: 'world', icon: '🌍', label: { nl: 'Aardrijkskunde', en: 'Geography' } },
-      { id: 'topo',  icon: '📍', label: { nl: 'Topografie',     en: 'Map Only'  } },
+      { id: 'world', icon: '🌍', label: { nl: 'Aardrijkskunde', en: 'Geography' }, diffs: ['medium','jeroen'], defaultDiff: 'medium' },
+      { id: 'topo',  icon: '📍', label: { nl: 'Topografie',     en: 'Map Only'  }, diffs: ['medium','jeroen'], defaultDiff: 'medium' },
     ],
-    diffs: ['medium','jeroen'],
     defaultMode: 'world', defaultDiff: 'medium',
   },
 ];
@@ -2226,7 +2224,7 @@ function renderLBFilters(skipLoad) {
     btn.textContent = `${m.icon} ${m.label[lang] || m.label.en}`;
     btn.onclick = () => {
       currentLBMode = m.id;
-      currentLBDiff = region.diffs[0];
+      currentLBDiff = m.defaultDiff;
       renderLBFilters();
       loadLeaderboard(currentLBDiff);
       loadAllStats();
@@ -2234,7 +2232,8 @@ function renderLBFilters(skipLoad) {
     modeToggle.appendChild(btn);
   });
 
-  // Diff toggle
+  // Diff toggle — use diffs from the current mode
+  const currentModeConfig = region.modes.find(m => m.id === currentLBMode) || region.modes[0];
   const diffToggle = document.getElementById('lb-diff-toggle');
   diffToggle.innerHTML = '';
   const diffDefs = {
@@ -2242,7 +2241,7 @@ function renderLBFilters(skipLoad) {
     medium: { icon: '🗺️', label: { nl: 'Medium',    en: 'Medium'   } },
     jeroen: { icon: '💀', label: { nl: 'Jeroen',    en: 'Jeroen'   } },
   };
-  region.diffs.forEach(d => {
+  currentModeConfig.diffs.forEach(d => {
     const def = diffDefs[d];
     const btn = document.createElement('button');
     btn.className = 'lb-toggle-btn' + (d === currentLBDiff ? ' active' : '') + (d === 'jeroen' ? ' lb-diff-jeroen' : '');
