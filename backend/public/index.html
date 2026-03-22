@@ -2131,8 +2131,12 @@ function renderSetupSummary() {
       <span class="setup-summary-label">${lang === 'nl' ? 'Moeilijkheid' : 'Difficulty'}</span>
       <span class="setup-summary-value">${diffNames[setupDiff]}</span>
     </div>`;
-  const playBtn = document.getElementById('setup-play-btn');
-  playBtn.className = 'play-btn' + (setupDiff === 'jeroen' ? ' jeroen-play' : '');
+  // Style the Next/Start button on step 3
+  const nextBtn = document.getElementById('setup-next-btn');
+  if (nextBtn) {
+    nextBtn.className = setupDiff === 'jeroen' ? 'btn btn-jeroen' : 'play-btn';
+    nextBtn.style.cssText = 'font-size:18px;padding:12px 32px;';
+  }
 }
 
 function confirmAndPlay() {
