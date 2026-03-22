@@ -3090,13 +3090,26 @@ function submitMapAnswer(isCapitalMap) {
   const badge = document.getElementById('distance-badge');
   badge.style.display = 'block';
 
+  // Look up the name of the country that was actually clicked
+  let clickedCountryName = null;
+  if (clickedIso && !correct) {
+    const cfg2 = getDiffConfig(currentDiff);
+    const pool = cfg2.countries || [];
+    const clicked = pool.find(c => c.iso === clickedIso);
+    if (clicked) clickedCountryName = localName(clicked);
+  }
+
+  const wrongCountryNote = clickedCountryName
+    ? (currentLang === 'nl' ? ` — jij klikte op ${clickedCountryName}` : ` — you clicked ${clickedCountryName}`)
+    : '';
+
   const verdictText = insideBorder
     ? (currentLang === 'nl' ? '✓ Binnen de grenzen!' : '✓ Inside the borders!')
     : isNeighbor
     ? (currentLang === 'nl' ? '✓ Buurland telt!' : '✓ Neighbour counts!')
     : noIsoFallback
     ? t().ui.withinKm(Math.max(cfg.mapThreshold, country.extraRadius || 0))
-    : (currentLang === 'nl' ? '✗ Verkeerd land' : '✗ Wrong country');
+    : (currentLang === 'nl' ? `✗ Verkeerd land${wrongCountryNote}` : `✗ Wrong country${wrongCountryNote}`);
 
   badge.innerHTML = `
     <div class="dist-value">${Math.round(dist)} km</div>
@@ -3110,7 +3123,9 @@ function submitMapAnswer(isCapitalMap) {
     ? (currentLang === 'nl' ? `✓ Buurland — dichtbij genoeg!` : `✓ Neighbour country — close enough!`)
     : noIsoFallback
     ? t().ui.closeEnough(Math.round(dist))
-    : (currentLang === 'nl' ? `✗ Dat is niet ${localName(country)}` : `✗ That's not ${localName(country)}`);
+    : (currentLang === 'nl'
+        ? `✗ ${clickedCountryName ? `Dat is ${clickedCountryName}, niet` : 'Dat is niet'} ${localName(country)}`
+        : `✗ ${clickedCountryName ? `That's ${clickedCountryName}, not` : `That's not`} ${localName(country)}`);
 
   showFeedback(correct, feedbackMsg, insideBorder || isNeighbor ? '' : localName(country));
 }
