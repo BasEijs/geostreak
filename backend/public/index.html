@@ -1766,7 +1766,14 @@ function fuzzyMatch(input, correct) {
 window.onload = async () => {
   await fetchSettings();
   applyLanguageUI();
-  if (token && username) showMenu();
+  if (token && username) {
+    // Validate token is still good before showing menu
+    try {
+      const res = await fetch('/api/me/stats', { headers: { Authorization: 'Bearer ' + token } });
+      if (res.status === 401) { logout(); return; }
+    } catch {}
+    showMenu();
+  }
   document.getElementById('auth-password').addEventListener('keydown', e => { if(e.key==='Enter') submitAuth(); });
   document.getElementById('auth-username').addEventListener('keydown', e => { if(e.key==='Enter') submitAuth(); });
 };
@@ -3776,11 +3783,15 @@ async function endGame() {
   submitContainer.classList.remove('visible');
   try {
     if (!devMode) {
-      await fetch('/api/scores',{
+      const res = await fetch('/api/scores',{
         method:'POST',
         headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
         body:JSON.stringify({streak, difficulty:currentDiff, mode:currentGameMode, region:currentRegion})
       });
+      if (res.status === 401 || res.status === 500) {
+        // Token invalid — silently log out after showing game over
+        setTimeout(() => { logout(); }, 4000);
+      }
     }
   } catch {}
   const isJ=currentDiff==='jeroen';
