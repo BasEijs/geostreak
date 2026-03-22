@@ -50,6 +50,8 @@ body.jeroen-mode::before {
 .btn { width: 100%; padding: 13px; border: none; border-radius: 8px; font-family: 'DM Sans',sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
 .btn-primary { background: linear-gradient(135deg,var(--accent),var(--accent2)); color: #000; }
 .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+.btn-accent { background: linear-gradient(135deg,var(--accent),var(--accent2)); color: #000; }
+.btn-accent:hover { opacity: 0.9; transform: translateY(-1px); }
 .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
 .btn-ghost:hover { border-color: var(--accent); }
 .btn-sm { width: auto; padding: 8px 16px; font-size: 13px; }
@@ -2033,10 +2035,9 @@ function renderSetupStep() {
   const nextBtn = document.getElementById('setup-next-btn');
   if (nextBtn) {
     nextBtn.className = setupStep === 3
-      ? (setupDiff === 'jeroen' ? 'btn btn-jeroen' : 'play-btn')
+      ? (setupDiff === 'jeroen' ? 'btn btn-jeroen' : 'btn btn-accent')
       : 'btn btn-primary';
-    if (setupStep === 3) nextBtn.style.cssText = 'font-size:18px;padding:12px 32px;';
-    else nextBtn.style.cssText = '';
+    nextBtn.style.cssText = '';
   }
 
   // Update title
@@ -2147,11 +2148,10 @@ function renderSetupSummary() {
       <span class="setup-summary-label">${lang === 'nl' ? 'Moeilijkheid' : 'Difficulty'}</span>
       <span class="setup-summary-value">${diffNames[setupDiff]}</span>
     </div>`;
-  // Style the Next/Start button on step 3
   const nextBtn = document.getElementById('setup-next-btn');
   if (nextBtn) {
-    nextBtn.className = setupDiff === 'jeroen' ? 'btn btn-jeroen' : 'play-btn';
-    nextBtn.style.cssText = 'font-size:18px;padding:12px 32px;';
+    nextBtn.className = setupDiff === 'jeroen' ? 'btn btn-jeroen' : 'btn btn-accent';
+    nextBtn.style.cssText = '';
   }
 }
 
