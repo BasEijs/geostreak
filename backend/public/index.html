@@ -122,9 +122,9 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .lb-me.jeroen-row { background: rgba(168,85,247,0.06) !important; }
 
 .lb-region-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); width: 100%; }
-.lb-region-tab { padding: 10px 24px; border: none; background: none; color: var(--text-muted); font-family: 'DM Sans',sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.15s; }
+.lb-region-tab { padding: 10px 24px; border: none; background: none; color: var(--text-muted); font-family: 'DM Sans',sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all 0.15s; }
 .lb-region-tab:hover { color: var(--text); }
-.lb-region-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.lb-region-tab.active { color: var(--accent); border-bottom-color: var(--accent); background: rgba(240,180,41,0.07); }
 .lb-filters { display: flex; gap: 20px; padding: 14px 0 4px; align-items: flex-start; }
 .lb-filter-group { display: flex; flex-direction: column; gap: 6px; }
 .lb-filter-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); font-weight: 600; }
@@ -133,8 +133,8 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .lb-toggle { display: flex; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 3px; }
 .lb-diff-toggle { flex: none; width: 100%; }
 .lb-toggle-btn { flex: 1; padding: 7px 14px; border: none; background: none; color: var(--text-muted); font-size: 13px; border-radius: calc(var(--radius) - 2px); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
-.lb-toggle-btn.active { background: var(--surface2); color: var(--text); font-weight: 600; }
-.lb-diff-jeroen.active { background: rgba(168,85,247,0.15); color: var(--jeroen); }
+.lb-toggle-btn.active { background: var(--accent); color: #000; font-weight: 700; }
+.lb-diff-jeroen.active { background: var(--jeroen); color: #fff; font-weight: 700; }
 .game-intro-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 2px; color: var(--accent); }
 .game-intro { width: 100%; max-width: 700px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; }
 .game-intro-text { font-size: 15px; color: var(--text-muted); line-height: 1.65; max-width: 560px; }
