@@ -68,6 +68,7 @@ const DEFAULT_SETTINGS = {
   nl_jeroen_min_pop: '2000',
   nl_pop_question_min_pop: '5000',
   easter_ga_werken: '1',
+  medium_neighbor_correct: '0',
 };
 for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
   try { db.prepare('INSERT INTO settings (key, value) VALUES (?, ?)').run(key, value); } catch {}
@@ -157,6 +158,7 @@ app.get('/api/settings', (req, res) => {
     nl_jeroen_min_pop: parseInt(getSetting('nl_jeroen_min_pop')),
     nl_pop_question_min_pop: parseInt(getSetting('nl_pop_question_min_pop')),
     easter_ga_werken: getSetting('easter_ga_werken') !== '0',
+    medium_neighbor_correct: getSetting('medium_neighbor_correct') === '1',
   });
 });
 
@@ -273,7 +275,7 @@ app.post('/api/admin/settings', auth, adminOnly, (req, res) => {
     'medium_pop_margin','jeroen_pop_margin','medium_second_city','population_mc',
     'nl_medium_map_threshold','nl_jeroen_map_threshold',
     'nl_medium_min_pop','nl_jeroen_min_pop','nl_pop_question_min_pop',
-    'easter_ga_werken',
+    'easter_ga_werken', 'medium_neighbor_correct',
   ];
   for (const key of allowed) {
     if (req.body[key] !== undefined) {

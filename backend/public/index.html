@@ -636,6 +636,10 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
               <div class="setting-label">Jeroen map threshold (km)<span>How close to click. Default 400km.</span></div>
               <input type="number" class="setting-input" id="setting-jeroen-map" min="50" max="2000" value="400">
             </div>
+            <div class="setting-row">
+              <div class="setting-label">Medium: neighbouring countries count<span>Clicking a country that borders the correct answer also counts as correct in Medium mode.</span></div>
+              <label class="switch"><input type="checkbox" id="setting-medium-neighbor"><span class="slider"></span></label>
+            </div>
           </div>
           <div class="settings-group">
             <div class="settings-group-title">Historical Flags</div>
@@ -1384,6 +1388,7 @@ let gameSettings = {
   nl_jeroen_min_pop: 2000,
   nl_pop_question_min_pop: 5000,
   easter_ga_werken: true,
+  medium_neighbor_correct: false,
 };
 
 function getDiffConfig(diff) {
@@ -1510,6 +1515,18 @@ let map = null;
 let mapMarkerEl = null;
 let mapMarkerObj = null;
 let geoJsonCache = null;
+let topoCache = null;
+let neighborMap = null; // iso -> Set of neighboring isos
+
+function buildNeighborMap(topo) {
+  const geometries = topo.objects.countries.geometries;
+  const neighbors = topojson.neighbors(geometries);
+  neighborMap = {};
+  geometries.forEach((geom, i) => {
+    const iso = parseInt(geom.id);
+    neighborMap[iso] = new Set(neighbors[i].map(j => parseInt(geometries[j].id)));
+  });
+}
 let marker = null; // {lat, lng} of current pin
 let lastMatchCountries = []; // prevent duplicate match questions
 let countryQueue = []; // shuffled queue — cycle through all before repeating
@@ -2965,7 +2982,11 @@ function buildMapQ(country, area, isCapitalMap) {
     if (!geoJsonCache) {
       fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
         .then(r => r.json())
-        .then(topo => { geoJsonCache = topojson.feature(topo, topo.objects.countries); })
+        .then(topo => {
+          topoCache = topo;
+          geoJsonCache = topojson.feature(topo, topo.objects.countries);
+          buildNeighborMap(topo);
+        })
         .catch(() => {});
     }
 
@@ -3015,22 +3036,35 @@ function submitMapAnswer(isCapitalMap) {
   const { country } = currentQ;
   const cfg = getDiffConfig(currentDiff);
   const dist = haversine(marker.lat, marker.lng, country.lat, country.lng);
-  const effectiveThreshold = Math.max(cfg.mapThreshold, country.extraRadius || 0);
 
-  // Border detection: load TopoJSON and match by ISO numeric code
+  // Find which country was clicked (by border detection)
+  let clickedIso = null;
   let insideBorder = false;
-  if (country.iso && geoJsonCache) {
+  if (geoJsonCache) {
     try {
       const clickCoords = [marker.lng, marker.lat];
-      // Find the feature whose ID matches the country's ISO numeric code
-      const feature = geoJsonCache.features.find(f => parseInt(f.id) === country.iso);
-      if (feature) {
-        insideBorder = pointInGeoJSON(clickCoords, feature);
+      for (const feature of geoJsonCache.features) {
+        if (pointInGeoJSON(clickCoords, feature)) {
+          clickedIso = parseInt(feature.id);
+          break;
+        }
       }
+      if (country.iso && clickedIso === country.iso) insideBorder = true;
     } catch {}
   }
 
-  const correct = insideBorder || dist <= effectiveThreshold;
+  // Neighbor leniency: Medium mode with admin setting enabled
+  const isNeighbor = !insideBorder
+    && gameSettings.medium_neighbor_correct
+    && currentDiff === 'medium'
+    && country.iso
+    && clickedIso
+    && neighborMap?.[country.iso]?.has(clickedIso);
+
+  // For disputed territories (no ISO), fall back to distance
+  const noIsoFallback = !country.iso && dist <= Math.max(cfg.mapThreshold, country.extraRadius || 0);
+
+  const correct = insideBorder || isNeighbor || noIsoFallback;
 
   // Show correct location marker
   const correctEl = document.createElement('div');
@@ -3039,7 +3073,7 @@ function submitMapAnswer(isCapitalMap) {
     .setLngLat([country.lng, country.lat])
     .addTo(map);
 
-  // Draw line from pin to correct
+  // Draw line from pin to correct location
   if (map.getSource('answer-line')) {
     map.removeLayer('answer-line-layer');
     map.removeSource('answer-line');
@@ -3055,14 +3089,30 @@ function submitMapAnswer(isCapitalMap) {
   document.getElementById('map-submit').style.display = 'none';
   const badge = document.getElementById('distance-badge');
   badge.style.display = 'block';
+
+  const verdictText = insideBorder
+    ? (currentLang === 'nl' ? '✓ Binnen de grenzen!' : '✓ Inside the borders!')
+    : isNeighbor
+    ? (currentLang === 'nl' ? '✓ Buurland telt!' : '✓ Neighbour counts!')
+    : noIsoFallback
+    ? t().ui.withinKm(Math.max(cfg.mapThreshold, country.extraRadius || 0))
+    : (currentLang === 'nl' ? '✗ Verkeerd land' : '✗ Wrong country');
+
   badge.innerHTML = `
     <div class="dist-value">${Math.round(dist)} km</div>
-    <div class="dist-label">from ${localName(country)}</div>
+    <div class="dist-label">${currentLang === 'nl' ? 'van' : 'from'} ${localName(country)}</div>
     <div class="dist-verdict" style="color:${correct ? 'var(--success)' : 'var(--danger)'}">
-      ${insideBorder ? '✓ Binnen de grenzen' : (correct ? t().ui.withinKm(effectiveThreshold) : t().ui.tooFar(effectiveThreshold))}</div>`;
-  showFeedback(correct,
-    insideBorder ? `✓ Binnen de grenzen van ${localName(country)}!` : (correct ? t().ui.closeEnough(Math.round(dist)) : t().ui.tooFarDist(Math.round(dist))),
-    insideBorder ? '' : localName(country));
+      ${verdictText}</div>`;
+
+  const feedbackMsg = insideBorder
+    ? (currentLang === 'nl' ? `✓ Binnen de grenzen van ${localName(country)}!` : `✓ Inside ${localName(country)}!`)
+    : isNeighbor
+    ? (currentLang === 'nl' ? `✓ Buurland — dichtbij genoeg!` : `✓ Neighbour country — close enough!`)
+    : noIsoFallback
+    ? t().ui.closeEnough(Math.round(dist))
+    : (currentLang === 'nl' ? `✗ Dat is niet ${localName(country)}` : `✗ That's not ${localName(country)}`);
+
+  showFeedback(correct, feedbackMsg, insideBorder || isNeighbor ? '' : localName(country));
 }
 
 // ── SECOND CITY ──
@@ -3872,6 +3922,7 @@ async function loadAdminSettings() {
     document.getElementById('setting-jeroen-timer-match').value = s.jeroen_timer_match;
     document.getElementById('setting-jeroen-timer-capitalmap').value = s.jeroen_timer_capitalmap;
     document.getElementById('setting-jeroen-map').value = s.jeroen_map_threshold;
+    document.getElementById('setting-medium-neighbor').checked = s.medium_neighbor_correct === true;
     document.getElementById('setting-historical-label').checked = s.jeroen_show_historical_label;
     document.getElementById('setting-historical-flags').checked = s.jeroen_historical_flags;
     document.getElementById('setting-historical-capitals').checked = s.jeroen_historical_capitals;
@@ -3902,6 +3953,7 @@ async function saveSettings() {
     jeroen_timer_typed: parseInt(document.getElementById('setting-jeroen-timer-simple').value) || 0,
     jeroen_timer_capitalmap: parseInt(document.getElementById('setting-jeroen-timer-capitalmap').value) || 0,
     jeroen_map_threshold: parseInt(document.getElementById('setting-jeroen-map').value) || 400,
+    medium_neighbor_correct: document.getElementById('setting-medium-neighbor').checked ? '1' : '0',
     jeroen_show_historical_label: document.getElementById('setting-historical-label').checked ? '1' : '0',
     jeroen_historical_flags: document.getElementById('setting-historical-flags').checked ? '1' : '0',
     jeroen_historical_capitals: document.getElementById('setting-historical-capitals').checked ? '1' : '0',
