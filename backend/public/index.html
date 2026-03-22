@@ -482,11 +482,11 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
       <div id="setup-summary" style="background:var(--surface2);border-radius:12px;padding:20px;"></div>
     </div>
     <div style="padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
-      <button class="btn btn-ghost" id="setup-back-btn" onclick="setupBack()" style="display:none">← <span id="setup-back-label"></span></button>
+      <button class="btn btn-ghost" id="setup-back-btn" onclick="setupBack()" style="display:none;width:auto;padding:10px 16px;">← <span id="setup-back-label"></span></button>
       <div></div>
       <div style="display:flex;gap:10px;align-items:center;">
-        <button class="btn btn-ghost" onclick="closeGameSetup()">✕</button>
-        <button class="btn btn-primary" id="setup-next-btn" onclick="setupNext()"><span id="setup-next-label"></span> →</button>
+        <button class="btn btn-ghost" onclick="closeGameSetup()" style="width:auto;padding:10px 16px;">✕</button>
+        <button class="btn btn-primary" id="setup-next-btn" onclick="setupNext()" style="width:auto;padding:10px 20px;"><span id="setup-next-label"></span> →</button>
       </div>
     </div>
   </div>
