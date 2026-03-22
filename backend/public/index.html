@@ -1832,8 +1832,8 @@ function applyLanguageUI() {
   updateDiffDescriptions();
   // Re-render leaderboard controls with new language
   if (document.getElementById('lb-region-tabs')) {
-    renderLBRegionTabs();
-    renderLBFilters();
+    renderLBRegionTabs(true);
+    renderLBFilters(true);
   }
 }
 
@@ -1852,13 +1852,12 @@ function showMenu() {
   document.getElementById('admin-nav-btn').style.display = isAdmin ? 'inline-block' : 'none';
   document.body.classList.remove('jeroen-mode');
   updateDiffDescriptions();
-  // Sync leaderboard to game just played
   currentLBRegion = currentRegion;
   currentLBMode = currentGameMode;
   const region = LB_REGIONS.find(r => r.id === currentLBRegion) || LB_REGIONS[0];
   currentLBDiff = region.diffs.includes(currentDiff) ? currentDiff : region.defaultDiff;
-  renderLBRegionTabs();
-  renderLBFilters();
+  renderLBRegionTabs(true);
+  renderLBFilters(true);
   loadAllStats();
   loadLeaderboard(currentLBDiff);
 }
@@ -2176,7 +2175,7 @@ const LB_REGIONS = [
   },
 ];
 
-function renderLBRegionTabs() {
+function renderLBRegionTabs(skipLoad) {
   const container = document.getElementById('lb-region-tabs');
   container.innerHTML = '';
   LB_REGIONS.forEach(r => {
@@ -2188,8 +2187,8 @@ function renderLBRegionTabs() {
       currentLBRegion = r.id;
       currentLBMode = region.defaultMode;
       currentLBDiff = region.defaultDiff;
-      renderLBFilters();
-      renderLBRegionTabs();
+      renderLBFilters(true);
+      renderLBRegionTabs(true);
       loadLeaderboard(currentLBDiff);
       loadAllStats();
     };
@@ -2197,7 +2196,7 @@ function renderLBRegionTabs() {
   });
 }
 
-function renderLBFilters() {
+function renderLBFilters(skipLoad) {
   const region = LB_REGIONS.find(r => r.id === currentLBRegion);
   const lang = currentLang;
 
@@ -2210,7 +2209,6 @@ function renderLBFilters() {
     btn.textContent = `${m.icon} ${m.label[lang] || m.label.en}`;
     btn.onclick = () => {
       currentLBMode = m.id;
-      // reset diff to first available
       currentLBDiff = region.diffs[0];
       renderLBFilters();
       loadLeaderboard(currentLBDiff);
@@ -2246,6 +2244,11 @@ function renderLBFilters() {
   const diffLbl = document.getElementById('lb-filter-diff-label');
   if (modeLbl) modeLbl.textContent = lang === 'nl' ? 'Modus' : 'Mode';
   if (diffLbl) diffLbl.textContent = lang === 'nl' ? 'Moeilijkheid' : 'Difficulty';
+
+  if (!skipLoad) {
+    loadLeaderboard(currentLBDiff);
+    loadAllStats();
+  }
 }
 
 function switchLBRegion(region, forceDiff) { /* legacy stub — now handled by renderLBRegionTabs */ }
