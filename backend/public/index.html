@@ -2955,10 +2955,16 @@ function buildMapQ(country, area, isCapitalMap) {
     }
 
     map.on('load', () => {
-      // Hide all label/text layers
+      const hideTypes = ['symbol'];
+      const hideKeywords = ['road','bridge','tunnel','building','motorway','street','path','track','ferry','aeroway','parking'];
       map.getStyle().layers.forEach(layer => {
-        if (layer.type === 'symbol') {
+        if (hideTypes.includes(layer.type)) {
           map.setLayoutProperty(layer.id, 'visibility', 'none');
+        } else {
+          const id = layer.id.toLowerCase();
+          if (hideKeywords.some(k => id.includes(k))) {
+            map.setLayoutProperty(layer.id, 'visibility', 'none');
+          }
         }
       });
     });
@@ -3459,6 +3465,7 @@ function buildNLMapQ(place, area) {
     });
     map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-left');
     map.on('load', () => {
+      // NL mode: hide labels only, keep roads for orientation
       map.getStyle().layers.forEach(layer => {
         if (layer.type === 'symbol') map.setLayoutProperty(layer.id, 'visibility', 'none');
       });
