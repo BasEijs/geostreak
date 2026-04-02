@@ -639,6 +639,10 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
               <input type="number" class="setting-input" id="setting-jeroen-map" min="50" max="2000" value="400">
             </div>
             <div class="setting-row">
+              <div class="setting-label">Disputed territory threshold (km)<span>Distance allowed for territories without ISO borders (Kosovo, Somaliland etc.). Default 100km.</span></div>
+              <input type="number" class="setting-input" id="setting-disputed-map" min="10" max="500" value="100">
+            </div>
+            <div class="setting-row">
               <div class="setting-label">Medium: neighbouring countries count<span>Clicking a country that borders the correct answer also counts as correct in Medium mode.</span></div>
               <label class="switch"><input type="checkbox" id="setting-medium-neighbor"><span class="slider"></span></label>
             </div>
@@ -1377,6 +1381,7 @@ let gameSettings = {
   jeroen_timer_simple: 12, jeroen_timer_match: 60, jeroen_timer_map: 30,
   jeroen_timer_typed: 15, jeroen_timer_capitalmap: 30,
   jeroen_map_threshold: 400,
+  disputed_map_threshold: 100,
   jeroen_show_historical_label: true,
   jeroen_historical_flags: true,
   jeroen_historical_capitals: false,
@@ -3061,7 +3066,10 @@ function submitMapAnswer(isCapitalMap) {
     && neighborMap?.[country.iso]?.has(clickedIso);
 
   // For disputed territories (no ISO), fall back to distance
-  const noIsoFallback = !country.iso && dist <= Math.max(cfg.mapThreshold, country.extraRadius || 0);
+  // Don't use border detection for disputed territories (no ISO) — use distance fallback instead
+  if (!country.iso) clickedIso = null;
+  const disputedThreshold = gameSettings.disputed_map_threshold || 100;
+  const noIsoFallback = !country.iso && dist <= Math.max(disputedThreshold, country.extraRadius || 0);
 
   const correct = insideBorder || isNeighbor || noIsoFallback;
 
@@ -3936,6 +3944,7 @@ async function loadAdminSettings() {
     document.getElementById('setting-jeroen-timer-match').value = s.jeroen_timer_match;
     document.getElementById('setting-jeroen-timer-capitalmap').value = s.jeroen_timer_capitalmap;
     document.getElementById('setting-jeroen-map').value = s.jeroen_map_threshold;
+    document.getElementById('setting-disputed-map').value = s.disputed_map_threshold || 100;
     document.getElementById('setting-medium-neighbor').checked = s.medium_neighbor_correct === true;
     document.getElementById('setting-historical-label').checked = s.jeroen_show_historical_label;
     document.getElementById('setting-historical-flags').checked = s.jeroen_historical_flags;
@@ -3967,6 +3976,7 @@ async function saveSettings() {
     jeroen_timer_typed: parseInt(document.getElementById('setting-jeroen-timer-simple').value) || 0,
     jeroen_timer_capitalmap: parseInt(document.getElementById('setting-jeroen-timer-capitalmap').value) || 0,
     jeroen_map_threshold: parseInt(document.getElementById('setting-jeroen-map').value) || 400,
+    disputed_map_threshold: parseInt(document.getElementById('setting-disputed-map').value) || 100,
     medium_neighbor_correct: document.getElementById('setting-medium-neighbor').checked ? '1' : '0',
     jeroen_show_historical_label: document.getElementById('setting-historical-label').checked ? '1' : '0',
     jeroen_historical_flags: document.getElementById('setting-historical-flags').checked ? '1' : '0',
