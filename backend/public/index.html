@@ -1598,6 +1598,9 @@ const NL = {
     whichCountryFlag: "Van welk land is deze vlag?",
     whichContinent: (c) => `Op welk continent ligt <span>${c}</span>?`,
     clickCountry: (c, km) => `Klik op het <span>midden van ${c}</span> — binnen ${km}km van het middelpunt om te scoren`,
+    clickCountryBorders: (c) => `Klik op <span>${c}</span>`,
+    clickCountryNeighbour: (c) => `Klik op <span>${c}</span> of een buurland`,
+    clickCountryDisputed: (c) => `Klik zo dicht mogelijk bij <span>${c}</span>`,
     capitalMap: (c) => `<span>${c}</span> is de hoofdstad van welk land? Klik het op de kaart.`,
     matchFlags: "Koppel elke <span>vlag</span> aan het juiste land",
     matchCapitals: "Koppel elke <span>hoofdstad</span> aan het juiste land",
@@ -1656,6 +1659,9 @@ const EN = {
     whichCountryFlag: "Which country does this flag belong to?",
     whichContinent: (c) => `Which continent is <span>${c}</span> in?`,
     clickCountry: (c, km) => `Click the <span>centre of ${c}</span> — within ${km}km of the centre to score`,
+    clickCountryBorders: (c) => `Click on <span>${c}</span>`,
+    clickCountryNeighbour: (c) => `Click on <span>${c}</span> or a neighbouring country`,
+    clickCountryDisputed: (c) => `Click as close as possible to <span>${c}</span>`,
     capitalMap: (c) => `<span>${c}</span> is the capital of which country? Click it on the map.`,
     matchFlags: "Match each <span>flag</span> to its country",
     matchCapitals: "Match each <span>capital</span> to its country",
@@ -2951,8 +2957,15 @@ function buildMapQ(country, area, isCapitalMap) {
   const cfg = getDiffConfig(currentDiff);
   if (isCapitalMap) {
     document.getElementById('question-text').innerHTML = t().ui.capitalMap(country.capital);
+  } else if (!country.iso) {
+    // Disputed territory — distance based
+    document.getElementById('question-text').innerHTML = t().ui.clickCountryDisputed(localName(country));
+  } else if (gameSettings.medium_neighbor_correct && currentDiff === 'medium') {
+    // Neighbour leniency on
+    document.getElementById('question-text').innerHTML = t().ui.clickCountryNeighbour(localName(country));
   } else {
-    document.getElementById('question-text').innerHTML = t().ui.clickCountry(localName(country), cfg.mapThreshold);
+    // Standard — click inside borders
+    document.getElementById('question-text').innerHTML = t().ui.clickCountryBorders(localName(country));
   }
 
   const container = document.createElement('div'); container.id = 'map-container';
