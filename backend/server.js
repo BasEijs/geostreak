@@ -398,7 +398,8 @@ app.post('/api/duel/room/:code/progress', auth, (req, res) => {
 app.get('*', (req, res) => {
   const html = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
   const token = process.env.MAPBOX_TOKEN || '';
-  res.send(html.replaceAll('__MAPBOX_TOKEN__', token));
+  const version = process.env.APP_VERSION || 'dev';
+  res.send(html.replaceAll('__MAPBOX_TOKEN__', token).replaceAll('__APP_VERSION__', version));
 });
 
 app.listen(PORT, () => console.log(`GeoGame running on port ${PORT}`));

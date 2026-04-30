@@ -7,7 +7,7 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text x='1' y='28' font-family='Arial Black,sans-serif' font-size='30' font-weight='900' fill='%23f0b429'>G</text></svg>">
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=__APP_VERSION__">
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
   <script src="https://unpkg.com/topojson@3/dist/topojson.min.js"></script>
 </head>
@@ -524,8 +524,8 @@
 
 </div> <!-- end #app -->
 
-<script src="data/countries.js"></script>
-<script src="data/nl-places.js"></script>
+<script src="data/countries.js?v=__APP_VERSION__"></script>
+<script src="data/nl-places.js?v=__APP_VERSION__"></script>
 
 <script>
 // Dynamic filtering based on gameSettings thresholds
@@ -1728,7 +1728,6 @@ function nextQuestion() {
     } else {
       place = getRandom(cfg.places);
     }
-    if (isDuelMode) console.log('[DUEL DEBUG] Q', { type, place: place?.name, qLeft: countryQueue.length });
     currentQ = {type, place};
     const nlBadges = {'nl-province':'🗺 Provincie','nl-map':'📍 Kaart','nl-population':'👥 Inwoners','nl-match':'🔗 Koppelen'};
     document.getElementById('q-type-badge').textContent = nlBadges[type] || type;
@@ -1766,7 +1765,6 @@ function nextQuestion() {
   } else {
     country = getRandom(nonHistoricalPool);
   }
-  if (isDuelMode) console.log('[DUEL DEBUG] Q', { type, country: country?.name, qLeft: countryQueue.length });
 
   currentQ = {type, country};
   const badges = {capital:'🏛 Capital', flag:'🚩 Flag', map:'🗺 Map', continent:'🌍 Continent', 'match-flags':'🚩 Match Flags', 'match-capitals':'🏛 Match Capitals', 'capital-map':'🗺 Capital → Map', 'second-city':'🏙 Second City', 'population':'👥 Population', 'match-population':'👥 Match Population'};
@@ -3357,18 +3355,6 @@ function startDuelGame(roomData) {
   currentDiff = roomData.difficulty;
   duelOpponentName = duelIsHost ? (roomData.guest?.username || '?') : (roomData.host?.username || '?');
   duelRng = makeSeededRng(duelSeed);
-  const _dbgCfg = getDiffConfig(currentDiff);
-  console.log('[DUEL DEBUG] start', {
-    isHost: duelIsHost,
-    seed: duelSeed,
-    region: currentRegion,
-    mode: currentGameMode,
-    diff: currentDiff,
-    placesLen: _dbgCfg.places?.length,
-    countriesLen: _dbgCfg.countries?.length,
-    qTypes: _dbgCfg.questionTypes,
-    nlMinPop: gameSettings.nl_medium_min_pop,
-  });
   duelOpponentStreak = 0;
   duelOpponentAlive = true;
   updateDuelStrip();
