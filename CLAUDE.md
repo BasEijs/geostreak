@@ -7,7 +7,7 @@ GeoStreak is a geography streak quiz web app. Players answer geography questions
 ## Tech Stack
 
 - **Backend**: Node.js / Express, SQLite via `better-sqlite3`, bcrypt for passwords, JWT for auth
-- **Frontend**: Single-page HTML app (`backend/public/index.html`) — all HTML, CSS, and JS in one file
+- **Frontend**: Single-page HTML app (`backend/public/index.html`) — HTML and JS; CSS is in `backend/public/style.css`; data in `backend/public/data/`
 - **Map**: Mapbox GL JS (style: `outdoors-v12`)
 - **Border detection**: TopoJSON world-atlas (`countries-110m.json`) with ray-casting `pointInGeoJSON`
 - **Deployment**: Docker → GitHub Container Registry (`ghcr.io/baseijs/geostreak:latest`), built via GitHub Actions, deployed via Komodo
@@ -18,9 +18,13 @@ GeoStreak is a geography streak quiz web app. Players answer geography questions
 ```
 geostreak/
 ├── backend/
-│   ├── server.js              # Express API, SQLite setup, auth, scores, admin settings
+│   ├── server.js              # Express API, SQLite setup, auth, scores, duel, admin settings
 │   ├── public/
-│   │   └── index.html         # The entire frontend (single-page app, ~4000+ lines)
+│   │   ├── index.html         # Frontend HTML + JS (single-page app, ~4500+ lines)
+│   │   ├── style.css          # All CSS
+│   │   └── data/
+│   │       ├── countries.js   # EASY_COUNTRIES, MEDIUM_EXTRA, JEROEN_EXTRA, HISTORICAL_FLAGS
+│   │       └── nl-places.js   # NL_PLACES (~316 Dutch woonplaatsen)
 │   ├── package.json
 │   └── Dockerfile
 ├── docker-compose.yml         # Local dev compose (NOT the production one)
@@ -48,16 +52,25 @@ Database tables:
 - `users` — id, username, password (bcrypt), is_admin
 - `scores` — id, user_id, streak, difficulty, mode, region, played_at
 - `settings` — key, value (key-value store for all configurable settings)
+- `duel_rooms` — id, code (6-char), host_user_id, guest_user_id, mode, region, difficulty, seed, status (waiting/active/finished), created_at
+- `duel_progress` — room_id, user_id, streak, alive, updated_at (PRIMARY KEY: room_id+user_id)
 
 Settings have server-side defaults. The full list includes timer durations, map thresholds, question type toggles, NL mode population thresholds, easter egg toggles, and neighbour leniency. All settings are exposed to the frontend via `GET /api/settings`.
+
+Duel endpoints (all require auth):
+- `POST /api/duel/create` — body: {mode, region, difficulty}; returns {code, seed, ...}
+- `POST /api/duel/join/:code` — guest joins a waiting room
+- `GET /api/duel/room/:code` — poll state; returns host/guest progress; lazy-expires after 2h
+- `POST /api/duel/room/:code/start` — host only; sets status=active
+- `POST /api/duel/room/:code/progress` — body: {streak, alive}; upserts progress; sets room finished when both alive=0
 
 ### Frontend (`index.html`)
 
 This is a large single-page app. Key sections (in rough order):
 
-1. **CSS** — custom properties (dark theme, Jeroen purple theme), responsive layout, all component styles
-2. **HTML screens** — auth, menu (with leaderboard + game setup modal), game, game-over, admin
-3. **Data** — `COUNTRIES` array (world), `NL_PLACES` array (~300 Dutch woonplaatsen with gemeente/province/pop/coords)
+1. **CSS** — in `style.css`: custom properties (dark theme, Jeroen purple theme), responsive layout, all component styles including duel
+2. **HTML screens** — auth, menu, game, game-over, admin, duel-lobby, duel-waiting, duel-results
+3. **Data** — `COUNTRIES` array (world) in `data/countries.js`, `NL_PLACES` array (~316 Dutch woonplaatsen) in `data/nl-places.js`
 4. **Translation system** — `STRINGS` object with `en` and `nl` keys; `t()` helper returns current language strings; `currentLang` toggles between `'en'` and `'nl'`
 5. **Game logic** — question generation, answer checking, streak tracking, timer
 6. **Map** — Mapbox GL JS initialization, marker placement, label hiding, road visibility toggling
@@ -122,6 +135,24 @@ Driven by the `LB_REGIONS` config array. Each entry defines:
 Adding a new region (e.g. Europe) = adding one entry to `LB_REGIONS` + providing data + question type support. The leaderboard tabs, mode toggles, and difficulty toggles render dynamically from this config.
 
 Scores are stored and queried by `region + mode + difficulty` combination.
+
+### Duel Mode
+
+Two logged-in players get the same questions (seeded RNG) and play simultaneously. Each sees the opponent's live streak via polling.
+
+**Flow**: Host creates room → gets 6-char code → shares it → guest joins → host starts → both play → results screen.
+
+**Seeded RNG**: `makeSeededRng(seed)` (LCG) + `gameRng()` helper. Injected at exactly 2 points in `nextQuestion()`:
+1. Question type selection: `cfg.questionTypes[Math.floor(gameRng() * ...)]`
+2. `countryQueue` shuffle: `shuffleForGame(arr)` instead of `shuffle(arr)`
+
+Wrong-answer choices still use `Math.random()` — only the question sequence needs to match.
+
+**Polling**: 2s in waiting room, 3s during game. Rooms expire after 2h (lazy check on GET).
+
+**Key state variables**: `isDuelMode`, `duelRoomCode`, `duelSeed`, `duelIsHost`, `duelRng`, `duelSetupMode` (flag that routes `confirmAndPlay()` to duel creation instead of normal game start).
+
+**Duel scores also post to the regular leaderboard.** Rematch is host-only (creates new room with same settings).
 
 ### Translation / i18n
 
@@ -189,6 +220,7 @@ cd ~/Downloads/geostreak && git add . && git commit -m "message" && git push
 - **Watch for scope creep** — Bas will call it out. Stay focused on what was asked.
 - **DB schema discipline** — always verify `CREATE TABLE` statements include all expected columns. Silent failures from schema mismatches have caused bugs before.
 - **Stale file awareness** — if working from files in context, they may be outdated. Check the actual current state before editing.
+- **NL places are woonplaatsen, not gemeenten** — `nl-places.js` entries must have a real place name in `name`, not just the gemeente name. Some gemeente names match their main woonplaats (e.g., Amsterdam) and are fine. Others (e.g., Halderberge) are administrative mergers with no actual place by that name — those must not appear as `name` values.
 
 ## Common Tasks
 

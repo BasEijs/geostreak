@@ -146,7 +146,6 @@ const NL_PLACES = [
   {name:"Steenbergen",gemeente:"Steenbergen",province:"Noord-Brabant",pop:24000,lat:51.589,lng:4.306},
   {name:"Etten-Leur",gemeente:"Etten-Leur",province:"Noord-Brabant",pop:44000,lat:51.566,lng:4.639},
   {name:"Zundert",gemeente:"Zundert",province:"Noord-Brabant",pop:22000,lat:51.471,lng:4.656},
-  {name:"Halderberge",gemeente:"Halderberge",province:"Noord-Brabant",pop:29000,lat:51.571,lng:4.451},
   {name:"Oudenbosch",gemeente:"Halderberge",province:"Noord-Brabant",pop:11000,lat:51.593,lng:4.522},
   // Gelderland
   {name:"Nijmegen",gemeente:"Nijmegen",province:"Gelderland",pop:178000,lat:51.843,lng:5.855},

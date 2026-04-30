@@ -61,6 +61,7 @@
     <div class="menu-intro-section">
       <div class="game-intro" id="game-intro"></div>
       <button class="play-btn" id="play-btn" onclick="openGameSetup()"></button>
+      <button class="btn btn-ghost duel-menu-btn" id="duel-menu-btn" onclick="openDuelLobby()">⚔️ <span id="duel-menu-label">Duel</span></button>
     </div>
     <div class="menu-lb-section">
       <div class="lb-section-header">
@@ -154,6 +155,11 @@
       <button class="btn btn-ghost btn-sm btn-danger" id="quit-btn" onclick="giveUp()">Quit</button>
     </div>
   </div>
+  <div id="duel-strip" style="display:none">
+    <span id="duel-you-label"></span>
+    <span class="duel-strip-vs">vs</span>
+    <span id="duel-opp-label"></span>
+  </div>
   <div class="game-body">
     <div class="question-area">
       <div class="question-text" id="question-text"></div>
@@ -185,6 +191,88 @@
     <div class="gameover-actions">
       <button class="btn btn-primary" id="play-again-btn" onclick="startGame()">Play Again</button>
       <button class="btn btn-ghost" id="back-to-menu-btn" onclick="showMenu()">Back to Menu</button>
+    </div>
+  </div>
+  </div>
+</div>
+
+<!-- DUEL LOBBY -->
+<div id="duel-lobby-screen" class="screen">
+  <nav>
+    <div class="nav-logo">GeoStreak</div>
+    <div class="nav-user">
+      <button class="btn btn-ghost btn-sm" onclick="showMenu()">← <span class="duel-nav-back"></span></button>
+    </div>
+  </nav>
+  <div class="duel-lobby-content">
+    <div class="duel-lobby-title">⚔️ <span id="duel-lobby-title-text"></span></div>
+    <div class="duel-lobby-subtitle" id="duel-lobby-subtitle"></div>
+    <div class="duel-lobby-actions">
+      <button class="btn btn-accent duel-lobby-btn" onclick="createDuelChallenge()">
+        <div class="duel-btn-icon">➕</div>
+        <div id="duel-create-label"></div>
+      </button>
+      <button class="btn btn-ghost duel-lobby-btn" id="duel-join-toggle-btn" onclick="toggleJoinInput()">
+        <div class="duel-btn-icon">🔑</div>
+        <div id="duel-join-label"></div>
+      </button>
+    </div>
+    <div id="duel-join-section" style="display:none">
+      <input type="text" class="duel-code-input" id="duel-join-input" maxlength="6" placeholder="ABCD12" oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')submitJoinDuel()">
+      <button class="btn btn-primary" onclick="submitJoinDuel()" id="duel-join-submit-btn"></button>
+    </div>
+    <div class="duel-error" id="duel-lobby-error" style="display:none"></div>
+  </div>
+</div>
+
+<!-- DUEL WAITING ROOM -->
+<div id="duel-waiting-screen" class="screen">
+  <nav>
+    <div class="nav-logo">GeoStreak</div>
+    <div class="nav-user">
+      <button class="btn btn-ghost btn-sm" onclick="cancelDuel()">✕ <span id="duel-cancel-label"></span></button>
+    </div>
+  </nav>
+  <div class="duel-waiting-content">
+    <div class="duel-waiting-title" id="duel-waiting-title"></div>
+    <div id="duel-code-section" style="display:none">
+      <div class="duel-waiting-share-label" id="duel-share-label"></div>
+      <div class="duel-code-box">
+        <span class="duel-code-display" id="duel-code-display"></span>
+        <button class="btn btn-ghost btn-sm" onclick="copyDuelCode()" id="duel-copy-btn"></button>
+      </div>
+    </div>
+    <div class="duel-players-row">
+      <div class="duel-player-slot">
+        <div class="duel-player-name" id="duel-host-name"></div>
+        <div class="duel-player-check">✓</div>
+      </div>
+      <div class="duel-vs-badge">VS</div>
+      <div class="duel-player-slot">
+        <div class="duel-player-name" id="duel-guest-name">...</div>
+        <div class="duel-player-check" id="duel-guest-check" style="visibility:hidden">✓</div>
+      </div>
+    </div>
+    <div class="duel-settings-summary" id="duel-settings-summary"></div>
+    <div class="duel-status-line" id="duel-status-line"></div>
+    <button class="btn btn-accent" id="duel-start-btn" style="display:none;margin-top:8px" onclick="startDuelFromHost()" disabled></button>
+    <div class="duel-error" id="duel-waiting-error" style="display:none"></div>
+  </div>
+</div>
+
+<!-- DUEL RESULTS -->
+<div id="duel-results-screen" class="screen">
+  <nav>
+    <div class="nav-logo">GeoStreak</div>
+    <div></div>
+  </nav>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;gap:24px">
+  <div class="gameover-card duel-results-card">
+    <div class="gameover-title" id="duel-result-title"></div>
+    <div class="duel-result-cols" id="duel-result-cols"></div>
+    <div class="gameover-actions">
+      <button class="btn btn-accent" id="duel-rematch-btn" style="display:none" onclick="duelRematch()"></button>
+      <button class="btn btn-ghost" onclick="cleanupDuel();showMenu()" id="duel-back-menu-btn"></button>
     </div>
   </div>
   </div>
@@ -634,6 +722,30 @@ let currentQ = null;
 let awaitingNext = false;
 let allStats = {};
 
+// ── DUEL STATE ──
+let isDuelMode = false;
+let duelRoomCode = null;
+let duelSeed = null;
+let duelIsHost = false;
+let duelOpponentName = null;
+let duelRng = null;
+let duelWaitPollInterval = null;
+let duelGamePollInterval = null;
+let duelOpponentStreak = 0;
+let duelOpponentAlive = true;
+let duelSetupMode = false;
+let duelLastRoomState = null;
+
+function makeSeededRng(seed) {
+  let s = seed >>> 0;
+  return function() {
+    s = (Math.imul(1664525, s) + 1013904223) >>> 0;
+    return s / 4294967296;
+  };
+}
+function gameRng() { return (isDuelMode && duelRng) ? duelRng() : Math.random(); }
+function shuffleForGame(arr) { return [...arr].sort(() => gameRng() - 0.5); }
+
 // ════════════════════════════════════
 // TRANSLATIONS
 // ════════════════════════════════════
@@ -741,6 +853,28 @@ const NL = {
     populationMarginHint: (m) => `Antwoord binnen ${m}% afwijking is goed`,
     matchPopulation: `Koppel elk land aan het juiste <span>aantal inwoners</span> (in miljoenen)`,
     dragPopulation: "Sleep de inwonertallen naar het juiste land",
+    duel: "Duel",
+    duelSubtitle: "Daag een vriend uit voor een aardrijkskundegevecht!",
+    createChallenge: "Maak uitdaging",
+    joinWithCode: "Meedoen met code",
+    enterCode: "Voer code in...",
+    waitingForOpponent: "Wachten op tegenstander...",
+    waitingForHost: "Wachten tot de host start...",
+    shareCode: "Deel deze code:",
+    copyCode: "Kopiëren",
+    copied: "Gekopieerd!",
+    startDuel: "Start Duel",
+    youWin: "Jij wint! 🏆",
+    youLose: "Jij verliest 💀",
+    itsATie: "Gelijkspel! 🤝",
+    stillPlaying: "nog bezig",
+    opponentOut: "eruit",
+    duelResults: "Duel Resultaat",
+    rematch: "Herkansing",
+    codeNotFound: "Code niet gevonden of verlopen.",
+    duelAlreadyStarted: "Dit spel is al gestart.",
+    opponentDisconnected: "Tegenstander lijkt verbroken.",
+    duelExpired: "Kamer verlopen. Maak een nieuwe uitdaging.",
   }
 };
 
@@ -802,6 +936,28 @@ const EN = {
     populationMarginHint: (m) => `Answer within ${m}% margin is correct`,
     matchPopulation: `Match each country to its <span>population</span> (in millions)`,
     dragPopulation: "Drag the population figures to the correct country",
+    duel: "Duel",
+    duelSubtitle: "Challenge a friend to a geography battle!",
+    createChallenge: "Create Challenge",
+    joinWithCode: "Join with Code",
+    enterCode: "Enter room code...",
+    waitingForOpponent: "Waiting for opponent...",
+    waitingForHost: "Waiting for host to start...",
+    shareCode: "Share this code:",
+    copyCode: "Copy",
+    copied: "Copied!",
+    startDuel: "Start Duel",
+    youWin: "You win! 🏆",
+    youLose: "You lose 💀",
+    itsATie: "It's a tie! 🤝",
+    stillPlaying: "still playing",
+    opponentOut: "out",
+    duelResults: "Duel Result",
+    rematch: "Rematch",
+    codeNotFound: "Code not found or expired.",
+    duelAlreadyStarted: "This game has already started.",
+    opponentDisconnected: "Opponent may have disconnected.",
+    duelExpired: "Room expired. Create a new challenge.",
   }
 };
 
@@ -931,6 +1087,8 @@ function updateDiffDescriptions() {
   if (topoJer) topoJer.textContent = t().ui.topoJeroenDesc;
   const playBtn = document.getElementById('play-btn');
   if (playBtn) playBtn.textContent = currentLang === 'nl' ? 'NIEUW SPEL →' : 'NEW GAME →';
+  const duelMenuLabel = document.getElementById('duel-menu-label');
+  if (duelMenuLabel) duelMenuLabel.textContent = t().ui.duel;
 
   const intro = document.getElementById('game-intro');
   if (intro) {
@@ -1259,18 +1417,6 @@ function renderSetupSummary() {
   }
 }
 
-function confirmAndPlay() {
-  currentRegion = setupRegion;
-  currentLBRegion = setupRegion;
-  currentLBMode = setupMode;
-  currentLBDiff = setupDiff;
-  currentGameMode = setupMode;
-  currentDiff = setupDiff;
-  closeGameSetup();
-  updateDiffDescriptions();
-  startGame();
-}
-
 let currentLBRegion = 'world';
 let currentLBMode = 'world';
 
@@ -1525,7 +1671,7 @@ function startGame() {
   nextQuestion();
 }
 
-function giveUp() { stopTimer(); stopWorkingHoursWatch(); endGame(); }
+function giveUp() { stopTimer(); endGame(); }
 function updateStreakDisplay() { document.getElementById('streak-count').textContent = streak; }
 
 function getRandom(arr, exclude=[]) {
@@ -1552,13 +1698,13 @@ function nextQuestion() {
 
   // ── NL region ──
   if (cfg.nlMode) {
-    const type = cfg.questionTypes[Math.floor(Math.random()*cfg.questionTypes.length)];
+    const type = cfg.questionTypes[Math.floor(gameRng()*cfg.questionTypes.length)];
     const isNLMatch = type === 'nl-match';
     let place;
     if (!isNLMatch) {
-      if (countryQueue.length === 0) countryQueue = shuffle(cfg.places);
+      if (countryQueue.length === 0) countryQueue = shuffleForGame(cfg.places);
       while (countryQueue.length > 0 && !cfg.places.includes(countryQueue[0])) countryQueue.shift();
-      if (countryQueue.length === 0) countryQueue = shuffle(cfg.places);
+      if (countryQueue.length === 0) countryQueue = shuffleForGame(cfg.places);
       place = countryQueue.shift();
     } else {
       place = getRandom(cfg.places);
@@ -1584,7 +1730,7 @@ function nextQuestion() {
   const capitalPool = gameSettings.jeroen_historical_capitals ? pool : nonHistoricalPool;
   const extraPool = nonHistoricalPool.filter(c => COUNTRY_EXTRA[c.name]);
 
-  const type = cfg.questionTypes[Math.floor(Math.random()*cfg.questionTypes.length)];
+  const type = cfg.questionTypes[Math.floor(gameRng()*cfg.questionTypes.length)];
   const isMatch = type === 'match-flags' || type === 'match-capitals' || type === 'match-population';
   const qPool = type === 'flag' ? pool
     : type === 'capital' ? capitalPool
@@ -1593,9 +1739,9 @@ function nextQuestion() {
 
   let country;
   if (!isMatch) {
-    if (countryQueue.length === 0) countryQueue = shuffle(qPool);
+    if (countryQueue.length === 0) countryQueue = shuffleForGame(qPool);
     while (countryQueue.length > 0 && !qPool.includes(countryQueue[0])) countryQueue.shift();
-    if (countryQueue.length === 0) countryQueue = shuffle(qPool);
+    if (countryQueue.length === 0) countryQueue = shuffleForGame(qPool);
     country = countryQueue.shift();
   } else {
     country = getRandom(nonHistoricalPool);
@@ -2949,7 +3095,7 @@ function haversine(lat1,lng1,lat2,lng2) {
 function showFeedback(correct, message, sub='') {
   awaitingNext=true;
   const effectiveCorrect = correct || devMode;
-  if(effectiveCorrect){streak++;updateStreakDisplay();}
+  if(effectiveCorrect){streak++;updateStreakDisplay();if(isDuelMode){updateDuelStrip();duelSubmitProgress(1);}}
   const bar=document.getElementById('feedback-bar');
   bar.className=`feedback-bar ${correct?'correct-bar':'wrong-bar'}`;
   bar.style.display='flex';
@@ -2963,9 +3109,14 @@ function showFeedback(correct, message, sub='') {
 
 async function endGame() {
   stopTimer();
+  stopWorkingHoursWatch();
   const submitContainer = document.getElementById('match-submit-container');
   submitContainer.innerHTML = '';
   submitContainer.classList.remove('visible');
+  if (isDuelMode) {
+    stopDuelGamePoll();
+    await duelSubmitProgress(0);
+  }
   try {
     if (!devMode) {
       const res = await fetch('/api/scores',{
@@ -2979,6 +3130,14 @@ async function endGame() {
       }
     }
   } catch {}
+  if (isDuelMode) {
+    try {
+      const res = await fetch('/api/duel/room/' + duelRoomCode, { headers: { Authorization: 'Bearer ' + token } });
+      const room = await res.json();
+      showDuelResults(room);
+    } catch { showDuelResults(duelLastRoomState || {}); }
+    return;
+  }
   const isJ=currentDiff==='jeroen';
   document.getElementById('final-streak').className='gameover-streak'+(isJ?' jeroen-score':'');
   document.getElementById('final-streak').textContent=streak;
@@ -3008,6 +3167,295 @@ async function endGame() {
   document.getElementById('play-again-btn').className='btn '+(isJ?'btn-jeroen':'btn-primary');
   showScreen('gameover-screen');
   document.body.classList.remove('jeroen-mode');
+}
+
+// ════════════════════════════════════
+// DUEL
+// ════════════════════════════════════
+
+function openDuelLobby() {
+  duelSetupMode = false;
+  document.querySelectorAll('.duel-nav-back').forEach(el => el.textContent = t().ui.backToMenu);
+  document.getElementById('duel-lobby-title-text').textContent = t().ui.duel;
+  document.getElementById('duel-lobby-subtitle').textContent = t().ui.duelSubtitle;
+  document.getElementById('duel-create-label').textContent = t().ui.createChallenge;
+  document.getElementById('duel-join-label').textContent = t().ui.joinWithCode;
+  document.getElementById('duel-join-input').placeholder = t().ui.enterCode;
+  document.getElementById('duel-join-submit-btn').textContent = t().ui.joinWithCode;
+  document.getElementById('duel-join-section').style.display = 'none';
+  document.getElementById('duel-lobby-error').style.display = 'none';
+  showScreen('duel-lobby-screen');
+}
+
+function toggleJoinInput() {
+  const sec = document.getElementById('duel-join-section');
+  sec.style.display = sec.style.display === 'none' ? 'flex' : 'none';
+  if (sec.style.display !== 'none') document.getElementById('duel-join-input').focus();
+}
+
+function createDuelChallenge() {
+  duelSetupMode = true;
+  openGameSetup();
+}
+
+function confirmAndPlay() {
+  if (duelSetupMode) {
+    closeGameSetup();
+    submitCreateDuel({ mode: setupMode, region: setupRegion, difficulty: setupDiff });
+    return;
+  }
+  currentRegion = setupRegion;
+  currentLBRegion = setupRegion;
+  currentLBMode = setupMode;
+  currentLBDiff = setupDiff;
+  currentGameMode = setupMode;
+  currentDiff = setupDiff;
+  closeGameSetup();
+  updateDiffDescriptions();
+  startGame();
+}
+
+async function submitCreateDuel({ mode, region, difficulty }) {
+  try {
+    const res = await fetch('/api/duel/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ mode, region, difficulty }),
+    });
+    if (!res.ok) { showDuelError(t().ui.codeNotFound, 'duel-lobby-error'); return; }
+    const data = await res.json();
+    duelRoomCode = data.code;
+    duelSeed = data.seed;
+    duelIsHost = true;
+    isDuelMode = true;
+    renderWaitingRoom({ ...data, host: { username, streak: 0, alive: 1 }, guest: null, status: 'waiting' });
+    showScreen('duel-waiting-screen');
+    startWaitingPoll();
+  } catch { showDuelError(t().ui.codeNotFound, 'duel-lobby-error'); }
+}
+
+async function submitJoinDuel() {
+  const code = document.getElementById('duel-join-input').value.trim().toUpperCase();
+  if (code.length < 4) return;
+  document.getElementById('duel-lobby-error').style.display = 'none';
+  try {
+    const res = await fetch('/api/duel/join/' + code, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + token },
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      showDuelError(err.error === 'Game already started' ? t().ui.duelAlreadyStarted : t().ui.codeNotFound, 'duel-lobby-error');
+      return;
+    }
+    const data = await res.json();
+    duelRoomCode = data.code || code;
+    duelSeed = data.seed;
+    duelIsHost = false;
+    isDuelMode = true;
+    duelOpponentName = data.host?.username || '?';
+    renderWaitingRoom(data);
+    showScreen('duel-waiting-screen');
+    startWaitingPoll();
+  } catch { showDuelError(t().ui.codeNotFound, 'duel-lobby-error'); }
+}
+
+function renderWaitingRoom(data) {
+  duelLastRoomState = data;
+  const isHost = duelIsHost;
+  document.getElementById('duel-waiting-title').textContent = '⚔️ ' + t().ui.duel;
+  const codeSection = document.getElementById('duel-code-section');
+  codeSection.style.display = isHost ? 'block' : 'none';
+  if (isHost) {
+    document.getElementById('duel-share-label').textContent = t().ui.shareCode;
+    document.getElementById('duel-code-display').textContent = data.code || duelRoomCode;
+    document.getElementById('duel-copy-btn').textContent = t().ui.copyCode;
+  }
+  document.getElementById('duel-host-name').textContent = data.host?.username || username;
+  document.getElementById('duel-guest-name').textContent = data.guest?.username || '...';
+  document.getElementById('duel-guest-check').style.visibility = data.guest ? 'visible' : 'hidden';
+  const modeLabel = data.mode === 'topo' ? t().ui.modeTopo : t().ui.modeWorld;
+  const diffLabels = { easy: '🧠 Dumb Test', medium: '🗺️ Medium', jeroen: '💀 Jeroen Mode' };
+  const regionLabels = { world: '🌍', nl: '🇳🇱' };
+  document.getElementById('duel-settings-summary').innerHTML =
+    `<span class="diff-badge ${data.difficulty}">${diffLabels[data.difficulty]}</span>
+     <span class="diff-badge medium">${regionLabels[data.region]} ${data.region === 'nl' ? 'Nederland' : 'Wereld'}</span>
+     <span class="diff-badge medium">${modeLabel}</span>`;
+  const startBtn = document.getElementById('duel-start-btn');
+  if (isHost) {
+    startBtn.style.display = 'inline-flex';
+    startBtn.textContent = t().ui.startDuel;
+    startBtn.disabled = !data.guest;
+  } else {
+    startBtn.style.display = 'none';
+  }
+  document.getElementById('duel-status-line').textContent = data.guest
+    ? (isHost ? '' : t().ui.waitingForHost)
+    : t().ui.waitingForOpponent;
+  document.getElementById('duel-cancel-label').textContent = t().ui.quit;
+  document.getElementById('duel-waiting-error').style.display = 'none';
+}
+
+function startWaitingPoll() {
+  stopWaitingPoll();
+  duelWaitPollInterval = setInterval(async () => {
+    try {
+      const res = await fetch('/api/duel/room/' + duelRoomCode, { headers: { Authorization: 'Bearer ' + token } });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.expired) { stopWaitingPoll(); showDuelError(t().ui.duelExpired, 'duel-waiting-error'); return; }
+      duelLastRoomState = data;
+      renderWaitingRoom(data);
+      if (data.status === 'active' && !duelIsHost) {
+        stopWaitingPoll();
+        startDuelGame(data);
+      }
+    } catch {}
+  }, 2000);
+}
+function stopWaitingPoll() { clearInterval(duelWaitPollInterval); duelWaitPollInterval = null; }
+
+async function startDuelFromHost() {
+  const btn = document.getElementById('duel-start-btn');
+  btn.disabled = true;
+  try {
+    const res = await fetch('/api/duel/room/' + duelRoomCode + '/start', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + token },
+    });
+    if (!res.ok) { btn.disabled = false; return; }
+    stopWaitingPoll();
+    startDuelGame(duelLastRoomState);
+  } catch { btn.disabled = false; }
+}
+
+function startDuelGame(roomData) {
+  stopWaitingPoll();
+  currentRegion = roomData.region;
+  currentGameMode = roomData.mode;
+  currentDiff = roomData.difficulty;
+  duelOpponentName = duelIsHost ? (roomData.guest?.username || '?') : (roomData.host?.username || '?');
+  duelRng = makeSeededRng(duelSeed);
+  duelOpponentStreak = 0;
+  duelOpponentAlive = true;
+  updateDuelStrip();
+  document.getElementById('duel-strip').style.display = 'flex';
+  updateDiffDescriptions();
+  startGame();
+  startGamePoll();
+}
+
+function updateDuelStrip() {
+  const youLabel = `${t().ui.you}: ${streak > 0 ? '🔥' : ''} ${streak}`;
+  const oppStatus = duelOpponentAlive
+    ? (duelOpponentStreak > 0 ? '🔥 ' + duelOpponentStreak : '0')
+    : `💀 ${duelOpponentStreak} (${t().ui.opponentOut})`;
+  document.getElementById('duel-you-label').textContent = youLabel;
+  document.getElementById('duel-opp-label').textContent = `${duelOpponentName}: ${oppStatus}`;
+}
+
+function startGamePoll() {
+  stopDuelGamePoll();
+  duelGamePollInterval = setInterval(async () => {
+    try {
+      const res = await fetch('/api/duel/room/' + duelRoomCode, { headers: { Authorization: 'Bearer ' + token } });
+      if (!res.ok) return;
+      const data = await res.json();
+      duelLastRoomState = data;
+      const opp = duelIsHost ? data.guest : data.host;
+      if (opp) {
+        duelOpponentStreak = opp.streak;
+        duelOpponentAlive = opp.alive === 1;
+        updateDuelStrip();
+      }
+    } catch {}
+  }, 3000);
+}
+function stopDuelGamePoll() { clearInterval(duelGamePollInterval); duelGamePollInterval = null; }
+
+function cancelDuel() {
+  stopWaitingPoll();
+  stopDuelGamePoll();
+  cleanupDuel();
+  showMenu();
+}
+
+function cleanupDuel() {
+  isDuelMode = false;
+  duelRoomCode = null;
+  duelSeed = null;
+  duelIsHost = false;
+  duelOpponentName = null;
+  duelRng = null;
+  duelOpponentStreak = 0;
+  duelOpponentAlive = true;
+  duelSetupMode = false;
+  duelLastRoomState = null;
+  document.getElementById('duel-strip').style.display = 'none';
+}
+
+function copyDuelCode() {
+  navigator.clipboard.writeText(duelRoomCode).then(() => {
+    const btn = document.getElementById('duel-copy-btn');
+    const orig = btn.textContent;
+    btn.textContent = t().ui.copied;
+    setTimeout(() => { btn.textContent = orig; }, 1500);
+  });
+}
+
+function showDuelError(msg, id) {
+  const el = document.getElementById(id);
+  if (el) { el.textContent = msg; el.style.display = 'block'; }
+}
+
+async function duelSubmitProgress(aliveVal) {
+  if (!duelRoomCode) return;
+  try {
+    await fetch('/api/duel/room/' + duelRoomCode + '/progress', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ streak, alive: aliveVal }),
+    });
+  } catch {}
+}
+
+function showDuelResults(room) {
+  const isJ = currentDiff === 'jeroen';
+  const me = duelIsHost ? room.host : room.guest;
+  const opp = duelIsHost ? room.guest : room.host;
+  const myStreak = me?.streak ?? streak;
+  const oppStreak = opp?.streak ?? 0;
+  let title, myBadge, oppBadge;
+  if (myStreak > oppStreak) { title = t().ui.youWin; myBadge = '🏆'; oppBadge = '💀'; }
+  else if (myStreak < oppStreak) { title = t().ui.youLose; myBadge = '💀'; oppBadge = '🏆'; }
+  else { title = t().ui.itsATie; myBadge = '🤝'; oppBadge = '🤝'; }
+  document.getElementById('duel-result-title').textContent = title;
+  const winnerClass = isJ ? 'winner-jeroen' : 'winner';
+  document.getElementById('duel-result-cols').innerHTML = `
+    <div class="duel-result-col ${myStreak >= oppStreak ? winnerClass : ''}">
+      <div class="duel-result-badge">${myBadge}</div>
+      <div class="duel-result-name">${me?.username || username}</div>
+      <div class="duel-result-streak ${isJ ? 'jeroen-score' : ''}">${myStreak}</div>
+    </div>
+    <div class="duel-result-col ${oppStreak >= myStreak ? winnerClass : ''}">
+      <div class="duel-result-badge">${oppBadge}</div>
+      <div class="duel-result-name">${opp?.username || duelOpponentName}</div>
+      <div class="duel-result-streak ${isJ ? 'jeroen-score' : ''}">${oppStreak}</div>
+    </div>`;
+  const rematchBtn = document.getElementById('duel-rematch-btn');
+  rematchBtn.textContent = t().ui.rematch;
+  rematchBtn.style.display = duelIsHost ? 'inline-flex' : 'none';
+  rematchBtn.className = 'btn ' + (isJ ? 'btn-jeroen' : 'btn-accent');
+  document.getElementById('duel-back-menu-btn').textContent = t().ui.backToMenu;
+  showScreen('duel-results-screen');
+  document.body.classList.remove('jeroen-mode');
+}
+
+async function duelRematch() {
+  if (!duelIsHost || !duelLastRoomState) return;
+  const { mode, region, difficulty } = duelLastRoomState;
+  cleanupDuel();
+  await submitCreateDuel({ mode, region, difficulty });
 }
 
 // ════════════════════════════════════

@@ -342,6 +342,53 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
 .lang-btn { padding: 6px 12px; border: none; background: none; color: var(--text-muted); font-family: 'DM Sans',sans-serif; font-size: 13px; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
 .lang-btn.active { background: var(--surface2); color: var(--text); }
 
+/* ═══════════════════════════════════
+   DUEL MODE
+═══════════════════════════════════ */
+
+/* Duel menu button */
+.duel-menu-btn { margin-top:8px; font-size:13px; padding:8px 18px; width:auto; align-self:center; letter-spacing:1px; }
+
+/* Opponent strip (top of game screen) */
+#duel-strip { display:flex; align-items:center; justify-content:center; gap:16px; background:var(--surface2); border-bottom:1px solid var(--border); padding:8px 20px; font-size:14px; font-weight:600; letter-spacing:0.5px; }
+.duel-strip-vs { color:var(--text-muted); font-size:11px; text-transform:uppercase; letter-spacing:2px; }
+
+/* Duel lobby */
+.duel-lobby-content { display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; padding:40px 24px; gap:20px; }
+.duel-lobby-title { font-family:'Bebas Neue',sans-serif; font-size:36px; letter-spacing:3px; }
+.duel-lobby-subtitle { color:var(--text-muted); font-size:15px; text-align:center; max-width:360px; }
+.duel-lobby-actions { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; }
+.duel-lobby-btn { display:flex; flex-direction:column; align-items:center; gap:8px; padding:24px 28px; min-width:150px; font-size:15px; font-weight:600; }
+.duel-btn-icon { font-size:28px; }
+.duel-code-input { background:var(--surface2); border:2px solid var(--border); border-radius:10px; color:var(--text); font-size:22px; font-family:'Bebas Neue',sans-serif; letter-spacing:6px; text-align:center; padding:12px 20px; width:160px; text-transform:uppercase; }
+.duel-code-input:focus { outline:none; border-color:var(--accent); }
+#duel-join-section { display:flex; align-items:center; gap:10px; }
+.duel-error { color:var(--danger); font-size:13px; text-align:center; padding:8px 0; }
+
+/* Duel waiting room */
+.duel-waiting-content { display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; padding:40px 24px; gap:20px; }
+.duel-waiting-title { font-family:'Bebas Neue',sans-serif; font-size:28px; letter-spacing:2px; }
+.duel-waiting-share-label { font-size:13px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:6px; text-align:center; }
+.duel-code-box { display:flex; align-items:center; gap:12px; background:var(--surface2); border:2px solid var(--border); border-radius:14px; padding:14px 20px; }
+.duel-code-display { font-family:'Bebas Neue',sans-serif; font-size:38px; letter-spacing:10px; color:var(--accent); }
+.duel-players-row { display:flex; align-items:center; gap:24px; }
+.duel-player-slot { display:flex; flex-direction:column; align-items:center; gap:4px; min-width:100px; }
+.duel-player-name { font-weight:700; font-size:16px; text-align:center; }
+.duel-player-check { color:var(--success); font-size:18px; font-weight:700; }
+.duel-vs-badge { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:3px; color:var(--text-muted); }
+.duel-settings-summary { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+.duel-status-line { color:var(--text-muted); font-size:13px; text-align:center; }
+
+/* Duel results */
+.duel-results-card { min-width:340px; }
+.duel-result-cols { display:flex; gap:24px; justify-content:center; margin:16px 0; }
+.duel-result-col { display:flex; flex-direction:column; align-items:center; gap:6px; background:var(--surface2); border-radius:14px; padding:20px 28px; border:2px solid var(--border); min-width:120px; }
+.duel-result-col.winner { border-color:gold; background:rgba(255,215,0,0.08); }
+.duel-result-col.winner-jeroen { border-color:var(--jeroen); background:rgba(124,58,237,0.10); }
+.duel-result-name { font-weight:700; font-size:15px; }
+.duel-result-streak { font-family:'Bebas Neue',sans-serif; font-size:52px; line-height:1; }
+.duel-result-badge { font-size:22px; }
+
 @media (max-width: 600px) {
   .choices-grid { grid-template-columns: 1fr; }
   .flag-img { width: 150px; height: 100px; }

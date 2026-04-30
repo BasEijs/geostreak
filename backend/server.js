@@ -42,6 +42,30 @@ db.exec(`
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
   );
+  CREATE TABLE IF NOT EXISTS duel_rooms (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT UNIQUE NOT NULL,
+    host_user_id INTEGER NOT NULL,
+    guest_user_id INTEGER,
+    mode TEXT NOT NULL DEFAULT 'world',
+    region TEXT NOT NULL DEFAULT 'world',
+    difficulty TEXT NOT NULL DEFAULT 'medium',
+    seed INTEGER NOT NULL,
+    status TEXT NOT NULL DEFAULT 'waiting',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (host_user_id) REFERENCES users(id),
+    FOREIGN KEY (guest_user_id) REFERENCES users(id)
+  );
+  CREATE TABLE IF NOT EXISTS duel_progress (
+    room_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    streak INTEGER NOT NULL DEFAULT 0,
+    alive INTEGER NOT NULL DEFAULT 1,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (room_id, user_id),
+    FOREIGN KEY (room_id) REFERENCES duel_rooms(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
 `);
 
 // Migrations
@@ -283,6 +307,90 @@ app.post('/api/admin/settings', auth, adminOnly, (req, res) => {
     if (req.body[key] !== undefined) {
       db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(key, String(req.body[key]));
     }
+  }
+  res.json({ ok: true });
+});
+
+// ── DUEL ──
+
+const DUEL_EXPIRY_MS = 2 * 60 * 60 * 1000;
+
+function generateDuelCode() {
+  for (let i = 0; i < 10; i++) {
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+    if (!db.prepare('SELECT id FROM duel_rooms WHERE code = ?').get(code)) return code;
+  }
+  throw new Error('Code generation failed');
+}
+
+function getDuelRoomState(room) {
+  const host = db.prepare('SELECT username FROM users WHERE id = ?').get(room.host_user_id);
+  const guest = room.guest_user_id ? db.prepare('SELECT username FROM users WHERE id = ?').get(room.guest_user_id) : null;
+  const hp = db.prepare('SELECT streak, alive FROM duel_progress WHERE room_id = ? AND user_id = ?').get(room.id, room.host_user_id);
+  const gp = room.guest_user_id ? db.prepare('SELECT streak, alive FROM duel_progress WHERE room_id = ? AND user_id = ?').get(room.id, room.guest_user_id) : null;
+  return {
+    code: room.code, status: room.status,
+    mode: room.mode, region: room.region, difficulty: room.difficulty, seed: room.seed,
+    host: host ? { username: host.username, streak: hp?.streak ?? 0, alive: hp?.alive ?? 1 } : null,
+    guest: guest ? { username: guest.username, streak: gp?.streak ?? 0, alive: gp?.alive ?? 1 } : null,
+  };
+}
+
+app.post('/api/duel/create', auth, (req, res) => {
+  const { mode, region, difficulty } = req.body;
+  if (!VALID_MODES.includes(mode)) return res.status(400).json({ error: 'Invalid mode' });
+  if (!VALID_REGIONS.includes(region)) return res.status(400).json({ error: 'Invalid region' });
+  if (!VALID_DIFFICULTIES.includes(difficulty)) return res.status(400).json({ error: 'Invalid difficulty' });
+  try {
+    const code = generateDuelCode();
+    const seed = Math.floor(Math.random() * 2147483647);
+    const result = db.prepare('INSERT INTO duel_rooms (code, host_user_id, mode, region, difficulty, seed) VALUES (?, ?, ?, ?, ?, ?)').run(code, req.user.id, mode, region, difficulty, seed);
+    db.prepare('INSERT INTO duel_progress (room_id, user_id) VALUES (?, ?)').run(result.lastInsertRowid, req.user.id);
+    res.json({ code, seed, mode, region, difficulty });
+  } catch { res.status(500).json({ error: 'Server error' }); }
+});
+
+app.post('/api/duel/join/:code', auth, (req, res) => {
+  const room = db.prepare('SELECT * FROM duel_rooms WHERE code = ?').get(req.params.code.toUpperCase());
+  if (!room) return res.status(404).json({ error: 'Room not found' });
+  if (Date.now() - new Date(room.created_at).getTime() > DUEL_EXPIRY_MS) return res.status(404).json({ error: 'Room expired' });
+  if (room.status !== 'waiting') return res.status(400).json({ error: 'Game already started' });
+  if (room.guest_user_id) return res.status(400).json({ error: 'Room is full' });
+  if (room.host_user_id === req.user.id) return res.status(400).json({ error: 'Cannot join your own room' });
+  db.prepare('UPDATE duel_rooms SET guest_user_id = ? WHERE id = ?').run(req.user.id, room.id);
+  db.prepare('INSERT INTO duel_progress (room_id, user_id) VALUES (?, ?)').run(room.id, req.user.id);
+  res.json(getDuelRoomState(db.prepare('SELECT * FROM duel_rooms WHERE id = ?').get(room.id)));
+});
+
+app.get('/api/duel/room/:code', auth, (req, res) => {
+  const room = db.prepare('SELECT * FROM duel_rooms WHERE code = ?').get(req.params.code.toUpperCase());
+  if (!room) return res.status(404).json({ error: 'Room not found' });
+  if (Date.now() - new Date(room.created_at).getTime() > DUEL_EXPIRY_MS && room.status !== 'finished') return res.json({ expired: true });
+  res.json(getDuelRoomState(room));
+});
+
+app.post('/api/duel/room/:code/start', auth, (req, res) => {
+  const room = db.prepare('SELECT * FROM duel_rooms WHERE code = ?').get(req.params.code.toUpperCase());
+  if (!room) return res.status(404).json({ error: 'Room not found' });
+  if (room.host_user_id !== req.user.id) return res.status(403).json({ error: 'Only the host can start' });
+  if (!room.guest_user_id) return res.status(400).json({ error: 'Waiting for opponent' });
+  if (room.status !== 'waiting') return res.status(400).json({ error: 'Game already started' });
+  db.prepare('UPDATE duel_rooms SET status = ? WHERE id = ?').run('active', room.id);
+  res.json({ ok: true });
+});
+
+app.post('/api/duel/room/:code/progress', auth, (req, res) => {
+  const { streak, alive } = req.body;
+  if (typeof streak !== 'number' || streak < 0) return res.status(400).json({ error: 'Invalid streak' });
+  const room = db.prepare('SELECT * FROM duel_rooms WHERE code = ?').get(req.params.code.toUpperCase());
+  if (!room) return res.status(404).json({ error: 'Room not found' });
+  if (room.host_user_id !== req.user.id && room.guest_user_id !== req.user.id) return res.status(403).json({ error: 'Not a participant' });
+  const aliveVal = alive ? 1 : 0;
+  db.prepare(`INSERT INTO duel_progress (room_id, user_id, streak, alive, updated_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+    ON CONFLICT(room_id, user_id) DO UPDATE SET streak = excluded.streak, alive = excluded.alive, updated_at = CURRENT_TIMESTAMP`).run(room.id, req.user.id, streak, aliveVal);
+  if (!aliveVal) {
+    const other = db.prepare('SELECT alive FROM duel_progress WHERE room_id = ? AND user_id != ?').get(room.id, req.user.id);
+    if (other && other.alive === 0) db.prepare('UPDATE duel_rooms SET status = ? WHERE id = ?').run('finished', room.id);
   }
   res.json({ ok: true });
 });
