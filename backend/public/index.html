@@ -1728,6 +1728,7 @@ function nextQuestion() {
     } else {
       place = getRandom(cfg.places);
     }
+    if (isDuelMode) console.log('[DUEL DEBUG] Q', { type, place: place?.name, qLeft: countryQueue.length });
     currentQ = {type, place};
     const nlBadges = {'nl-province':'🗺 Provincie','nl-map':'📍 Kaart','nl-population':'👥 Inwoners','nl-match':'🔗 Koppelen'};
     document.getElementById('q-type-badge').textContent = nlBadges[type] || type;
@@ -1765,6 +1766,7 @@ function nextQuestion() {
   } else {
     country = getRandom(nonHistoricalPool);
   }
+  if (isDuelMode) console.log('[DUEL DEBUG] Q', { type, country: country?.name, qLeft: countryQueue.length });
 
   currentQ = {type, country};
   const badges = {capital:'🏛 Capital', flag:'🚩 Flag', map:'🗺 Map', continent:'🌍 Continent', 'match-flags':'🚩 Match Flags', 'match-capitals':'🏛 Match Capitals', 'capital-map':'🗺 Capital → Map', 'second-city':'🏙 Second City', 'population':'👥 Population', 'match-population':'👥 Match Population'};
@@ -3355,6 +3357,18 @@ function startDuelGame(roomData) {
   currentDiff = roomData.difficulty;
   duelOpponentName = duelIsHost ? (roomData.guest?.username || '?') : (roomData.host?.username || '?');
   duelRng = makeSeededRng(duelSeed);
+  const _dbgCfg = getDiffConfig(currentDiff);
+  console.log('[DUEL DEBUG] start', {
+    isHost: duelIsHost,
+    seed: duelSeed,
+    region: currentRegion,
+    mode: currentGameMode,
+    diff: currentDiff,
+    placesLen: _dbgCfg.places?.length,
+    countriesLen: _dbgCfg.countries?.length,
+    qTypes: _dbgCfg.questionTypes,
+    nlMinPop: gameSettings.nl_medium_min_pop,
+  });
   duelOpponentStreak = 0;
   duelOpponentAlive = true;
   updateDuelStrip();
