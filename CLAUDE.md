@@ -1,0 +1,229 @@
+# CLAUDE.md — GeoStreak
+
+## What is GeoStreak?
+
+GeoStreak is a geography streak quiz web app. Players answer geography questions in a row; one wrong answer ends the streak. The app is hosted at `geostreak.eijsertjes.nl` and is intentionally desktop-only. The developer is Bas, and a colleague named Jeroen is the primary tester and inspiration — Jeroen is exceptionally skilled at geography, and the hardest difficulty ("Jeroen Mode") is named after him.
+
+## Tech Stack
+
+- **Backend**: Node.js / Express, SQLite via `better-sqlite3`, bcrypt for passwords, JWT for auth
+- **Frontend**: Single-page HTML app (`backend/public/index.html`) — all HTML, CSS, and JS in one file
+- **Map**: Mapbox GL JS (style: `outdoors-v12`)
+- **Border detection**: TopoJSON world-atlas (`countries-110m.json`) with ray-casting `pointInGeoJSON`
+- **Deployment**: Docker → GitHub Container Registry (`ghcr.io/baseijs/geostreak:latest`), built via GitHub Actions, deployed via Komodo
+- **Repo**: `BasEijs/geostreak` on GitHub
+
+## Project Structure
+
+```
+geostreak/
+├── backend/
+│   ├── server.js              # Express API, SQLite setup, auth, scores, admin settings
+│   ├── public/
+│   │   └── index.html         # The entire frontend (single-page app, ~4000+ lines)
+│   ├── package.json
+│   └── Dockerfile
+├── docker-compose.yml         # Local dev compose (NOT the production one)
+├── .github/
+│   └── workflows/
+│       └── docker-build.yml   # CI/CD: builds Docker image, pushes to ghcr.io
+└── CLAUDE.md
+```
+
+**Important**: The production `docker-compose.yml` lives in a separate `docker-stacks` repo managed by Komodo. The one in this repo is for local development only.
+
+## Architecture Overview
+
+### Backend (`server.js`)
+
+The server handles:
+
+- **Auth**: `/api/register`, `/api/login` — JWT-based, bcrypt hashed passwords
+- **Scores**: `/api/scores` (POST to save, GET for leaderboard) — scores are stored per `user_id`, `difficulty`, `mode`, and `region`
+- **Settings**: `/api/settings` (GET public settings), `/api/admin/settings` (POST, admin-only) — key-value pairs in a `settings` table
+- **Admin**: `/api/admin/users` — user management, admin-only
+- **Version**: `/api/version` — returns `APP_VERSION` and `GIT_SHA` from build args
+
+Database tables:
+- `users` — id, username, password (bcrypt), is_admin
+- `scores` — id, user_id, streak, difficulty, mode, region, played_at
+- `settings` — key, value (key-value store for all configurable settings)
+
+Settings have server-side defaults. The full list includes timer durations, map thresholds, question type toggles, NL mode population thresholds, easter egg toggles, and neighbour leniency. All settings are exposed to the frontend via `GET /api/settings`.
+
+### Frontend (`index.html`)
+
+This is a large single-page app. Key sections (in rough order):
+
+1. **CSS** — custom properties (dark theme, Jeroen purple theme), responsive layout, all component styles
+2. **HTML screens** — auth, menu (with leaderboard + game setup modal), game, game-over, admin
+3. **Data** — `COUNTRIES` array (world), `NL_PLACES` array (~300 Dutch woonplaatsen with gemeente/province/pop/coords)
+4. **Translation system** — `STRINGS` object with `en` and `nl` keys; `t()` helper returns current language strings; `currentLang` toggles between `'en'` and `'nl'`
+5. **Game logic** — question generation, answer checking, streak tracking, timer
+6. **Map** — Mapbox GL JS initialization, marker placement, label hiding, road visibility toggling
+7. **Leaderboard** — `LB_REGIONS` config-driven tab system with region/mode/difficulty filters
+8. **Admin panel** — collapsible `<details>` sections for Timers, World Mode, Question Types, NL Mode, Easter Eggs
+
+### Game Modes & Regions
+
+The game has two dimensions:
+
+- **Mode**: `world` (Aardrijkskunde/Geography — mixed question types) or `topo` (Topografie/Map Only — map click questions only)
+- **Region**: `world` (all countries) or `nl` (Dutch woonplaatsen)
+
+The game setup flow is: **Mode → Region → Difficulty → Play**, presented as a 3-step modal with Next/Back/Start Game buttons.
+
+### Difficulty Levels
+
+- **Dumb Test** (`easy`) — World only, well-known countries, no map questions, multiple choice only
+- **Medium** — All countries/places (filtered by population threshold in NL), all question types, map questions with optional neighbour leniency
+- **Jeroen Mode** (`jeroen`) — Everything including disputed territories, typed answers instead of MC, tightest thresholds, no leniency
+
+NL mode has no Dumb Test difficulty.
+
+### Question Types
+
+**World mode (Aardrijkskunde):**
+- Capital MC / typed (Jeroen)
+- Flag identification
+- Map click (click inside country borders)
+- Capital map click
+- Population MC
+- Match (drag countries to continents)
+
+**World mode (Topografie):**
+- Map click only
+
+**NL mode:**
+- `nl-province` — Which province is this city in? (MC or typed in Jeroen)
+- `nl-map` — Click on the map of the Netherlands (distance-based, threshold scales with population)
+- `nl-population` — How many inhabitants? (MC, only for places above configurable minimum)
+- `nl-match` — Match 4 cities to their province (Medium) or randomly to gemeente/province (Jeroen)
+
+### Map Scoring
+
+**World mode**: Uses border detection via TopoJSON. `pointInGeoJSON` does ray-casting against country polygons.
+- Clicking inside the correct country = correct
+- Clicking a neighbouring country = correct (Medium only, if `medium_neighbor_correct` is enabled in admin)
+- Disputed territories (ISO `null`, e.g. Kosovo, Somaliland) fall back to distance-based scoring with a separate admin-configurable threshold
+- When wrong, the game tells you which country you actually clicked
+
+**NL mode**: Distance-based. Threshold scales dynamically with population — large cities get tight thresholds, small villages get loose ones. Base thresholds are configurable in admin per difficulty.
+
+**Map layer visibility**: World mode hides roads, buildings, and symbols. NL mode hides symbols only (keeps roads for orientation).
+
+### Leaderboard System
+
+Driven by the `LB_REGIONS` config array. Each entry defines:
+- Region id, icon, label (EN/NL)
+- Available modes with their own difficulty lists and defaults
+- Default mode and difficulty
+
+Adding a new region (e.g. Europe) = adding one entry to `LB_REGIONS` + providing data + question type support. The leaderboard tabs, mode toggles, and difficulty toggles render dynamically from this config.
+
+Scores are stored and queried by `region + mode + difficulty` combination.
+
+### Translation / i18n
+
+All user-facing strings must exist in both English and Dutch. The translation system uses a `STRINGS` object with `en` and `nl` sub-objects. The `t()` function returns the current language's strings. The language toggle is in the nav bar.
+
+**Critical**: Every new user-facing string must be added in both languages. This has been a recurring source of bugs.
+
+### Easter Eggs
+
+- **Username "Jeroen"**: Blocked on registration (client + server, case-insensitive). Shows: "Jij mag niet meedoen, dan is het voor niemand meer leuk 😅"
+- **"Ga werken man!"**: Toast notification after 10 minutes of play between 07:00–17:00 local time. Toggleable in admin settings.
+
+### Admin Panel
+
+Accessible only to admin users. Organized into collapsible `<details>` sections:
+- **Timers** — per-difficulty timer durations
+- **World Mode** — map thresholds, neighbour leniency toggle, disputed territory threshold
+- **Question Types** — toggles for specific question types (second city, population MC, historical country names)
+- **NL Mode** — population thresholds for Medium/Jeroen filtering, map thresholds, population question minimum
+- **Easter Eggs** — toggle for "Ga werken man!"
+
+## Deployment & CI/CD
+
+### GitHub Actions (`.github/workflows/docker-build.yml`)
+
+On push to `main`:
+1. Builds Docker image from `./backend`
+2. Tags with `latest`, `0.5.X` (build number), and git SHA
+3. Pushes to `ghcr.io/baseijs/geostreak`
+4. Passes `APP_VERSION` and `GIT_SHA` as build args
+
+### Docker
+
+The Dockerfile:
+- Base: `node:20-alpine`
+- Installs production deps
+- Accepts `APP_VERSION` and `GIT_SHA` build args, sets them as env vars
+- Exposes port 3000
+
+### Production Deployment (Komodo)
+
+- Komodo manages the production `docker-compose.yml` in a separate `docker-stacks` repo
+- Database volume: `/docker/geostreak/database:/app/data` (outside the repo to survive reclones)
+- Environment variables include `JWT_SECRET`, `MAPBOX_TOKEN`, `NODE_ENV=production`
+
+### Known Deployment Gotchas
+
+- **Komodo Reclone**: If enabled, wipes the repo directory on every deploy. Data volumes MUST be outside the repo path.
+- **Image not updating**: `docker compose pull && docker compose up -d --force-recreate` is the reliable way to force a new image. Komodo's redeploy doesn't always pull the latest.
+- **Verify deployments**: `docker inspect <container> --format '{{.Image}}'` against `docker images ghcr.io/baseijs/geostreak --digests` is the only reliable way to confirm which image is running.
+
+## Development Workflow
+
+Bas works from a Mac (restricted, no sudo) and a second machine, syncing via git:
+
+```bash
+cd ~/Downloads/geostreak && git add . && git commit -m "message" && git push
+```
+
+### Key Principles
+
+- **Brainstorm before implementing** — don't jump ahead. Discuss the approach before writing code.
+- **Always include both EN and NL translations** for any new user-facing string.
+- **Extensible configs** — use config objects (like `LB_REGIONS`) for features that will grow over time.
+- **Watch for scope creep** — Bas will call it out. Stay focused on what was asked.
+- **DB schema discipline** — always verify `CREATE TABLE` statements include all expected columns. Silent failures from schema mismatches have caused bugs before.
+- **Stale file awareness** — if working from files in context, they may be outdated. Check the actual current state before editing.
+
+## Common Tasks
+
+### Adding a new region (e.g. Europe)
+
+1. Add data array (like `NL_PLACES` but for European countries/cities)
+2. Add entry to `LB_REGIONS` config
+3. Add region option to `renderSetupRegions()` in the game setup modal
+4. Add question type support (or reuse world question types)
+5. Add difficulty filtering logic
+6. Ensure all new strings are in both EN and NL
+
+### Adding a new question type
+
+1. Add the question builder function (e.g. `buildNewTypeQ`)
+2. Add the answer handler in the appropriate submit function
+3. Add it to the question type selection logic for the relevant mode/difficulty
+4. Add translation strings for question text and feedback
+5. If it needs admin toggles, add to settings (server defaults + allowed list + admin UI + frontend read)
+
+### Adding a new admin setting
+
+1. Add default value in server.js `defaults` object
+2. Add to the `/api/settings` GET response
+3. Add to the `allowed` array in `/api/admin/settings` POST
+4. Add UI control in the admin panel HTML (in the appropriate `<details>` section)
+5. Wire up in `loadAdminSettings()` and `saveSettings()` on the frontend
+6. Use `gameSettings.settingName` in game logic
+
+### Making the admin command to set a user as admin
+
+```bash
+docker exec geostreak-geostreak-1 node -e "const db = require('better-sqlite3')('/app/data/geogame.db'); db.prepare('UPDATE users SET is_admin = 1 WHERE username = ?').run('Bas'); console.log('Done');"
+```
+
+## Version Info
+
+Version is displayed subtly in the top-right of the menu nav. Format: `0.5.X` where X is the GitHub Actions run number. The version string and git SHA are injected via Docker build args and served via `/api/version`.
