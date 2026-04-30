@@ -1678,6 +1678,11 @@ function getRandom(arr, exclude=[]) {
   const pool = arr.filter(x => !exclude.includes(x));
   return pool[Math.floor(Math.random()*pool.length)];
 }
+function getRngItem(arr, exclude=[]) {
+  const pool = arr.filter(x => !exclude.includes(x));
+  if (!pool.length) return undefined;
+  return pool[Math.floor(gameRng()*pool.length)];
+}
 function getWrongAnswers(correct, field, pool, count=3) {
   const others = pool.filter(c => c!==correct && c[field]!==correct[field]);
   const wrong=[];
@@ -1990,7 +1995,7 @@ function buildMatchQ(type, pool, area) {
   const pickPool = freshPool.length >= 4 ? freshPool : regularPool;
   const picks = [];
   while (picks.length < 4) {
-    const c = getRandom(pickPool, picks);
+    const c = getRngItem(pickPool, picks);
     if (c) picks.push(c);
   }
   lastMatchCountries = picks.map(c => c.name);
@@ -2561,16 +2566,16 @@ function buildMatchPopulationQ(pool, area) {
   if (currentDiff === 'easy') {
     // One from each tier — obvious differences
     for (const tier of tiers) {
-      if (tier.length > 0) picks.push(getRandom(tier, picks));
+      if (tier.length > 0) picks.push(getRngItem(tier, picks));
       if (picks.length === 4) break;
     }
   } else if (currentDiff === 'medium') {
     // Two pairs: pick 2 tiers, take 2 from each
-    const shuffledTiers = shuffle([...tiers]);
+    const shuffledTiers = shuffleForGame([...tiers]);
     for (const tier of shuffledTiers) {
       if (tier.length >= 2) {
-        picks.push(getRandom(tier, picks));
-        picks.push(getRandom(tier, picks));
+        picks.push(getRngItem(tier, picks));
+        picks.push(getRngItem(tier, picks));
         if (picks.length >= 4) break;
       }
     }
@@ -2578,21 +2583,21 @@ function buildMatchPopulationQ(pool, area) {
     // Jeroen: 3 from one tier + 1 outlier from a very different tier
     const tiersWithEnough = tiers.filter(t => t.length >= 3);
     if (tiersWithEnough.length > 0) {
-      const mainTier = getRandom(tiersWithEnough);
-      picks.push(getRandom(mainTier, picks));
-      picks.push(getRandom(mainTier, picks));
-      picks.push(getRandom(mainTier, picks));
+      const mainTier = getRngItem(tiersWithEnough);
+      picks.push(getRngItem(mainTier, picks));
+      picks.push(getRngItem(mainTier, picks));
+      picks.push(getRngItem(mainTier, picks));
       // Outlier: pick from a tier that's far away (not adjacent)
       const mainIndex = tiers.indexOf(mainTier);
       const farTiers = tiers.filter((_, i) => Math.abs(i - mainIndex) >= 2);
-      const outlierTier = farTiers.length > 0 ? getRandom(farTiers) : tiers.find(t => t !== mainTier);
-      if (outlierTier) picks.push(getRandom(outlierTier, picks));
+      const outlierTier = farTiers.length > 0 ? getRngItem(farTiers) : tiers.find(t => t !== mainTier);
+      if (outlierTier) picks.push(getRngItem(outlierTier, picks));
     }
   }
 
   // Fill any remaining slots
   while (picks.length < 4) {
-    const extra = getRandom(pickPool, picks);
+    const extra = getRngItem(pickPool, picks);
     if (extra) picks.push(extra); else break;
   }
 
@@ -2609,12 +2614,12 @@ function buildMatchPopulationQ(pool, area) {
     const labels = picks.map(c => popLabel(COUNTRY_EXTRA[c.name].pop));
     const dupeIndex = labels.findIndex((l, i) => labels.indexOf(l) !== i);
     if (dupeIndex === -1) break; // no duplicates
-    const replacement = getRandom(pickPool, picks);
+    const replacement = getRngItem(pickPool, picks);
     if (replacement) picks[dupeIndex] = replacement;
     else break;
   }
 
-  picks = shuffle(picks);
+  picks = shuffleForGame(picks);
   lastMatchCountries = picks.map(c => c.name);
 
   document.getElementById('question-text').innerHTML = t().ui.matchPopulation;
@@ -2924,7 +2929,7 @@ function buildNLPopulationQ(place, area, pool) {
 
 function buildNLMatchQ(pool, area) {
   // Decide match target: Medium always province, Jeroen randomly gemeente or province
-  const useGemeente = currentDiff === 'jeroen' && Math.random() < 0.5;
+  const useGemeente = currentDiff === 'jeroen' && gameRng() < 0.5;
   const matchKey = useGemeente ? 'gemeente' : 'province';
 
   // Pick 4 places with distinct match targets (no duplicate provincie/gemeente)
@@ -2933,7 +2938,7 @@ function buildNLMatchQ(pool, area) {
 
   const picks = [];
   const usedTargets = new Set();
-  const shuffledPool = shuffle(pickPool);
+  const shuffledPool = shuffleForGame(pickPool);
   for (const p of shuffledPool) {
     if (!usedTargets.has(p[matchKey])) {
       picks.push(p);
