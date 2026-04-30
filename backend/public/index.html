@@ -744,7 +744,14 @@ function makeSeededRng(seed) {
   };
 }
 function gameRng() { return (isDuelMode && duelRng) ? duelRng() : Math.random(); }
-function shuffleForGame(arr) { return [...arr].sort(() => gameRng() - 0.5); }
+function shuffleForGame(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(gameRng() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
 // ════════════════════════════════════
 // TRANSLATIONS
@@ -1692,7 +1699,14 @@ function getWrongAnswers(correct, field, pool, count=3) {
   }
   return wrong;
 }
-function shuffle(arr) { return [...arr].sort(()=>Math.random()-0.5); }
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
 function nextQuestion() {
   awaitingNext=false; stopTimer();
