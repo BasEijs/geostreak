@@ -1123,7 +1123,9 @@ async function fetchSettings() {
   try {
     const res = await fetch('/api/settings');
     const data = await res.json();
-    gameSettings = data;
+    // Merge over frontend defaults so newly-introduced settings don't fall back to undefined
+    // when the backend hasn't been redeployed yet.
+    gameSettings = {...gameSettings, ...data};
     updateDiffDescriptions();
   } catch {}
 }
