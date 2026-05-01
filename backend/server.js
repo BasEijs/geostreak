@@ -94,6 +94,8 @@ const DEFAULT_SETTINGS = {
   easter_ga_werken: '1',
   medium_neighbor_correct: '0',
   disputed_map_threshold: '100',
+  unlock_medium_streak: '10',
+  unlock_jeroen_streak: '15',
 };
 for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
   try { db.prepare('INSERT INTO settings (key, value) VALUES (?, ?)').run(key, value); } catch {}
@@ -185,6 +187,8 @@ app.get('/api/settings', (req, res) => {
     easter_ga_werken: getSetting('easter_ga_werken') !== '0',
     medium_neighbor_correct: getSetting('medium_neighbor_correct') === '1',
     disputed_map_threshold: parseInt(getSetting('disputed_map_threshold')),
+    unlock_medium_streak: parseInt(getSetting('unlock_medium_streak')),
+    unlock_jeroen_streak: parseInt(getSetting('unlock_jeroen_streak')),
   });
 });
 
@@ -302,6 +306,7 @@ app.post('/api/admin/settings', auth, adminOnly, (req, res) => {
     'nl_medium_map_threshold','nl_jeroen_map_threshold',
     'nl_medium_min_pop','nl_jeroen_min_pop','nl_pop_question_min_pop',
     'easter_ga_werken', 'medium_neighbor_correct', 'disputed_map_threshold',
+    'unlock_medium_streak', 'unlock_jeroen_streak',
   ];
   for (const key of allowed) {
     if (req.body[key] !== undefined) {

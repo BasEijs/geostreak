@@ -195,6 +195,7 @@
     <div class="gameover-streak" id="final-streak">0</div>
     <div class="gameover-sub" id="gameover-sub">correct answers in a row</div>
     <div class="gameover-msg" id="gameover-msg"></div>
+    <div class="gameover-unlock" id="gameover-unlock" style="display:none"></div>
     <div class="gameover-actions">
       <button class="btn btn-primary" id="play-again-btn" onclick="startGame()">Play Again</button>
       <button class="btn btn-ghost" id="back-to-menu-btn" onclick="showMenu()">Back to Menu</button>
@@ -469,6 +470,23 @@
       </details>
 
       <details class="settings-details">
+        <summary class="settings-summary">🔓 Unlock Settings</summary>
+        <div class="settings-grid">
+          <div class="settings-group">
+            <div class="settings-group-title">Difficulty Gates</div>
+            <div class="setting-row">
+              <div class="setting-label">Streak to unlock Medium<span>Best streak required in Dumb Test (per region+mode lane) to unlock Medium. Set to 0 to disable.</span></div>
+              <input type="number" class="setting-input" id="setting-unlock-medium" min="0" max="200" value="10">
+            </div>
+            <div class="setting-row">
+              <div class="setting-label">Streak to unlock Jeroen Mode<span>Best streak required in Medium (per region+mode lane) to unlock Jeroen Mode. Set to 0 to disable.</span></div>
+              <input type="number" class="setting-input" id="setting-unlock-jeroen" min="0" max="200" value="15">
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="settings-details">
         <summary class="settings-summary">🥚 Easter Eggs</summary>
         <div class="settings-grid">
           <div class="settings-group">
@@ -585,7 +603,32 @@ let gameSettings = {
   nl_pop_question_min_pop: 5000,
   easter_ga_werken: true,
   medium_neighbor_correct: false,
+  unlock_medium_streak: 10,
+  unlock_jeroen_streak: 15,
 };
+
+// Per-lane unlock chain: each (region, mode) lane has its own gate.
+// `medium` is locked behind `easy` only in lanes that have an `easy` tier (World Geography).
+// `jeroen` is locked behind `medium` in every lane.
+function getUnlockPrereq(region, mode, diff) {
+  if (diff === 'easy') return null;
+  if (diff === 'medium') {
+    const laneHasEasy = (region === 'world' && mode === 'world');
+    return laneHasEasy ? { prereqDiff: 'easy', settingKey: 'unlock_medium_streak' } : null;
+  }
+  if (diff === 'jeroen') return { prereqDiff: 'medium', settingKey: 'unlock_jeroen_streak' };
+  return null;
+}
+
+function isDifficultyUnlocked(diff, region, mode) {
+  if (devMode) return true;
+  const prereq = getUnlockPrereq(region, mode, diff);
+  if (!prereq) return true;
+  const threshold = gameSettings[prereq.settingKey] || 0;
+  if (threshold <= 0) return true;
+  const best = (allStats?.[`${region}_${mode}_${prereq.prereqDiff}`]?.best_streak) || 0;
+  return best >= threshold;
+}
 
 function getDiffConfig(diff) {
   if (currentRegion === 'nl') return getNLDiffConfig(diff);
@@ -890,6 +933,8 @@ const NL = {
     duelAlreadyStarted: "Dit spel is al gestart.",
     opponentDisconnected: "Tegenstander lijkt verbroken.",
     duelExpired: "Kamer verlopen. Maak een nieuwe uitdaging.",
+    unlockHint: (n, prereq) => `Bereik streak ${n} in ${prereq} om te ontgrendelen`,
+    unlocked: (tier) => `${tier} ontgrendeld!`,
   }
 };
 
@@ -973,6 +1018,8 @@ const EN = {
     duelAlreadyStarted: "This game has already started.",
     opponentDisconnected: "Opponent may have disconnected.",
     duelExpired: "Room expired. Create a new challenge.",
+    unlockHint: (n, prereq) => `Reach streak ${n} in ${prereq} to unlock`,
+    unlocked: (tier) => `${tier} unlocked!`,
   }
 };
 
@@ -1266,11 +1313,15 @@ function openGameSetupWithDiff(diff) {
   document.getElementById('setup-modal').style.display = 'flex';
 }
 
-function openGameSetup() {
+async function openGameSetup() {
   setupStep = 1;
   setupRegion = currentRegion;
   setupMode = currentGameMode;
   setupDiff = currentDiff === 'easy' ? 'medium' : currentDiff;
+  await loadAllStats();
+  if (!isDifficultyUnlocked(setupDiff, setupRegion, setupMode)) {
+    setupDiff = isDifficultyUnlocked('medium', setupRegion, setupMode) ? 'medium' : 'easy';
+  }
   renderSetupStep();
   const modal = document.getElementById('setup-modal');
   modal.style.display = 'flex';
@@ -1417,16 +1468,54 @@ function renderSetupDifficulties() {
         { id: 'jeroen', icon: '💀', name: 'Jeroen Mode', desc: { nl: 'Betwiste gebieden · Alles', en: 'Disputed territories · Everything' }, jeroen: true },
       ];
 
+  // If the currently selected diff is locked in this lane, shift to the highest unlocked option.
+  if (!isDifficultyUnlocked(setupDiff, setupRegion, setupMode)) {
+    const firstUnlocked = [...diffs].reverse().find(d => isDifficultyUnlocked(d.id, setupRegion, setupMode));
+    if (firstUnlocked) setupDiff = firstUnlocked.id;
+  }
+
+  const diffNameMap = { easy: 'Dumb Test', medium: 'Medium', jeroen: 'Jeroen Mode' };
   diffs.forEach(d => {
+    const unlocked = isDifficultyUnlocked(d.id, setupRegion, setupMode);
+    const prereq = getUnlockPrereq(setupRegion, setupMode, d.id);
     const row = document.createElement('div');
-    row.className = 'setup-diff-row' + (d.jeroen ? ' jeroen-row' : '') + (setupDiff === d.id ? ' selected' : '');
-    row.innerHTML = `<div class="setup-diff-icon">${d.icon}</div><div class="setup-diff-info"><div class="setup-diff-name">${d.name}</div><div class="setup-diff-desc">${d.desc[currentLang] || d.desc.en}</div></div>`;
+    row.className = 'setup-diff-row'
+      + (d.jeroen ? ' jeroen-row' : '')
+      + (setupDiff === d.id ? ' selected' : '')
+      + (unlocked ? '' : ' locked');
+    const lockIconHTML = unlocked
+      ? ''
+      : `<span class="lock-icon" aria-hidden="true">🔒</span>`;
+    row.innerHTML = `<div class="setup-diff-icon">${d.icon}</div>`
+      + `<div class="setup-diff-info"><div class="setup-diff-name">${lockIconHTML}${d.name}</div>`
+      + `<div class="setup-diff-desc">${d.desc[currentLang] || d.desc.en}</div></div>`;
     row.onclick = () => {
+      if (!unlocked) {
+        const prereqName = prereq ? diffNameMap[prereq.prereqDiff] : '';
+        const threshold = prereq ? (gameSettings[prereq.settingKey] || 0) : 0;
+        showLockTooltip(row, t().ui.unlockHint(threshold, prereqName));
+        return;
+      }
       setupDiff = d.id;
-      renderSetupDifficulties(); // re-render to show selection, no auto-advance
+      renderSetupDifficulties();
     };
     grid.appendChild(row);
   });
+}
+
+let lockTooltipTimer = null;
+function showLockTooltip(anchor, msg) {
+  document.querySelectorAll('.lock-tooltip').forEach(el => el.remove());
+  if (lockTooltipTimer) clearTimeout(lockTooltipTimer);
+  const tip = document.createElement('div');
+  tip.className = 'lock-tooltip';
+  tip.textContent = msg;
+  anchor.appendChild(tip);
+  requestAnimationFrame(() => tip.classList.add('visible'));
+  lockTooltipTimer = setTimeout(() => {
+    tip.classList.remove('visible');
+    setTimeout(() => tip.remove(), 200);
+  }, 2400);
 }
 
 function renderSetupSummary() {
@@ -3171,6 +3260,9 @@ async function endGame() {
     stopDuelGamePoll();
     await duelSubmitProgress(0);
   }
+  // Capture prior best in this lane before saving — used to detect a freshly-crossed unlock threshold.
+  const priorLaneKey = `${currentRegion}_${currentGameMode}_${currentDiff}`;
+  const priorBest = (allStats?.[priorLaneKey]?.best_streak) || 0;
   try {
     if (!devMode) {
       const res = await fetch('/api/scores',{
@@ -3182,6 +3274,7 @@ async function endGame() {
         // Token invalid — silently log out after showing game over
         setTimeout(() => { logout(); }, 4000);
       }
+      await loadAllStats();
     }
   } catch {}
   if (isDuelMode) {
@@ -3219,6 +3312,27 @@ async function endGame() {
   ];
   document.getElementById('gameover-msg').textContent=msgs.filter(([n])=>streak>=n).pop()[1];
   document.getElementById('play-again-btn').className='btn '+(isJ?'btn-jeroen':'btn-primary');
+
+  // If this run's streak crossed the threshold for the next tier *in this same lane*, celebrate.
+  const unlockEl = document.getElementById('gameover-unlock');
+  unlockEl.style.display = 'none';
+  unlockEl.classList.remove('visible');
+  if (!devMode) {
+    const nextTier = currentDiff === 'easy' ? 'medium' : (currentDiff === 'medium' ? 'jeroen' : null);
+    const prereq = nextTier ? getUnlockPrereq(currentRegion, currentGameMode, nextTier) : null;
+    if (prereq) {
+      const threshold = gameSettings[prereq.settingKey] || 0;
+      const newBest = (allStats?.[priorLaneKey]?.best_streak) || 0;
+      // Celebrate only when the persisted best (post-save) crossed the threshold for the first time.
+      if (threshold > 0 && priorBest < threshold && newBest >= threshold) {
+        const tierName = nextTier === 'jeroen' ? 'Jeroen Mode' : 'Medium';
+        unlockEl.innerHTML = `<span class="lock-icon unlocked" aria-hidden="true">🔓</span> ${t().ui.unlocked(tierName)}`;
+        unlockEl.style.display = 'block';
+        requestAnimationFrame(() => unlockEl.classList.add('visible'));
+      }
+    }
+  }
+
   showScreen('gameover-screen');
   document.body.classList.remove('jeroen-mode');
 }
@@ -3567,6 +3681,8 @@ async function loadAdminSettings() {
     document.getElementById('setting-nl-jeroen-min-pop').value = s.nl_jeroen_min_pop || 2000;
     document.getElementById('setting-nl-pop-min-pop').value = s.nl_pop_question_min_pop || 5000;
     document.getElementById('setting-easter-ga-werken').checked = s.easter_ga_werken !== false;
+    document.getElementById('setting-unlock-medium').value = s.unlock_medium_streak ?? 10;
+    document.getElementById('setting-unlock-jeroen').value = s.unlock_jeroen_streak ?? 15;
   } catch {}
 }
 
@@ -3599,6 +3715,8 @@ async function saveSettings() {
     nl_jeroen_min_pop: parseInt(document.getElementById('setting-nl-jeroen-min-pop').value) || 2000,
     nl_pop_question_min_pop: parseInt(document.getElementById('setting-nl-pop-min-pop').value) || 5000,
     easter_ga_werken: document.getElementById('setting-easter-ga-werken').checked ? '1' : '0',
+    unlock_medium_streak: Math.max(0, parseInt(document.getElementById('setting-unlock-medium').value) || 0),
+    unlock_jeroen_streak: Math.max(0, parseInt(document.getElementById('setting-unlock-jeroen').value) || 0),
   };
   try {
     await fetch('/api/admin/settings', {

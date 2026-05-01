@@ -94,6 +94,23 @@ The game setup flow is: **Mode → Region → Difficulty → Play**, presented a
 
 NL mode has no Dumb Test difficulty.
 
+### Difficulty Unlocks
+
+Harder difficulties are gated behind a minimum streak in the prerequisite difficulty, **per region+mode lane**. Each `(region, mode)` lane has its own independent unlock chain:
+
+- **World Geography**: easy → medium → jeroen (full chain)
+- **World Topo / NL Geography / NL Topo**: medium always unlocked (no `easy` to gate on) → jeroen (gated by streak in *that lane's* medium)
+
+So reaching streak 10 on World Geography Dumb Test only unlocks World Geography Medium — it does **not** unlock NL Jeroen. Each lane is earned independently. This was an explicit design decision; if you're tempted to refactor toward a global unlock model, talk to Bas first.
+
+Helpers (in `index.html`):
+- `getUnlockPrereq(region, mode, diff)` — returns `{ prereqDiff, settingKey }` or `null` if always unlocked
+- `isDifficultyUnlocked(diff, region, mode)` — bypasses for `devMode` and threshold=0; otherwise compares cached `allStats[`${region}_${mode}_${prereqDiff}`].best_streak` against threshold
+
+The unlock check reuses the existing `/api/me/stats` endpoint (cached as `allStats`) — no new endpoint needed. Locked rows in the setup modal show a `<span class="lock-icon">🔒</span>` (a single swappable element, prepared for a future custom icon) and a tooltip on click. After a game, `endGame()` refreshes `allStats` and shows a "🔓 Medium unlocked!" celebration on the game-over screen if the *persisted* best_streak just crossed the threshold (compares `priorBest` captured before save against `newBest` after `loadAllStats()`).
+
+Admin settings: `unlock_medium_streak` (default 10) and `unlock_jeroen_streak` (default 15). Setting either to 0 disables that gate. `devMode` bypasses all locks.
+
 ### Question Types
 
 **World mode (Aardrijkskunde):**
@@ -172,6 +189,7 @@ Accessible only to admin users. Organized into collapsible `<details>` sections:
 - **World Mode** — map thresholds, neighbour leniency toggle, disputed territory threshold
 - **Question Types** — toggles for specific question types (second city, population MC, historical country names)
 - **NL Mode** — population thresholds for Medium/Jeroen filtering, map thresholds, population question minimum
+- **Unlock Settings** — streak thresholds to unlock Medium and Jeroen Mode (per-lane); 0 disables a gate
 - **Easter Eggs** — toggle for "Ga werken man!"
 
 ## Deployment & CI/CD
