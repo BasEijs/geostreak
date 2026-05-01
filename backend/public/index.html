@@ -60,8 +60,8 @@
   <div class="menu-content">
     <div class="menu-intro-section">
       <div class="game-intro" id="game-intro"></div>
-      <button class="play-btn" id="play-btn" onclick="openGameSetup()"></button>
-      <button class="btn btn-ghost duel-menu-btn" id="duel-menu-btn" onclick="openDuelLobby()"><img src="duel-logo.png?v=__APP_VERSION__" alt="" class="duel-logo duel-logo-xs"> <span id="duel-menu-label">Duel</span></button>
+      <button class="play-btn" id="play-btn" onclick="openGameSetup()"><span class="play-btn-icon">🌍</span><span id="play-btn-label"></span></button>
+      <button class="btn btn-ghost duel-menu-btn" id="duel-menu-btn" onclick="openDuelLobby()"><img src="duel-logo.png?v=__APP_VERSION__" alt="" class="duel-logo duel-logo-btn"><span id="duel-menu-label">Duel</span></button>
     </div>
     <div class="menu-lb-section">
       <div class="lb-section-header">
@@ -198,10 +198,11 @@
 
 <!-- DUEL LOBBY -->
 <div id="duel-lobby-screen" class="screen">
-  <nav class="nav-3col">
-    <div><button class="btn btn-ghost btn-sm" onclick="showMenu()">← <span class="duel-nav-back"></span></button></div>
+  <nav>
     <div class="nav-logo">GeoStreak</div>
-    <div></div>
+    <div class="nav-user">
+      <button class="btn btn-ghost btn-sm" onclick="showMenu()">← <span class="duel-nav-back"></span></button>
+    </div>
   </nav>
   <div class="duel-lobby-content">
     <div class="duel-lobby-title"><span id="duel-lobby-title-text"></span></div>
@@ -226,10 +227,11 @@
 
 <!-- DUEL WAITING ROOM -->
 <div id="duel-waiting-screen" class="screen">
-  <nav class="nav-3col">
-    <div><button class="btn btn-ghost btn-sm" onclick="cancelDuel()">✕ <span id="duel-cancel-label"></span></button></div>
+  <nav>
     <div class="nav-logo">GeoStreak</div>
-    <div></div>
+    <div class="nav-user">
+      <button class="btn btn-ghost btn-sm" onclick="cancelDuel()">✕ <span id="duel-cancel-label"></span></button>
+    </div>
   </nav>
   <div class="duel-waiting-content">
     <div class="duel-waiting-title" id="duel-waiting-title"></div>
@@ -260,10 +262,8 @@
 
 <!-- DUEL RESULTS -->
 <div id="duel-results-screen" class="screen">
-  <nav class="nav-3col">
-    <div></div>
+  <nav>
     <div class="nav-logo">GeoStreak</div>
-    <div></div>
   </nav>
   <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;gap:24px">
   <div class="gameover-card duel-results-card">
@@ -1091,8 +1091,8 @@ function updateDiffDescriptions() {
   const topoJer = document.getElementById('desc-topo-jeroen');
   if (topoMed) topoMed.textContent = t().ui.topoMediumDesc;
   if (topoJer) topoJer.textContent = t().ui.topoJeroenDesc;
-  const playBtn = document.getElementById('play-btn');
-  if (playBtn) playBtn.textContent = currentLang === 'nl' ? 'NIEUW SPEL →' : 'NEW GAME →';
+  const playBtnLabel = document.getElementById('play-btn-label');
+  if (playBtnLabel) playBtnLabel.textContent = currentLang === 'nl' ? 'NIEUW SPEL →' : 'NEW GAME →';
   const duelMenuLabel = document.getElementById('duel-menu-label');
   if (duelMenuLabel) duelMenuLabel.textContent = t().ui.duel;
 
