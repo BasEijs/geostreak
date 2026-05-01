@@ -347,7 +347,7 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
 ═══════════════════════════════════ */
 
 /* Duel menu button */
-.duel-menu-btn { margin-top:8px; font-size:13px; padding:8px 18px; width:auto; align-self:center; letter-spacing:1px; }
+.duel-menu-btn { margin-top:8px; font-family:'Bebas Neue',sans-serif; font-size:24px; letter-spacing:3px; padding:14px 48px; width:auto; min-width:280px; align-self:center; }
 
 /* Opponent strip (top of game screen) */
 #duel-strip { display:flex; align-items:center; justify-content:center; gap:16px; background:var(--surface2); border-bottom:1px solid var(--border); padding:8px 20px; font-size:14px; font-weight:600; letter-spacing:0.5px; }
@@ -355,6 +355,10 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
 
 /* Duel lobby */
 .duel-lobby-content { display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; padding:40px 24px; gap:20px; }
+.duel-logo { display:block; mix-blend-mode:screen; filter:drop-shadow(0 0 28px rgba(240,180,41,0.45)) hue-rotate(-4deg) saturate(1.05); user-select:none; -webkit-user-drag:none; }
+.duel-logo-hero { width:240px; max-width:55vw; margin-bottom:-4px; }
+.duel-logo-sm { width:96px; }
+.duel-logo-xs { width:44px; vertical-align:middle; margin-right:6px; }
 .duel-lobby-title { font-family:'Bebas Neue',sans-serif; font-size:36px; letter-spacing:3px; }
 .duel-lobby-subtitle { color:var(--text-muted); font-size:15px; text-align:center; max-width:360px; }
 .duel-lobby-actions { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; }
