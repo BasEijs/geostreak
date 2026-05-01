@@ -99,8 +99,14 @@
 <!-- GAME SETUP MODAL -->
 <div id="setup-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px;">
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;width:100%;max-width:560px;overflow:hidden;">
-    <div style="padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;" id="setup-title"></div>
+    <div class="setup-header">
+      <div class="setup-title-group">
+        <img src="play-logo.png?v=__APP_VERSION__-logo-20260501" alt="" class="setup-flow-logo" id="setup-flow-logo">
+        <div>
+          <div class="setup-title" id="setup-title"></div>
+          <div class="setup-kicker" id="setup-kicker"></div>
+        </div>
+      </div>
       <div style="display:flex;gap:8px;" id="setup-steps">
         <div class="setup-step active" data-step="1">1</div>
         <div class="setup-step" data-step="2">2</div>
@@ -205,6 +211,7 @@
     </div>
   </nav>
   <div class="duel-lobby-content">
+    <img src="duel-logo.png?v=__APP_VERSION__-logo-20260501" alt="" class="duel-logo duel-logo-hero">
     <div class="duel-lobby-title"><span id="duel-lobby-title-text"></span></div>
     <div class="duel-lobby-subtitle" id="duel-lobby-subtitle"></div>
     <div class="duel-lobby-actions">
@@ -234,6 +241,7 @@
     </div>
   </nav>
   <div class="duel-waiting-content">
+    <img src="duel-logo.png?v=__APP_VERSION__-logo-20260501" alt="" class="duel-logo duel-logo-sm">
     <div class="duel-waiting-title" id="duel-waiting-title"></div>
     <div id="duel-code-section" style="display:none">
       <div class="duel-waiting-share-label" id="duel-share-label"></div>
@@ -1267,8 +1275,9 @@ function openGameSetup() {
   modal.style.display = 'flex';
 }
 
-function closeGameSetup() {
+function closeGameSetup(keepDuelSetup = false) {
   document.getElementById('setup-modal').style.display = 'none';
+  if (!keepDuelSetup) duelSetupMode = false;
 }
 
 function setupNext() {
@@ -1281,6 +1290,20 @@ function setupBack() {
 }
 
 function renderSetupStep() {
+  const lang = currentLang === 'nl' ? 'nl' : 'en';
+  const isDuelSetup = duelSetupMode;
+  const setupLogo = document.getElementById('setup-flow-logo');
+  const setupKicker = document.getElementById('setup-kicker');
+  if (setupLogo) {
+    setupLogo.src = (isDuelSetup ? 'duel-logo.png' : 'play-logo.png') + '?v=__APP_VERSION__-logo-20260501';
+    setupLogo.className = 'setup-flow-logo ' + (isDuelSetup ? 'duel-logo' : 'play-logo');
+  }
+  if (setupKicker) {
+    setupKicker.textContent = isDuelSetup
+      ? (lang === 'nl' ? 'Uitdaging instellen' : 'Challenge setup')
+      : (lang === 'nl' ? 'Spel instellen' : 'Game setup');
+  }
+
   // Update step indicators
   [1,2,3].forEach(s => {
     const el = document.querySelector(`.setup-step[data-step="${s}"]`);
@@ -1289,14 +1312,15 @@ function renderSetupStep() {
   });
   document.getElementById('setup-back-btn').style.display = setupStep > 1 ? '' : 'none';
   [1,2,3].forEach(s => document.getElementById(`setup-step-${s}`).style.display = s === setupStep ? '' : 'none');
-  document.getElementById('setup-title').textContent = currentLang === 'nl' ? 'NIEUW SPEL' : 'NEW GAME';
+  document.getElementById('setup-title').textContent = isDuelSetup
+    ? (lang === 'nl' ? 'DUEL' : 'DUEL')
+    : (lang === 'nl' ? 'NIEUW SPEL' : 'NEW GAME');
 
-  const lang = currentLang === 'nl' ? 'nl' : 'en';
   const backLabel = document.getElementById('setup-back-label');
   const nextLabel = document.getElementById('setup-next-label');
   if (backLabel) backLabel.textContent = lang === 'nl' ? 'Terug' : 'Back';
   if (nextLabel) nextLabel.textContent = setupStep === 3
-    ? (lang === 'nl' ? 'Start spel' : 'Start game')
+    ? (isDuelSetup ? t().ui.createChallenge : (lang === 'nl' ? 'Start spel' : 'Start game'))
     : (lang === 'nl' ? 'Volgende' : 'Next');
 
   // Style next btn as play on step 3
@@ -1313,6 +1337,10 @@ function renderSetupStep() {
     nl: { 1: 'Kies een regio', 2: 'Kies moeilijkheid', 3: 'Klaar om te spelen' },
     en: { 1: 'Choose a region', 2: 'Choose difficulty', 3: 'Ready to play' },
   };
+  if (isDuelSetup) {
+    titles.nl[3] = 'Klaar voor duel';
+    titles.en[3] = 'Ready to duel';
+  }
   document.getElementById(`setup-step${setupStep}-label`).textContent = titles[lang][setupStep];
 
   if (setupStep === 1) renderSetupRegions();
@@ -1408,6 +1436,10 @@ function renderSetupSummary() {
   const diffNames = { easy: 'Dumb Test', medium: 'Medium', jeroen: 'Jeroen Mode 💀' };
   const lang = currentLang;
   document.getElementById('setup-summary').innerHTML = `
+    <div class="setup-summary-brand">
+      <img src="${duelSetupMode ? 'duel-logo.png' : 'play-logo.png'}?v=__APP_VERSION__-logo-20260501" alt="" class="setup-summary-logo ${duelSetupMode ? 'duel-logo' : 'play-logo'}">
+      <div class="setup-summary-brand-text">${duelSetupMode ? t().ui.duel : (lang === 'nl' ? 'Nieuw spel' : 'New game')}</div>
+    </div>
     <div class="setup-summary-row">
       <span class="setup-summary-label">${lang === 'nl' ? 'Modus' : 'Mode'}</span>
       <span class="setup-summary-value">${modeNames[setupRegion]?.[lang] || setupRegion}${topoLabel}</span>
@@ -3218,7 +3250,7 @@ function createDuelChallenge() {
 
 function confirmAndPlay() {
   if (duelSetupMode) {
-    closeGameSetup();
+    closeGameSetup(true);
     submitCreateDuel({ mode: setupMode, region: setupRegion, difficulty: setupDiff });
     return;
   }
@@ -3281,7 +3313,7 @@ async function submitJoinDuel() {
 function renderWaitingRoom(data) {
   duelLastRoomState = data;
   const isHost = duelIsHost;
-  document.getElementById('duel-waiting-title').textContent = '⚔️ ' + t().ui.duel;
+  document.getElementById('duel-waiting-title').textContent = t().ui.duel;
   const codeSection = document.getElementById('duel-code-section');
   codeSection.style.display = isHost ? 'block' : 'none';
   if (isHost) {
@@ -3302,7 +3334,7 @@ function renderWaitingRoom(data) {
   const startBtn = document.getElementById('duel-start-btn');
   if (isHost) {
     startBtn.style.display = 'inline-flex';
-    startBtn.textContent = t().ui.startDuel;
+    startBtn.innerHTML = `<img src="duel-logo.png?v=__APP_VERSION__-logo-20260501" alt="" class="duel-logo duel-logo-xs"> <span>${t().ui.startDuel}</span>`;
     startBtn.disabled = !data.guest;
   } else {
     startBtn.style.display = 'none';
