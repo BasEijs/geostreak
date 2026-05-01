@@ -60,6 +60,7 @@ nav.nav-3col { display: grid; grid-template-columns: 1fr auto 1fr; }
 .nav-logo { display: block; width: 130px; height: 42px; object-fit: contain; user-select: none; -webkit-user-drag: none; flex-shrink: 0; }
 .nav-user { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text-muted); }
 .nav-user strong { color: var(--text); }
+#menu-screen .nav-logo { width: 260px; height: 84px; }
 
 /* MENU */
 #menu-screen { min-height: 100vh; flex-direction: column; }
