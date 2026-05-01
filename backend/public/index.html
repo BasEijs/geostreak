@@ -1487,7 +1487,7 @@ function renderSetupDifficulties() {
       + (unlocked ? '' : ' locked');
     const lockIconHTML = unlocked
       ? ''
-      : `<span class="lock-icon" aria-hidden="true">🔒</span>`;
+      : `<img src="padlock-closed-icon.png?v=__APP_VERSION__-padlock-20260501" alt="" class="lock-icon">`;
     row.innerHTML = `<div class="setup-diff-icon">${d.icon}</div>`
       + `<div class="setup-diff-info"><div class="setup-diff-name">${lockIconHTML}${d.name}</div>`
       + `<div class="setup-diff-desc">${d.desc[currentLang] || d.desc.en}</div></div>`;
