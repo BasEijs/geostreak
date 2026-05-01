@@ -17,6 +17,7 @@ body.jeroen-mode::before {
 #app { max-width: 920px; margin: 0 auto; min-height: 100vh; position: relative; border-left: 1px solid var(--border); border-right: 1px solid var(--border); background: var(--bg); display: flex; flex-direction: column; }
 .screen { display: none; position: relative; z-index: 1; }
 .screen.active { display: flex; }
+.build-version-badge { position:fixed; right:8px; bottom:8px; z-index:2000; padding:4px 7px; border:1px solid var(--border); border-radius:6px; background:rgba(10,14,26,0.86); color:var(--text-muted); font-size:10px; line-height:1; letter-spacing:0.4px; pointer-events:none; }
 
 /* AUTH */
 #auth-screen { min-height: 100vh; align-items: center; justify-content: center; flex-direction: column; gap: 20px; padding: 24px; }

@@ -7,12 +7,13 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text x='1' y='28' font-family='Arial Black,sans-serif' font-size='30' font-weight='900' fill='%23f0b429'>G</text></svg>">
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=__APP_VERSION__">
+  <link rel="stylesheet" href="style.css?v=__APP_VERSION__&ui=setup-logo-fix-20260501-2">
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
   <script src="https://unpkg.com/topojson@3/dist/topojson.min.js"></script>
 </head>
 <body>
 <div id="app">
+<div id="build-version-badge" class="build-version-badge">ui setup-logo-fix-20260501-2 · __APP_VERSION__</div>
 
 <!-- AUTH -->
 <div id="auth-screen" class="screen active">
@@ -101,7 +102,7 @@
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;width:100%;max-width:560px;overflow:hidden;">
     <div class="setup-header">
       <div class="setup-title-group">
-        <img src="play-logo.png?v=__APP_VERSION__-logo-20260501" alt="" class="setup-flow-logo" id="setup-flow-logo">
+        <img src="play-logo.png?v=__APP_VERSION__-logo-20260501" alt="" class="setup-flow-logo" id="setup-flow-logo" width="28" height="28" style="width:28px;height:28px;max-width:28px;max-height:28px;object-fit:contain;">
         <div>
           <div class="setup-title" id="setup-title"></div>
           <div class="setup-kicker" id="setup-kicker"></div>
@@ -1297,6 +1298,9 @@ function renderSetupStep() {
   if (setupLogo) {
     setupLogo.src = (isDuelSetup ? 'duel-logo.png' : 'play-logo.png') + '?v=__APP_VERSION__-logo-20260501';
     setupLogo.className = 'setup-flow-logo ' + (isDuelSetup ? 'duel-logo' : 'play-logo');
+    setupLogo.width = 28;
+    setupLogo.height = 28;
+    setupLogo.style.cssText = 'width:28px;height:28px;max-width:28px;max-height:28px;object-fit:contain;filter:none;mix-blend-mode:normal;flex:0 0 28px;';
   }
   if (setupKicker) {
     setupKicker.textContent = isDuelSetup
@@ -1437,7 +1441,7 @@ function renderSetupSummary() {
   const lang = currentLang;
   document.getElementById('setup-summary').innerHTML = `
     <div class="setup-summary-brand">
-      <img src="${duelSetupMode ? 'duel-logo.png' : 'play-logo.png'}?v=__APP_VERSION__-logo-20260501" alt="" class="setup-summary-logo ${duelSetupMode ? 'duel-logo' : 'play-logo'}">
+      <img src="${duelSetupMode ? 'duel-logo.png' : 'play-logo.png'}?v=__APP_VERSION__-logo-20260501" alt="" class="setup-summary-logo ${duelSetupMode ? 'duel-logo' : 'play-logo'}" width="30" height="30" style="width:30px;height:30px;max-width:30px;max-height:30px;object-fit:contain;filter:none;mix-blend-mode:normal;flex:0 0 30px;">
       <div class="setup-summary-brand-text">${duelSetupMode ? t().ui.duel : (lang === 'nl' ? 'Nieuw spel' : 'New game')}</div>
     </div>
     <div class="setup-summary-row">
