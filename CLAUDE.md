@@ -75,7 +75,7 @@ This is a large single-page app. Key sections (in rough order):
 5. **Game logic** — question generation, answer checking, streak tracking, timer
 6. **Map** — Mapbox GL JS initialization, marker placement, label hiding, road visibility toggling
 7. **Leaderboard** — `LB_REGIONS` config-driven tab system with region/mode/difficulty filters
-8. **Admin panel** — collapsible `<details>` sections for Timers, World Mode, Question Types, NL Mode, Easter Eggs
+8. **Admin panel** — collapsible `<details>` sections for Timers, World Mode, Question Types, NL Mode, Unlock Settings, Easter Eggs
 
 ### Game Modes & Regions
 
@@ -261,12 +261,13 @@ cd ~/Downloads/geostreak && git add . && git commit -m "message" && git push
 
 ### Adding a new admin setting
 
-1. Add default value in server.js `defaults` object
-2. Add to the `/api/settings` GET response
+1. Add default value in server.js `DEFAULT_SETTINGS` object
+2. Add to the `/api/settings` GET response (with the right type cast — `parseInt`, `=== '1'`, etc.)
 3. Add to the `allowed` array in `/api/admin/settings` POST
-4. Add UI control in the admin panel HTML (in the appropriate `<details>` section)
-5. Wire up in `loadAdminSettings()` and `saveSettings()` on the frontend
-6. Use `gameSettings.settingName` in game logic
+4. Add the same default to the frontend `gameSettings` object literal in `index.html`. This matters: `fetchSettings()` does `gameSettings = {...gameSettings, ...data}` so frontend defaults survive as a fallback when the backend hasn't redeployed yet. Skipping this step caused the unlock locks to silently bypass on first deploy — `undefined || 0` made the threshold 0, which the lock check treats as "disabled".
+5. Add UI control in the admin panel HTML (in the appropriate `<details>` section)
+6. Wire up in `loadAdminSettings()` and `saveSettings()` on the frontend
+7. Use `gameSettings.settingName` in game logic
 
 ### Making the admin command to set a user as admin
 
