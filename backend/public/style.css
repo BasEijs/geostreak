@@ -78,7 +78,7 @@ nav.nav-3col { display: grid; grid-template-columns: 1fr auto 1fr; }
 .diff-desc { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
 .play-btn { background: linear-gradient(135deg,var(--accent),var(--accent2)); color: #000; font-family: 'Bebas Neue',sans-serif; font-size: 24px; letter-spacing: 3px; padding: 8px 48px; border: none; border-radius: var(--radius); cursor: pointer; transition: all 0.2s; box-shadow: 0 6px 24px rgba(240,180,41,0.2); width: auto; min-width: 280px; display: inline-flex; align-items: center; justify-content: center; gap: 12px; }
 .play-logo { display:block; user-select:none; -webkit-user-drag:none; }
-.play-logo-btn { width:48px; }
+.play-logo-btn { flex:0 0 48px; width:48px; height:48px; max-width:48px; max-height:48px; object-fit:contain; }
 .play-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(240,180,41,0.3); }
 .play-btn.jeroen-play { background: linear-gradient(135deg,var(--jeroen),var(--jeroen2)); color: #fff; box-shadow: 0 6px 24px rgba(168,85,247,0.25); }
 .play-btn.jeroen-play:hover { box-shadow: 0 10px 32px rgba(168,85,247,0.4); }
@@ -364,7 +364,7 @@ input:checked + .slider:before { transform: translateX(20px); background: var(--
 .duel-logo { display:block; mix-blend-mode:screen; filter:drop-shadow(0 0 28px rgba(240,180,41,0.45)) hue-rotate(-4deg) saturate(1.05); user-select:none; -webkit-user-drag:none; }
 .duel-logo-hero { width:240px; max-width:55vw; margin-bottom:-4px; }
 .duel-logo-sm { width:96px; }
-.duel-logo-btn { width:48px; }
+.duel-logo-btn { flex:0 0 48px; width:48px; height:48px; max-width:48px; max-height:48px; object-fit:contain; }
 .duel-logo-xs { width:44px; }
 .duel-lobby-title { font-family:'Bebas Neue',sans-serif; font-size:36px; letter-spacing:3px; }
 .duel-lobby-subtitle { color:var(--text-muted); font-size:15px; text-align:center; max-width:360px; }
