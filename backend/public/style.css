@@ -76,8 +76,9 @@ nav.nav-3col { display: grid; grid-template-columns: 1fr auto 1fr; }
 .diff-name { font-family: 'Bebas Neue',sans-serif; font-size: 26px; letter-spacing: 1px; margin-bottom: 6px; }
 .diff-card.jeroen-card .diff-name { background: linear-gradient(135deg,var(--jeroen),var(--jeroen2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 .diff-desc { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
-.play-btn { background: linear-gradient(135deg,var(--accent),var(--accent2)); color: #000; font-family: 'Bebas Neue',sans-serif; font-size: 24px; letter-spacing: 3px; padding: 12px 48px; border: none; border-radius: var(--radius); cursor: pointer; transition: all 0.2s; box-shadow: 0 6px 24px rgba(240,180,41,0.2); width: auto; min-width: 280px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; }
-.play-btn-icon { font-size: 22px; line-height: 1; }
+.play-btn { background: linear-gradient(135deg,var(--accent),var(--accent2)); color: #000; font-family: 'Bebas Neue',sans-serif; font-size: 24px; letter-spacing: 3px; padding: 8px 48px; border: none; border-radius: var(--radius); cursor: pointer; transition: all 0.2s; box-shadow: 0 6px 24px rgba(240,180,41,0.2); width: auto; min-width: 280px; display: inline-flex; align-items: center; justify-content: center; gap: 12px; }
+.play-logo { display:block; user-select:none; -webkit-user-drag:none; }
+.play-logo-btn { width:48px; }
 .play-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(240,180,41,0.3); }
 .play-btn.jeroen-play { background: linear-gradient(135deg,var(--jeroen),var(--jeroen2)); color: #fff; box-shadow: 0 6px 24px rgba(168,85,247,0.25); }
 .play-btn.jeroen-play:hover { box-shadow: 0 10px 32px rgba(168,85,247,0.4); }
