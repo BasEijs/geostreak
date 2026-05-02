@@ -7,13 +7,13 @@
   <link rel="icon" type="image/png" href="favicon.png?v=__APP_VERSION__-favicon-square-20260501">
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=__APP_VERSION__&ui=global-nav-logo-size-20260501">
+  <link rel="stylesheet" href="style.css?v=__APP_VERSION__&ui=global-nav-logo-size-20260502-lock-emoji">
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
   <script src="https://unpkg.com/topojson@3/dist/topojson.min.js"></script>
 </head>
 <body>
 <div id="app">
-<div id="build-version-badge" class="build-version-badge">ui global-nav-logo-size-20260501 · 0.5.0</div>
+<div id="build-version-badge" class="build-version-badge">ui global-nav-logo-size-20260502-lock-emoji · 0.5.0</div>
 
 <!-- AUTH -->
 <div id="auth-screen" class="screen active">
@@ -1487,7 +1487,7 @@ function renderSetupDifficulties() {
       + (unlocked ? '' : ' locked');
     const lockIconHTML = unlocked
       ? ''
-      : `<img src="padlock-closed-icon.png?v=__APP_VERSION__-padlock-20260501" alt="" class="lock-icon">`;
+      : `<span class="lock-icon" aria-hidden="true">🔒</span>`;
     row.innerHTML = `<div class="setup-diff-icon">${d.icon}</div>`
       + `<div class="setup-diff-info"><div class="setup-diff-name">${lockIconHTML}${d.name}</div>`
       + `<div class="setup-diff-desc">${d.desc[currentLang] || d.desc.en}</div></div>`;
