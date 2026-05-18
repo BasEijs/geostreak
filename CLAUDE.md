@@ -198,9 +198,10 @@ Accessible only to admin users. Organized into collapsible `<details>` sections:
 
 On push to `main`:
 1. Builds Docker image from `./backend`
-2. Tags with `latest`, `0.5.X` (build number), and git SHA
+2. Tags with `latest` only
 3. Pushes to `ghcr.io/baseijs/geostreak`
-4. Passes `APP_VERSION` and `GIT_SHA` as build args
+
+(The workflow does **not** currently pass `APP_VERSION` or `GIT_SHA` as build args — so `__APP_VERSION__` in the HTML always resolves to `'dev'` in production. Visible versioning is handled by the hand-bumped marker in [`backend/public/index.html`](backend/public/index.html) — see "Version Marker" below.)
 
 ### Docker
 
@@ -239,6 +240,7 @@ cd ~/Downloads/geostreak && git add . && git commit -m "message" && git push
 - **DB schema discipline** — always verify `CREATE TABLE` statements include all expected columns. Silent failures from schema mismatches have caused bugs before.
 - **Stale file awareness** — if working from files in context, they may be outdated. Check the actual current state before editing.
 - **NL places are woonplaatsen, not gemeenten** — `nl-places.js` entries must have a real place name in `name`, not just the gemeente name. Some gemeente names match their main woonplaats (e.g., Amsterdam) and are fine. Others (e.g., Halderberge) are administrative mergers with no actual place by that name — those must not appear as `name` values.
+- **ALWAYS bump the version marker on every commit** — see "Version Marker" below. Bas relies on this badge to confirm the new code is actually deployed; if you skip it, he has no way to tell stale-cache from undeployed from old-image.
 
 ## Common Tasks
 
@@ -275,6 +277,15 @@ cd ~/Downloads/geostreak && git add . && git commit -m "message" && git push
 docker exec geostreak-geostreak-1 node -e "const db = require('better-sqlite3')('/app/data/geogame.db'); db.prepare('UPDATE users SET is_admin = 1 WHERE username = ?').run('Bas'); console.log('Done');"
 ```
 
-## Version Info
+## Version Marker
 
-Version is displayed subtly in the top-right of the menu nav. Format: `0.5.X` where X is the GitHub Actions run number. The version string and git SHA are injected via Docker build args and served via `/api/version`.
+A single hand-bumped string in [`backend/public/index.html`](backend/public/index.html) (look for the `BUILD_MARKER` comment near the top of `<body>`) renders into a small badge in the bottom-right corner on every screen. This is the **only** reliable way Bas can tell which build of the code is actually running in his browser.
+
+**Rule: every commit must bump this marker.** No exceptions — even doc-only or CSS-only commits. If you forget, Bas tests, sees the same badge, and assumes nothing deployed.
+
+Format: `v<YYYY-MM-DD>-<short-kebab-tag>`
+- Date: today's date (use the `currentDate` from your context, not your training cutoff).
+- Tag: 1–4 kebab-case words describing the change. Keep it terse — it's a marker, not a changelog. Examples: `versioning`, `nl-province-rev`, `duel-rematch-fix`, `lock-icon-polish`.
+- If you make multiple commits in one day, suffix with `-2`, `-3`, etc.: `v2026-05-18-versioning-2`.
+
+There is **no** `/api/version` endpoint and CI does **not** inject a build number — earlier versions of this doc claimed both, but neither exists. If you ever wire them up, update this section.
