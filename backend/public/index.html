@@ -14,7 +14,7 @@
 <body>
 <div id="app">
 <!-- BUILD_MARKER: bump on every commit. Format: vYYYY-MM-DD-short-tag (see CLAUDE.md "Version Marker") -->
-<div id="build-version-badge" class="build-version-badge">v2026-05-18-sandwich</div>
+<div id="build-version-badge" class="build-version-badge">v2026-05-18-borders-multi</div>
 
 <!-- AUTH -->
 <div id="auth-screen" class="screen active">
@@ -473,6 +473,10 @@
               <div class="setting-label">Country sandwich<span>"Which country borders both X and Y?" MC; typed in Jeroen.</span></div>
               <label class="switch"><input type="checkbox" id="setting-qt-sandwich" checked><span class="slider"></span></label>
             </div>
+            <div class="setting-row">
+              <div class="setting-label">Borders (multi-select)<span>"Pick all that border X" — Medium allows 1 mistake, Jeroen requires exact.</span></div>
+              <label class="switch"><input type="checkbox" id="setting-qt-borders-multi" checked><span class="slider"></span></label>
+            </div>
           </div>
           <div class="settings-group">
             <div class="settings-group-title">New Question Types (NL)</div>
@@ -667,6 +671,7 @@ let gameSettings = {
   qt_landlocked: true,
   qt_area_battle: true,
   qt_sandwich: true,
+  qt_borders_multi: true,
 };
 
 // Per-lane unlock chain: each (region, mode) lane has its own gate.
@@ -733,6 +738,7 @@ function getDiffConfig(diff) {
         ...(gameSettings.qt_landlocked ? ["landlocked"] : []),
         ...(gameSettings.qt_area_battle ? ["area-battle"] : []),
         ...(gameSettings.qt_sandwich ? ["sandwich"] : []),
+        ...(gameSettings.qt_borders_multi ? ["borders-multi"] : []),
       ],
       mapThreshold: 800,
       timers: {
@@ -755,6 +761,7 @@ function getDiffConfig(diff) {
         ...(gameSettings.qt_landlocked ? ["landlocked"] : []),
         ...(gameSettings.qt_area_battle ? ["area-battle"] : []),
         ...(gameSettings.qt_sandwich ? ["sandwich","sandwich"] : []),
+        ...(gameSettings.qt_borders_multi ? ["borders-multi","borders-multi"] : []),
       ],
       mapThreshold: gameSettings.jeroen_map_threshold,
       timers: {
@@ -1044,6 +1051,7 @@ const NL = {
     whichLandlocked: "Welk van deze landen heeft <span>geen kustlijn</span>?",
     whichLargerArea: "Welk land is <span>groter in oppervlakte</span>?",
     whichBordersBoth: (a, b) => `Welk land grenst aan zowel <span>${a}</span> als <span>${b}</span>?`,
+    whichBordersMulti: (c) => `Kies <span>alle landen</span> die aan ${c} grenzen`,
     badgeBorders: '🧭 Buren',
     badgeCapitalToCountry: '🏛 Hoofdstad → Land',
     badgeCityToCountry: '🏙 Stad → Land',
@@ -1054,6 +1062,7 @@ const NL = {
     badgeLandlocked: '🏔 Geen kust',
     badgeAreaBattle: '📏 Oppervlakte-duel',
     badgeSandwich: '🥪 Sandwich',
+    badgeBordersMulti: '🧭 Buren (multi)',
   }
 };
 
@@ -1155,6 +1164,7 @@ const EN = {
     whichLandlocked: "Which of these countries is <span>landlocked</span>?",
     whichLargerArea: "Which country has a <span>larger area</span>?",
     whichBordersBoth: (a, b) => `Which country borders both <span>${a}</span> and <span>${b}</span>?`,
+    whichBordersMulti: (c) => `Pick <span>all countries</span> that border ${c}`,
     badgeBorders: '🧭 Borders',
     badgeCapitalToCountry: '🏛 Capital → Country',
     badgeCityToCountry: '🏙 City → Country',
@@ -1165,6 +1175,7 @@ const EN = {
     badgeLandlocked: '🏔 Landlocked',
     badgeAreaBattle: '📏 Area Battle',
     badgeSandwich: '🥪 Sandwich',
+    badgeBordersMulti: '🧭 Borders (multi)',
   }
 };
 
@@ -2029,7 +2040,7 @@ function nextQuestion() {
     : type === 'capital' ? capitalPool
     : (type === 'second-city' || type === 'population') ? (extraPool.length >= 4 ? extraPool : nonHistoricalPool)
     : (type === 'city-to-country' || type === 'pop-battle' || type === 'area-battle') ? (extraPool.length >= 4 ? extraPool : nonHistoricalPool)
-    : (type === 'borders' || type === 'shape' || type === 'sandwich') ? nonHistoricalPool.filter(c => c.iso != null)
+    : (type === 'borders' || type === 'shape' || type === 'sandwich' || type === 'borders-multi') ? nonHistoricalPool.filter(c => c.iso != null)
     : type === 'satellite' ? nonHistoricalPool.filter(c => typeof c.lat === 'number' && typeof c.lng === 'number')
     : type === 'landlocked' ? nonHistoricalPool.filter(c => LANDLOCKED.has(c.name))
     : nonHistoricalPool;
@@ -2046,7 +2057,7 @@ function nextQuestion() {
 
   currentQ = {type, country};
   const badges = {capital:'🏛 Capital', flag:'🚩 Flag', map:'🗺 Map', continent:'🌍 Continent', 'match-flags':'🚩 Match Flags', 'match-capitals':'🏛 Match Capitals', 'capital-map':'🗺 Capital → Map', 'second-city':'🏙 Second City', 'population':'👥 Population', 'match-population':'👥 Match Population',
-    borders: t().ui.badgeBorders, 'capital-to-country': t().ui.badgeCapitalToCountry, 'city-to-country': t().ui.badgeCityToCountry, 'pop-battle': t().ui.badgePopBattle, shape: t().ui.badgeShape, satellite: t().ui.badgeSatellite, landlocked: t().ui.badgeLandlocked, 'area-battle': t().ui.badgeAreaBattle, sandwich: t().ui.badgeSandwich};
+    borders: t().ui.badgeBorders, 'capital-to-country': t().ui.badgeCapitalToCountry, 'city-to-country': t().ui.badgeCityToCountry, 'pop-battle': t().ui.badgePopBattle, shape: t().ui.badgeShape, satellite: t().ui.badgeSatellite, landlocked: t().ui.badgeLandlocked, 'area-battle': t().ui.badgeAreaBattle, sandwich: t().ui.badgeSandwich, 'borders-multi': t().ui.badgeBordersMulti};
   document.getElementById('q-type-badge').textContent = badges[type] || type;
 
   const area = document.getElementById('answer-area');
@@ -2075,6 +2086,7 @@ function nextQuestion() {
   else if (type==='landlocked') buildLandlockedQ(country, area, nonHistoricalPool);
   else if (type==='area-battle') buildAreaBattleQ(country, area, nonHistoricalPool);
   else if (type==='sandwich') buildSandwichQ(country, area, nonHistoricalPool);
+  else if (type==='borders-multi') buildBordersMultiQ(country, area, nonHistoricalPool);
 
   if (useTimer) startTimer(type);
 }
@@ -3623,6 +3635,97 @@ function renderSandwichQ(country, area, pool) {
     c => c === country, localName(country));
 }
 
+// ── BORDERS MULTI-SELECT (World) ──
+// "Pick all countries that border X" — checkboxes + submit.
+// Scoring: Jeroen requires exact match; medium allows up to 1 mistake (false positive OR false negative).
+function buildBordersMultiQ(country, area, pool) {
+  if (!geoJsonCache || !neighborMap) {
+    ensureGeoJsonLoaded().then(() => renderBordersMultiQ(country, area, pool));
+  } else {
+    renderBordersMultiQ(country, area, pool);
+  }
+}
+function renderBordersMultiQ(country, area, pool) {
+  const myNeighborIsos = neighborMap?.[country.iso];
+  if (!myNeighborIsos || myNeighborIsos.size === 0) return buildCapitalQ(country, area, pool);
+
+  const neighborPool = pool.filter(c => c !== country && c.iso != null && myNeighborIsos.has(c.iso));
+  if (neighborPool.length < 2) return buildCapitalQ(country, area, pool);
+
+  const GRID = 6;
+  const maxK = currentDiff === 'jeroen' ? 4 : 3;
+  const K = Math.min(maxK, neighborPool.length);
+  const corrects = shuffle(neighborPool).slice(0, K);
+
+  const nonNeighbors = pool.filter(c => c !== country && c.iso != null && !myNeighborIsos.has(c.iso));
+  const wrongs = shuffle(nonNeighbors).slice(0, GRID - K);
+  if (wrongs.length < GRID - K) return buildCapitalQ(country, area, pool);
+
+  const items = shuffle([...corrects, ...wrongs]);
+  const correctSet = new Set(corrects);
+
+  document.getElementById('question-text').innerHTML = t().ui.whichBordersMulti(localName(country));
+
+  const grid = document.createElement('div');
+  grid.className = 'choices-grid';
+  const selected = new Set();
+  const buttons = [];
+
+  items.forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.innerHTML = `<span class="multi-checkbox">☐</span>${localName(c)}`;
+    btn.onclick = () => {
+      if (awaitingNext || btn.disabled) return;
+      if (selected.has(c)) {
+        selected.delete(c);
+        btn.classList.remove('selected');
+        btn.querySelector('.multi-checkbox').textContent = '☐';
+      } else {
+        selected.add(c);
+        btn.classList.add('selected');
+        btn.querySelector('.multi-checkbox').textContent = '☑';
+      }
+    };
+    buttons.push({ btn, c });
+    grid.appendChild(btn);
+  });
+  area.appendChild(grid);
+
+  const submitContainer = document.getElementById('match-submit-container');
+  submitContainer.innerHTML = '';
+  submitContainer.classList.add('visible');
+
+  const submitBtn = document.createElement('button');
+  submitBtn.className = 'btn btn-primary match-submit';
+  submitBtn.textContent = t().ui.submitAnswer;
+  submitBtn.onclick = () => {
+    if (awaitingNext) return;
+    stopTimer();
+    let mistakes = 0;
+    items.forEach(c => {
+      if (correctSet.has(c) !== selected.has(c)) mistakes++;
+    });
+    const threshold = currentDiff === 'jeroen' ? 0 : 1;
+    const passed = mistakes <= threshold;
+
+    buttons.forEach(({ btn, c }) => {
+      btn.disabled = true;
+      const isCorrect = correctSet.has(c);
+      const isSelected = selected.has(c);
+      if (isCorrect && isSelected) btn.classList.add('correct');
+      else if (isCorrect && !isSelected) btn.classList.add('missed');
+      else if (!isCorrect && isSelected) btn.classList.add('wrong');
+    });
+    submitBtn.disabled = true;
+
+    const correctNames = corrects.map(c => localName(c)).join(', ');
+    showFeedback(passed,
+      passed ? t().ui.correct : t().ui.wrong(correctNames));
+  };
+  submitContainer.appendChild(submitBtn);
+}
+
 // ── SHAPE (World) ──
 function buildShapeQ(country, area, pool) {
   document.getElementById('question-text').innerHTML = t().ui.whichCountryShape;
@@ -4256,6 +4359,7 @@ async function loadAdminSettings() {
     document.getElementById('setting-qt-landlocked').checked = s.qt_landlocked !== false;
     document.getElementById('setting-qt-area-battle').checked = s.qt_area_battle !== false;
     document.getElementById('setting-qt-sandwich').checked = s.qt_sandwich !== false;
+    document.getElementById('setting-qt-borders-multi').checked = s.qt_borders_multi !== false;
   } catch {}
 }
 
@@ -4301,6 +4405,7 @@ async function saveSettings() {
     qt_landlocked: document.getElementById('setting-qt-landlocked').checked ? '1' : '0',
     qt_area_battle: document.getElementById('setting-qt-area-battle').checked ? '1' : '0',
     qt_sandwich: document.getElementById('setting-qt-sandwich').checked ? '1' : '0',
+    qt_borders_multi: document.getElementById('setting-qt-borders-multi').checked ? '1' : '0',
   };
   try {
     await fetch('/api/admin/settings', {
