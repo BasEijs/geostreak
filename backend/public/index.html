@@ -14,7 +14,7 @@
 <body>
 <div id="app">
 <!-- BUILD_MARKER: bump on every commit. Format: vYYYY-MM-DD-short-tag (see CLAUDE.md "Version Marker") -->
-<div id="build-version-badge" class="build-version-badge">v2026-05-18-versioning</div>
+<div id="build-version-badge" class="build-version-badge">v2026-05-18-pop-buckets</div>
 
 <!-- AUTH -->
 <div id="auth-screen" class="screen active">
@@ -2703,55 +2703,34 @@ function buildPopulationQ(country, area) {
   if (useMC) {
     document.getElementById('question-text').innerHTML = t().ui.populationMC(localName(country));
 
-    // Generate 3 wrong answers close in magnitude to the real one
-    // Pick from other countries with similar population ranges
-    const allExtras = Object.entries(COUNTRY_EXTRA)
-      .filter(([name]) => name !== country.name && COUNTRY_EXTRA[name].pop)
-      .map(([name, data]) => data.pop);
+    // Dynamic log-scale buckets: pick 4 consecutive ranges that bracket the actual value,
+    // with the correct bucket landing in a random slot (constrained so the window fits).
+    const stops = [0, 3, 10, 30, 100, 300, 1000, Infinity];
+    const totalBuckets = stops.length - 1;
+    let idx = 0;
+    while (idx < totalBuckets - 1 && actual >= stops[idx + 1]) idx++;
+    const minSlot = Math.max(0, idx - (totalBuckets - 4));
+    const maxSlot = Math.min(3, idx);
+    const correctSlot = minSlot + Math.floor(Math.random() * (maxSlot - minSlot + 1));
+    const start = idx - correctSlot;
 
-    // Sort by closeness to actual, pick 3 from similar range but distinct labels
-    const formatPop = (pop) => {
-      if (pop >= 1000) return `~${Math.round(pop/100)*100}M`;
-      if (pop >= 100) return `~${Math.round(pop/10)*10}M`;
-      if (pop >= 10) return `~${Math.round(pop)}M`;
-      return `~${pop.toFixed(1)}M`;
+    const fmt = (lo, hi) => {
+      if (lo === 0) return `< ${hi}M`;
+      if (hi === Infinity) return `> ${lo}M`;
+      return `${lo}–${hi}M`;
     };
-    const correctLabel = formatPop(actual);
+    const choices = [];
+    for (let i = 0; i < 4; i++) choices.push(fmt(stops[start + i], stops[start + i + 1]));
+    const correctLabel = choices[correctSlot];
 
-    // Pick wrong answers: candidates sorted by closeness, then filtered for unique labels
-    const candidates = allExtras
-      .sort((a, b) => Math.abs(a - actual) - Math.abs(b - actual))
-      .filter(p => formatPop(p) !== correctLabel);
-
-    const wrongLabels = [];
-    for (const p of candidates) {
-      const label = formatPop(p);
-      if (!wrongLabels.includes(label) && label !== correctLabel) {
-        wrongLabels.push(label);
-        if (wrongLabels.length === 3) break;
-      }
-    }
-
-    // Fallback if not enough unique labels — generate plausible variants
-    while (wrongLabels.length < 3) {
-      const factor = [0.4, 2.5, 5][wrongLabels.length] || 3;
-      const variant = formatPop(actual * factor);
-      if (!wrongLabels.includes(variant) && variant !== correctLabel) wrongLabels.push(variant);
-      else wrongLabels.push(formatPop(actual * (factor + 1)));
-    }
-
-    const choices = shuffle([correctLabel, ...wrongLabels]);
     const grid = document.createElement('div'); grid.className = 'choices-grid';
     ['A','B','C','D'].forEach((letter, i) => {
-      if (!choices[i]) return;
       const btn = document.createElement('button'); btn.className = 'choice-btn';
       btn.innerHTML = `<span class="choice-letter">${letter}</span>${choices[i]}`;
       btn.onclick = () => {
         if (awaitingNext) return; stopTimer();
-        grid.querySelectorAll('.choice-btn').forEach(b => {
-          b.disabled = true;
-          if (b.textContent.trim().endsWith(correctLabel)) b.classList.add('correct');
-        });
+        grid.querySelectorAll('.choice-btn').forEach(b => { b.disabled = true; });
+        grid.children[correctSlot].classList.add('correct');
         const chosen = choices[i];
         if (chosen !== correctLabel) btn.classList.add('wrong');
         showFeedback(chosen === correctLabel,
