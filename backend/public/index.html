@@ -14,7 +14,7 @@
 <body>
 <div id="app">
 <!-- BUILD_MARKER: bump on every commit. Format: vYYYY-MM-DD-short-tag (see CLAUDE.md "Version Marker") -->
-<div id="build-version-badge" class="build-version-badge">v2026-05-18-pop-buckets</div>
+<div id="build-version-badge" class="build-version-badge">v2026-05-18-landlocked</div>
 
 <!-- AUTH -->
 <div id="auth-screen" class="screen active">
@@ -461,6 +461,10 @@
               <div class="setting-label">Satellite view<span>Identify the country from satellite imagery.</span></div>
               <label class="switch"><input type="checkbox" id="setting-qt-satellite" checked><span class="slider"></span></label>
             </div>
+            <div class="setting-row">
+              <div class="setting-label">Landlocked<span>"Which of these is landlocked?" MC.</span></div>
+              <label class="switch"><input type="checkbox" id="setting-qt-landlocked" checked><span class="slider"></span></label>
+            </div>
           </div>
           <div class="settings-group">
             <div class="settings-group-title">New Question Types (NL)</div>
@@ -652,6 +656,7 @@ let gameSettings = {
   qt_satellite: true,
   qt_province_to_place: true,
   qt_nl_pop_battle: true,
+  qt_landlocked: true,
 };
 
 // Per-lane unlock chain: each (region, mode) lane has its own gate.
@@ -692,6 +697,7 @@ function getDiffConfig(diff) {
         ...(gameSettings.qt_capital_to_country ? ["capital-to-country"] : []),
         ...(gameSettings.qt_city_to_country ? ["city-to-country"] : []),
         ...(gameSettings.qt_pop_battle ? ["pop-battle"] : []),
+        ...(gameSettings.qt_landlocked ? ["landlocked"] : []),
       ],
       mapThreshold: 1000,
       timers: {
@@ -712,6 +718,7 @@ function getDiffConfig(diff) {
         ...(gameSettings.qt_pop_battle ? ["pop-battle"] : []),
         ...(gameSettings.qt_shape ? ["shape"] : []),
         ...(gameSettings.qt_satellite ? ["satellite"] : []),
+        ...(gameSettings.qt_landlocked ? ["landlocked"] : []),
       ],
       mapThreshold: 800,
       timers: {
@@ -731,6 +738,7 @@ function getDiffConfig(diff) {
         ...(gameSettings.qt_pop_battle ? ["pop-battle"] : []),
         ...(gameSettings.qt_shape ? ["shape","shape"] : []),
         ...(gameSettings.qt_satellite ? ["satellite"] : []),
+        ...(gameSettings.qt_landlocked ? ["landlocked"] : []),
       ],
       mapThreshold: gameSettings.jeroen_map_threshold,
       timers: {
@@ -1017,6 +1025,7 @@ const NL = {
     whichMorePopNL: "Welke plaats heeft <span>meer inwoners</span>?",
     whichCountryShape: "Welk land heeft deze vorm?",
     whichCountrySatellite: "Welk land zie je hier?",
+    whichLandlocked: "Welk van deze landen heeft <span>geen kustlijn</span>?",
     badgeBorders: '🧭 Buren',
     badgeCapitalToCountry: '🏛 Hoofdstad → Land',
     badgeCityToCountry: '🏙 Stad → Land',
@@ -1024,6 +1033,7 @@ const NL = {
     badgePopBattle: '⚖️ Bevolking-duel',
     badgeShape: '🌐 Vorm',
     badgeSatellite: '🛰 Satelliet',
+    badgeLandlocked: '🏔 Geen kust',
   }
 };
 
@@ -1122,6 +1132,7 @@ const EN = {
     whichMorePopNL: "Which place has <span>more inhabitants</span>?",
     whichCountryShape: "Which country has this shape?",
     whichCountrySatellite: "Which country is shown here?",
+    whichLandlocked: "Which of these countries is <span>landlocked</span>?",
     badgeBorders: '🧭 Borders',
     badgeCapitalToCountry: '🏛 Capital → Country',
     badgeCityToCountry: '🏙 City → Country',
@@ -1129,6 +1140,7 @@ const EN = {
     badgePopBattle: '⚖️ Population Battle',
     badgeShape: '🌐 Shape',
     badgeSatellite: '🛰 Satellite',
+    badgeLandlocked: '🏔 Landlocked',
   }
 };
 
@@ -1995,6 +2007,7 @@ function nextQuestion() {
     : (type === 'city-to-country' || type === 'pop-battle') ? (extraPool.length >= 4 ? extraPool : nonHistoricalPool)
     : (type === 'borders' || type === 'shape') ? nonHistoricalPool.filter(c => c.iso != null)
     : type === 'satellite' ? nonHistoricalPool.filter(c => typeof c.lat === 'number' && typeof c.lng === 'number')
+    : type === 'landlocked' ? nonHistoricalPool.filter(c => LANDLOCKED.has(c.name))
     : nonHistoricalPool;
 
   let country;
@@ -2009,7 +2022,7 @@ function nextQuestion() {
 
   currentQ = {type, country};
   const badges = {capital:'🏛 Capital', flag:'🚩 Flag', map:'🗺 Map', continent:'🌍 Continent', 'match-flags':'🚩 Match Flags', 'match-capitals':'🏛 Match Capitals', 'capital-map':'🗺 Capital → Map', 'second-city':'🏙 Second City', 'population':'👥 Population', 'match-population':'👥 Match Population',
-    borders: t().ui.badgeBorders, 'capital-to-country': t().ui.badgeCapitalToCountry, 'city-to-country': t().ui.badgeCityToCountry, 'pop-battle': t().ui.badgePopBattle, shape: t().ui.badgeShape, satellite: t().ui.badgeSatellite};
+    borders: t().ui.badgeBorders, 'capital-to-country': t().ui.badgeCapitalToCountry, 'city-to-country': t().ui.badgeCityToCountry, 'pop-battle': t().ui.badgePopBattle, shape: t().ui.badgeShape, satellite: t().ui.badgeSatellite, landlocked: t().ui.badgeLandlocked};
   document.getElementById('q-type-badge').textContent = badges[type] || type;
 
   const area = document.getElementById('answer-area');
@@ -2035,6 +2048,7 @@ function nextQuestion() {
   else if (type==='pop-battle') buildPopBattleQ(country, area, nonHistoricalPool);
   else if (type==='shape') buildShapeQ(country, area, nonHistoricalPool);
   else if (type==='satellite') buildSatelliteQ(country, area, nonHistoricalPool);
+  else if (type==='landlocked') buildLandlockedQ(country, area, nonHistoricalPool);
 
   if (useTimer) startTimer(type);
 }
@@ -3395,6 +3409,17 @@ function renderBordersQ(country, area, pool) {
     c=>c===correctNeighbor, localName(correctNeighbor));
 }
 
+// ── LANDLOCKED (World) ──
+// `country` is guaranteed landlocked (qPool filters to LANDLOCKED). Pick 3 coastal distractors.
+function buildLandlockedQ(country, area, pool) {
+  document.getElementById('question-text').innerHTML = t().ui.whichLandlocked;
+  const coastalPool = pool.filter(c => !LANDLOCKED.has(c.name) && c !== country);
+  if (coastalPool.length < 3) { nextQuestion(); return; }
+  const wrongs = shuffle(coastalPool).slice(0, 3);
+  buildChoices(shuffle([country, ...wrongs]), area,
+    c => localName(c), c => c === country, localName(country));
+}
+
 // ── CAPITAL → COUNTRY (reversal) ──
 function buildCapitalToCountryQ(country, area, pool) {
   document.getElementById('question-text').innerHTML = t().ui.capitalOf(localCapital(country));
@@ -4097,6 +4122,7 @@ async function loadAdminSettings() {
     document.getElementById('setting-qt-satellite').checked = s.qt_satellite !== false;
     document.getElementById('setting-qt-province-to-place').checked = s.qt_province_to_place !== false;
     document.getElementById('setting-qt-nl-pop-battle').checked = s.qt_nl_pop_battle !== false;
+    document.getElementById('setting-qt-landlocked').checked = s.qt_landlocked !== false;
   } catch {}
 }
 
@@ -4139,6 +4165,7 @@ async function saveSettings() {
     qt_satellite: document.getElementById('setting-qt-satellite').checked ? '1' : '0',
     qt_province_to_place: document.getElementById('setting-qt-province-to-place').checked ? '1' : '0',
     qt_nl_pop_battle: document.getElementById('setting-qt-nl-pop-battle').checked ? '1' : '0',
+    qt_landlocked: document.getElementById('setting-qt-landlocked').checked ? '1' : '0',
   };
   try {
     await fetch('/api/admin/settings', {

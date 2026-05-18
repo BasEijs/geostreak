@@ -142,6 +142,19 @@ const HISTORICAL_FLAGS = [
 ];
 
 // ════════════════════════════════════
+// LANDLOCKED COUNTRIES
+// ════════════════════════════════════
+// Names that appear in EASY/MEDIUM/JEROEN_EXTRA AND are landlocked.
+// Used for the "which of these is landlocked?" question type.
+// Any country in our dataset NOT in this set is treated as coastal.
+const LANDLOCKED = new Set([
+  "Switzerland","Austria","Czech Republic","Hungary",
+  "Afghanistan","Bolivia","Ethiopia","Kazakhstan","Nepal","Serbia","Uganda","Uzbekistan",
+  "Zimbabwe","Slovakia","Belarus","Moldova","Armenia","Azerbaijan","Zambia",
+  "Kosovo","Transnistria","South Ossetia",
+]);
+
+// ════════════════════════════════════
 // SECOND CITY + POPULATION DATA
 // (only large well-known countries)
 // ════════════════════════════════════
