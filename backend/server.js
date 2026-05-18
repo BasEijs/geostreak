@@ -106,6 +106,7 @@ const DEFAULT_SETTINGS = {
   qt_nl_pop_battle: '1',
   qt_landlocked: '1',
   qt_area_battle: '1',
+  qt_sandwich: '1',
 };
 for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
   try { db.prepare('INSERT INTO settings (key, value) VALUES (?, ?)').run(key, value); } catch {}
@@ -209,6 +210,7 @@ app.get('/api/settings', (req, res) => {
     qt_nl_pop_battle: getSetting('qt_nl_pop_battle') !== '0',
     qt_landlocked: getSetting('qt_landlocked') !== '0',
     qt_area_battle: getSetting('qt_area_battle') !== '0',
+    qt_sandwich: getSetting('qt_sandwich') !== '0',
   });
 });
 
@@ -329,7 +331,7 @@ app.post('/api/admin/settings', auth, adminOnly, (req, res) => {
     'unlock_medium_streak', 'unlock_jeroen_streak',
     'qt_borders', 'qt_capital_to_country', 'qt_city_to_country', 'qt_pop_battle',
     'qt_shape', 'qt_satellite', 'qt_province_to_place', 'qt_nl_pop_battle',
-    'qt_landlocked', 'qt_area_battle',
+    'qt_landlocked', 'qt_area_battle', 'qt_sandwich',
   ];
   for (const key of allowed) {
     if (req.body[key] !== undefined) {
