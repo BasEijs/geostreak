@@ -240,7 +240,7 @@ cd ~/Downloads/geostreak && git add . && git commit -m "message" && git push
 - **DB schema discipline** — always verify `CREATE TABLE` statements include all expected columns. Silent failures from schema mismatches have caused bugs before.
 - **Stale file awareness** — if working from files in context, they may be outdated. Check the actual current state before editing.
 - **NL places are woonplaatsen, not gemeenten** — `nl-places.js` entries must have a real place name in `name`, not just the gemeente name. Some gemeente names match their main woonplaats (e.g., Amsterdam) and are fine. Others (e.g., Halderberge) are administrative mergers with no actual place by that name — those must not appear as `name` values.
-- **ALWAYS bump the version marker on every commit** — see "Version Marker" below. Bas relies on this badge to confirm the new code is actually deployed; if you skip it, he has no way to tell stale-cache from undeployed from old-image.
+- **Bump the version marker whenever the deployed app changes** — see "Version Marker" below. Bas relies on this badge to confirm new code is actually live; skip the bump for repo-only changes (CLAUDE.md, IDEAS.md, README, etc.) that don't ship to the container.
 
 ## Common Tasks
 
@@ -281,7 +281,7 @@ docker exec geostreak-geostreak-1 node -e "const db = require('better-sqlite3')(
 
 A single hand-bumped string in [`backend/public/index.html`](backend/public/index.html) (look for the `BUILD_MARKER` comment near the top of `<body>`) renders into a small badge in the bottom-right corner on every screen. This is the **only** reliable way Bas can tell which build of the code is actually running in his browser.
 
-**Rule: every commit must bump this marker.** No exceptions — even doc-only or CSS-only commits. If you forget, Bas tests, sees the same badge, and assumes nothing deployed.
+**Rule: bump this marker whenever the deployed app changes.** That means any change under `backend/` (server code, HTML, CSS, JS, data, Dockerfile) — including CSS-only or copy-only tweaks. Skip the bump for repo-only files that don't ship to the container: CLAUDE.md, IDEAS.md, README, `.github/` workflows, the local `docker-compose.yml`. If you bump for an unshipped change, Bas tests, sees the new badge, and assumes the change is live when it isn't.
 
 Format: `v<YYYY-MM-DD>-<short-kebab-tag>`
 - Date: today's date (use the `currentDate` from your context, not your training cutoff).
