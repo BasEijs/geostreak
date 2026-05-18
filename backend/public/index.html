@@ -434,6 +434,44 @@
               <label class="switch"><input type="checkbox" id="setting-medium-second-city" checked><span class="slider"></span></label>
             </div>
           </div>
+          <div class="settings-group">
+            <div class="settings-group-title">New Question Types (World)</div>
+            <div class="setting-row">
+              <div class="setting-label">Borders<span>"Which country borders X?" MC.</span></div>
+              <label class="switch"><input type="checkbox" id="setting-qt-borders" checked><span class="slider"></span></label>
+            </div>
+            <div class="setting-row">
+              <div class="setting-label">Capital → country<span>"Lisbon is the capital of?" (reversal).</span></div>
+              <label class="switch"><input type="checkbox" id="setting-qt-capital-to-country" checked><span class="slider"></span></label>
+            </div>
+            <div class="setting-row">
+              <div class="setting-label">City → country<span>"Munich is a major city in?" (reversal).</span></div>
+              <label class="switch"><input type="checkbox" id="setting-qt-city-to-country" checked><span class="slider"></span></label>
+            </div>
+            <div class="setting-row">
+              <div class="setting-label">Population battle<span>"Which has more people: A or B?" 2-option.</span></div>
+              <label class="switch"><input type="checkbox" id="setting-qt-pop-battle" checked><span class="slider"></span></label>
+            </div>
+            <div class="setting-row">
+              <div class="setting-label">Country shape<span>Identify the country from its silhouette.</span></div>
+              <label class="switch"><input type="checkbox" id="setting-qt-shape" checked><span class="slider"></span></label>
+            </div>
+            <div class="setting-row">
+              <div class="setting-label">Satellite view<span>Identify the country from satellite imagery.</span></div>
+              <label class="switch"><input type="checkbox" id="setting-qt-satellite" checked><span class="slider"></span></label>
+            </div>
+          </div>
+          <div class="settings-group">
+            <div class="settings-group-title">New Question Types (NL)</div>
+            <div class="setting-row">
+              <div class="setting-label">Province → place<span>"Which is in Gelderland?" (reversal).</span></div>
+              <label class="switch"><input type="checkbox" id="setting-qt-province-to-place" checked><span class="slider"></span></label>
+            </div>
+            <div class="setting-row">
+              <div class="setting-label">Population battle (NL)<span>"Which place has more inhabitants?" 2-option.</span></div>
+              <label class="switch"><input type="checkbox" id="setting-qt-nl-pop-battle" checked><span class="slider"></span></label>
+            </div>
+          </div>
         </div>
       </details>
 
@@ -605,6 +643,14 @@ let gameSettings = {
   medium_neighbor_correct: false,
   unlock_medium_streak: 10,
   unlock_jeroen_streak: 15,
+  qt_borders: true,
+  qt_capital_to_country: true,
+  qt_city_to_country: true,
+  qt_pop_battle: true,
+  qt_shape: true,
+  qt_satellite: true,
+  qt_province_to_place: true,
+  qt_nl_pop_battle: true,
 };
 
 // Per-lane unlock chain: each (region, mode) lane has its own gate.
@@ -640,7 +686,12 @@ function getDiffConfig(diff) {
     easy: {
       label:"Dumb Test", badge:"easy",
       countries: easyCountries,
-      questionTypes: ["capital","capital","flag","flag","continent","match-flags","match-capitals"],
+      questionTypes: ["capital","capital","flag","flag","continent","match-flags","match-capitals",
+        ...(gameSettings.qt_borders ? ["borders"] : []),
+        ...(gameSettings.qt_capital_to_country ? ["capital-to-country"] : []),
+        ...(gameSettings.qt_city_to_country ? ["city-to-country"] : []),
+        ...(gameSettings.qt_pop_battle ? ["pop-battle"] : []),
+      ],
       mapThreshold: 1000,
       timers: {
         simple: gameSettings.easy_timer_simple || null,
@@ -652,7 +703,15 @@ function getDiffConfig(diff) {
     medium: {
       label:"Medium", badge:"medium",
       countries: medCountries,
-      questionTypes: ["capital","capital","flag","flag","map","map","match-flags","match-capitals","population", ...(gameSettings.medium_second_city ? ["second-city"] : [])],
+      questionTypes: ["capital","capital","flag","flag","map","map","match-flags","match-capitals","population",
+        ...(gameSettings.medium_second_city ? ["second-city"] : []),
+        ...(gameSettings.qt_borders ? ["borders"] : []),
+        ...(gameSettings.qt_capital_to_country ? ["capital-to-country"] : []),
+        ...(gameSettings.qt_city_to_country ? ["city-to-country"] : []),
+        ...(gameSettings.qt_pop_battle ? ["pop-battle"] : []),
+        ...(gameSettings.qt_shape ? ["shape"] : []),
+        ...(gameSettings.qt_satellite ? ["satellite"] : []),
+      ],
       mapThreshold: 800,
       timers: {
         simple: gameSettings.medium_timer_simple || null,
@@ -664,7 +723,14 @@ function getDiffConfig(diff) {
     jeroen: {
       label:"Jeroen Mode 💀", badge:"jeroen",
       countries: [...jeroenCountries, ...(gameSettings.jeroen_historical_flags ? HISTORICAL_FLAGS : [])],
-      questionTypes: ["capital","capital","flag","flag","map","map","capital-map","match-flags","match-capitals","second-city","population","population","match-population"],
+      questionTypes: ["capital","capital","flag","flag","map","map","capital-map","match-flags","match-capitals","second-city","population","population","match-population",
+        ...(gameSettings.qt_borders ? ["borders","borders"] : []),
+        ...(gameSettings.qt_capital_to_country ? ["capital-to-country"] : []),
+        ...(gameSettings.qt_city_to_country ? ["city-to-country"] : []),
+        ...(gameSettings.qt_pop_battle ? ["pop-battle"] : []),
+        ...(gameSettings.qt_shape ? ["shape","shape"] : []),
+        ...(gameSettings.qt_satellite ? ["satellite"] : []),
+      ],
       mapThreshold: gameSettings.jeroen_map_threshold,
       timers: {
         simple: gameSettings.jeroen_timer_simple || null,
@@ -711,9 +777,11 @@ function getTopoDiffConfig(diff) {
 function getNLDiffConfig(diff) {
   const isTopo = currentGameMode === 'topo';
   const places = diff === 'medium' ? getNLMediumPlaces() : getNLJeroenPlaces();
-  const worldQTypes = diff === 'medium'
+  const worldQTypes = (diff === 'medium'
     ? ['nl-province','nl-province','nl-map','nl-map','nl-population','nl-match']
-    : ['nl-province','nl-province','nl-province','nl-map','nl-map','nl-population','nl-match'];
+    : ['nl-province','nl-province','nl-province','nl-map','nl-map','nl-population','nl-match'])
+    .concat(gameSettings.qt_province_to_place ? ['nl-province-to-place'] : [])
+    .concat(gameSettings.qt_nl_pop_battle ? ['nl-pop-battle'] : []);
   return {
     label: diff === 'medium' ? 'Medium' : 'Jeroen Mode 💀',
     badge: diff,
@@ -935,6 +1003,26 @@ const NL = {
     duelExpired: "Kamer verlopen. Maak een nieuwe uitdaging.",
     unlockHint: (n, prereq) => `Bereik streak ${n} in ${prereq} om te ontgrendelen`,
     unlocked: (tier) => `${tier} ontgrendeld!`,
+    whichBorders: (c) => `Welk land grenst aan <span>${c}</span>?`,
+    howManyBorders: (c) => `Aan hoeveel landen grenst <span>${c}</span>?`,
+    typeNeighborCount: "Typ het aantal buurlanden",
+    capitalOf: (cap) => `<span>${cap}</span> is de hoofdstad van welk land?`,
+    typeCountryForCapital: "Typ het land",
+    cityOf: (city) => `<span>${city}</span> is een grote stad in welk land?`,
+    typeCountryForCity: "Typ het land",
+    whichInProvince: (p) => `Welke plaats ligt in <span>${p}</span>?`,
+    typePlaceInProvince: "Typ de plaatsnaam",
+    whichMorePop: "Welk land heeft <span>meer inwoners</span>?",
+    whichMorePopNL: "Welke plaats heeft <span>meer inwoners</span>?",
+    whichCountryShape: "Welk land heeft deze vorm?",
+    whichCountrySatellite: "Welk land zie je hier?",
+    badgeBorders: '🧭 Buren',
+    badgeCapitalToCountry: '🏛 Hoofdstad → Land',
+    badgeCityToCountry: '🏙 Stad → Land',
+    badgeProvinceToPlace: '🗺 Provincie → Plaats',
+    badgePopBattle: '⚖️ Bevolking-duel',
+    badgeShape: '🌐 Vorm',
+    badgeSatellite: '🛰 Satelliet',
   }
 };
 
@@ -1020,6 +1108,26 @@ const EN = {
     duelExpired: "Room expired. Create a new challenge.",
     unlockHint: (n, prereq) => `Reach streak ${n} in ${prereq} to unlock`,
     unlocked: (tier) => `${tier} unlocked!`,
+    whichBorders: (c) => `Which country borders <span>${c}</span>?`,
+    howManyBorders: (c) => `How many countries border <span>${c}</span>?`,
+    typeNeighborCount: "Type the number of neighbours",
+    capitalOf: (cap) => `<span>${cap}</span> is the capital of which country?`,
+    typeCountryForCapital: "Type the country",
+    cityOf: (city) => `<span>${city}</span> is a major city in which country?`,
+    typeCountryForCity: "Type the country",
+    whichInProvince: (p) => `Which place is in <span>${p}</span>?`,
+    typePlaceInProvince: "Type the place name",
+    whichMorePop: "Which country has <span>more inhabitants</span>?",
+    whichMorePopNL: "Which place has <span>more inhabitants</span>?",
+    whichCountryShape: "Which country has this shape?",
+    whichCountrySatellite: "Which country is shown here?",
+    badgeBorders: '🧭 Borders',
+    badgeCapitalToCountry: '🏛 Capital → Country',
+    badgeCityToCountry: '🏙 City → Country',
+    badgeProvinceToPlace: '🗺 Province → Place',
+    badgePopBattle: '⚖️ Population Battle',
+    badgeShape: '🌐 Shape',
+    badgeSatellite: '🛰 Satellite',
   }
 };
 
@@ -1790,6 +1898,7 @@ function startGame() {
   countryQueue = []; // reset — will be built on first nextQuestion call
   lastMatchCountries = [];
   useTimer = !devMode && Object.values(cfg.timers).some(v => v > 0);
+  ensureGeoJsonLoaded(); // preload world topojson for shape/borders questions
   stopTimer(); updateStreakDisplay();
   document.body.classList.toggle('jeroen-mode', currentDiff==='jeroen');
   const badge = document.getElementById('diff-badge');
@@ -1844,7 +1953,7 @@ function nextQuestion() {
   // ── NL region ──
   if (cfg.nlMode) {
     const type = cfg.questionTypes[Math.floor(gameRng()*cfg.questionTypes.length)];
-    const isNLMatch = type === 'nl-match';
+    const isNLMatch = type === 'nl-match' || type === 'nl-pop-battle';
     let place;
     if (!isNLMatch) {
       if (countryQueue.length === 0) countryQueue = shuffleForGame(cfg.places);
@@ -1855,7 +1964,7 @@ function nextQuestion() {
       place = getRandom(cfg.places);
     }
     currentQ = {type, place};
-    const nlBadges = {'nl-province':'🗺 Provincie','nl-map':'📍 Kaart','nl-population':'👥 Inwoners','nl-match':'🔗 Koppelen'};
+    const nlBadges = {'nl-province':'🗺 Provincie','nl-map':'📍 Kaart','nl-population':'👥 Inwoners','nl-match':'🔗 Koppelen','nl-province-to-place': t().ui.badgeProvinceToPlace,'nl-pop-battle': t().ui.badgePopBattle};
     document.getElementById('q-type-badge').textContent = nlBadges[type] || type;
     const area = document.getElementById('answer-area');
     area.innerHTML=''; area.classList.remove('map-mode','match-mode');
@@ -1865,6 +1974,8 @@ function nextQuestion() {
     else if (type==='nl-map') buildNLMapQ(place, area);
     else if (type==='nl-population') buildNLPopulationQ(place, area, cfg.places);
     else if (type==='nl-match') buildNLMatchQ(cfg.places, area);
+    else if (type==='nl-province-to-place') buildNLProvinceToPlaceQ(place, area, cfg.places);
+    else if (type==='nl-pop-battle') buildNLPopBattleQ(place, area, cfg.places);
     if (useTimer) startTimer(type);
     return;
   }
@@ -1880,6 +1991,9 @@ function nextQuestion() {
   const qPool = type === 'flag' ? pool
     : type === 'capital' ? capitalPool
     : (type === 'second-city' || type === 'population') ? (extraPool.length >= 4 ? extraPool : nonHistoricalPool)
+    : (type === 'city-to-country' || type === 'pop-battle') ? (extraPool.length >= 4 ? extraPool : nonHistoricalPool)
+    : (type === 'borders' || type === 'shape') ? nonHistoricalPool.filter(c => c.iso != null)
+    : type === 'satellite' ? nonHistoricalPool.filter(c => typeof c.lat === 'number' && typeof c.lng === 'number')
     : nonHistoricalPool;
 
   let country;
@@ -1893,7 +2007,8 @@ function nextQuestion() {
   }
 
   currentQ = {type, country};
-  const badges = {capital:'🏛 Capital', flag:'🚩 Flag', map:'🗺 Map', continent:'🌍 Continent', 'match-flags':'🚩 Match Flags', 'match-capitals':'🏛 Match Capitals', 'capital-map':'🗺 Capital → Map', 'second-city':'🏙 Second City', 'population':'👥 Population', 'match-population':'👥 Match Population'};
+  const badges = {capital:'🏛 Capital', flag:'🚩 Flag', map:'🗺 Map', continent:'🌍 Continent', 'match-flags':'🚩 Match Flags', 'match-capitals':'🏛 Match Capitals', 'capital-map':'🗺 Capital → Map', 'second-city':'🏙 Second City', 'population':'👥 Population', 'match-population':'👥 Match Population',
+    borders: t().ui.badgeBorders, 'capital-to-country': t().ui.badgeCapitalToCountry, 'city-to-country': t().ui.badgeCityToCountry, 'pop-battle': t().ui.badgePopBattle, shape: t().ui.badgeShape, satellite: t().ui.badgeSatellite};
   document.getElementById('q-type-badge').textContent = badges[type] || type;
 
   const area = document.getElementById('answer-area');
@@ -1913,6 +2028,12 @@ function nextQuestion() {
   else if (type==='second-city') buildSecondCityQ(country, area, nonHistoricalPool);
   else if (type==='population') buildPopulationQ(country, area);
   else if (type==='match-population') buildMatchPopulationQ(nonHistoricalPool, area);
+  else if (type==='borders') buildBordersQ(country, area, nonHistoricalPool);
+  else if (type==='capital-to-country') buildCapitalToCountryQ(country, area, capitalPool);
+  else if (type==='city-to-country') buildCityToCountryQ(country, area, nonHistoricalPool);
+  else if (type==='pop-battle') buildPopBattleQ(country, area, nonHistoricalPool);
+  else if (type==='shape') buildShapeQ(country, area, nonHistoricalPool);
+  else if (type==='satellite') buildSatelliteQ(country, area, nonHistoricalPool);
 
   if (useTimer) startTimer(type);
 }
@@ -1926,7 +2047,8 @@ function startTimer(questionType) {
   const typeKey = questionType.startsWith('match') ? 'match'
     : questionType === 'map' ? 'map'
     : questionType === 'capital-map' ? 'capitalmap'
-    : (questionType === 'capital' || questionType === 'flag' || questionType === 'continent') && currentDiff === 'jeroen' ? 'typed'
+    : questionType === 'shape' || questionType === 'satellite' ? 'map'
+    : (['capital','flag','continent','borders','capital-to-country','city-to-country','nl-province-to-place'].includes(questionType)) && currentDiff === 'jeroen' ? 'typed'
     : 'simple';
   // For Jeroen typed questions (capital/flag) use typed timer
   const seconds = cfg.timers[typeKey] || 0;
@@ -3207,6 +3329,308 @@ function buildNLMatchQ(pool, area) {
   submitContainer.classList.add('visible');
 }
 
+// ── HELPER: preload world topojson (for borders/shape/satellite) ──
+let geoJsonLoadPromise = null;
+function ensureGeoJsonLoaded() {
+  if (geoJsonCache) return Promise.resolve();
+  if (!geoJsonLoadPromise) {
+    geoJsonLoadPromise = fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
+      .then(r => r.json())
+      .then(topo => {
+        topoCache = topo;
+        geoJsonCache = topojson.feature(topo, topo.objects.countries);
+        buildNeighborMap(topo);
+      })
+      .catch(() => { geoJsonLoadPromise = null; });
+  }
+  return geoJsonLoadPromise;
+}
+
+function computeBBox(geometry) {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  const visit = (coord) => {
+    if (typeof coord[0] === 'number') {
+      if (coord[0] < minX) minX = coord[0];
+      if (coord[0] > maxX) maxX = coord[0];
+      if (coord[1] < minY) minY = coord[1];
+      if (coord[1] > maxY) maxY = coord[1];
+    } else {
+      coord.forEach(visit);
+    }
+  };
+  visit(geometry.coordinates);
+  return [[minX, minY], [maxX, maxY]];
+}
+
+// ── HELPER: numeric typed input (used by Borders Jeroen) ──
+function buildTypedNumericInput(area, correctNum, placeholder) {
+  const wrapper = document.createElement('div'); wrapper.className = 'typed-answer-area';
+  const row = document.createElement('div'); row.className = 'typed-input-row';
+  const input = document.createElement('input');
+  input.type = 'number'; input.className = 'typed-input';
+  input.placeholder = placeholder; input.min = '0'; input.autocomplete = 'off';
+  const btn = document.createElement('button'); btn.className = 'typed-submit'; btn.textContent = t().ui.submitAnswer;
+  const hint = document.createElement('div'); hint.className = 'typed-hint'; hint.textContent = t().ui.typingHint;
+  const submit = () => {
+    if (awaitingNext || input.value === '') return;
+    stopTimer();
+    const correct = parseInt(input.value, 10) === correctNum;
+    input.disabled = true; btn.disabled = true;
+    input.classList.add(correct ? 'correct' : 'wrong');
+    if (!correct) { hint.textContent = `✓ ${correctNum}`; hint.style.color = 'var(--success)'; }
+    showFeedback(correct, correct ? t().ui.correct : t().ui.wrong(String(correctNum)));
+  };
+  btn.onclick = submit;
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+  row.appendChild(input); row.appendChild(btn);
+  wrapper.appendChild(row); wrapper.appendChild(hint);
+  area.appendChild(wrapper);
+  setTimeout(() => input.focus(), 100);
+}
+
+// ── BORDERS (World) ──
+function buildBordersQ(country, area, pool) {
+  document.getElementById('question-text').innerHTML = (currentDiff === 'jeroen')
+    ? t().ui.howManyBorders(localName(country))
+    : t().ui.whichBorders(localName(country));
+  if (!geoJsonCache || !neighborMap) {
+    ensureGeoJsonLoaded().then(() => renderBordersQ(country, area, pool));
+  } else {
+    renderBordersQ(country, area, pool);
+  }
+}
+function renderBordersQ(country, area, pool) {
+  const neighbors = neighborMap?.[country.iso];
+  if (!neighbors || neighbors.size === 0) return buildCapitalQ(country, area, pool);
+  if (currentDiff === 'jeroen') {
+    buildTypedNumericInput(area, neighbors.size, t().ui.typeNeighborCount);
+    return;
+  }
+  const neighborCandidates = pool.filter(c => c !== country && c.iso != null && neighbors.has(c.iso));
+  if (neighborCandidates.length === 0) return buildCapitalQ(country, area, pool);
+  const correctNeighbor = getRngItem(neighborCandidates) || neighborCandidates[0];
+  const nonNeighbors = pool.filter(c => c !== country && c.iso != null && !neighbors.has(c.iso));
+  const wrongs = shuffle(nonNeighbors).slice(0, 3);
+  buildChoices(shuffle([correctNeighbor, ...wrongs]), area, c=>localName(c),
+    c=>c===correctNeighbor, localName(correctNeighbor));
+}
+
+// ── CAPITAL → COUNTRY (reversal) ──
+function buildCapitalToCountryQ(country, area, pool) {
+  document.getElementById('question-text').innerHTML = t().ui.capitalOf(localCapital(country));
+  if (country.historical && gameSettings.jeroen_show_historical_label) {
+    document.getElementById('historical-note').style.display='block';
+    document.getElementById('historical-note').textContent = t().ui.historical;
+  }
+  if (currentDiff === 'jeroen') {
+    buildTypedInput(area, country.name, localName(country), t().ui.typeCountryForCapital);
+  } else {
+    const wrongs = shuffle(pool.filter(c => c !== country && c.capital !== country.capital)).slice(0, 3);
+    buildChoices(shuffle([country, ...wrongs]), area, c=>localName(c), c=>c===country, localName(country));
+  }
+}
+
+// ── CITY → COUNTRY (reversal) ──
+function buildCityToCountryQ(country, area, pool) {
+  const extra = COUNTRY_EXTRA[country.name];
+  if (!extra?.cities?.length) { nextQuestion(); return; }
+  const city = getRngItem(extra.cities) || extra.cities[0];
+  document.getElementById('question-text').innerHTML = t().ui.cityOf(city);
+  if (currentDiff === 'jeroen') {
+    buildTypedInput(area, country.name, localName(country), t().ui.typeCountryForCity);
+  } else {
+    const wrongs = shuffle(pool.filter(c => {
+      if (c === country) return false;
+      if (c.capital === city) return false;
+      const ex = COUNTRY_EXTRA[c.name];
+      if (ex?.cities?.includes(city)) return false;
+      return true;
+    })).slice(0, 3);
+    buildChoices(shuffle([country, ...wrongs]), area, c=>localName(c), c=>c===country, localName(country));
+  }
+}
+
+// ── POPULATION BATTLE (World) ──
+function buildPopBattleQ(country, area, pool) {
+  document.getElementById('question-text').innerHTML = t().ui.whichMorePop;
+  const extra = COUNTRY_EXTRA[country.name];
+  if (!extra?.pop) { nextQuestion(); return; }
+  const myPop = extra.pop;
+  const candidates = pool.filter(c => {
+    if (c === country) return false;
+    const e = COUNTRY_EXTRA[c.name];
+    if (!e?.pop) return false;
+    const ratio = e.pop > myPop ? e.pop / myPop : myPop / e.pop;
+    return ratio >= 1.2 && ratio <= 10;
+  });
+  if (candidates.length === 0) { nextQuestion(); return; }
+  const opponent = getRngItem(candidates) || candidates[0];
+  const winner = (myPop > COUNTRY_EXTRA[opponent.name].pop) ? country : opponent;
+  const choices = shuffle([country, opponent]);
+  const grid = document.createElement('div'); grid.className = 'choices-grid';
+  choices.forEach((c, i) => {
+    const btn = document.createElement('button'); btn.className = 'choice-btn';
+    btn.innerHTML = `<span class="choice-letter">${'AB'[i]}</span>${localName(c)}`;
+    btn.onclick = () => {
+      if (awaitingNext) return; stopTimer();
+      grid.querySelectorAll('.choice-btn').forEach((b, bi) => {
+        b.disabled = true;
+        const cc = choices[bi];
+        b.innerHTML = b.innerHTML + ` <span style="opacity:0.6;font-weight:400;">(${COUNTRY_EXTRA[cc.name].pop}M)</span>`;
+        if (cc === winner) b.classList.add('correct');
+      });
+      if (c !== winner) btn.classList.add('wrong');
+      showFeedback(c === winner, c === winner ? t().ui.correct : t().ui.wrong(localName(winner)));
+    };
+    grid.appendChild(btn);
+  });
+  area.appendChild(grid);
+}
+
+// ── SHAPE (World) ──
+function buildShapeQ(country, area, pool) {
+  document.getElementById('question-text').innerHTML = t().ui.whichCountryShape;
+  if (!geoJsonCache) {
+    ensureGeoJsonLoaded().then(() => renderShapeQ(country, area, pool));
+  } else {
+    renderShapeQ(country, area, pool);
+  }
+}
+function renderShapeQ(country, area, pool) {
+  const feature = geoJsonCache?.features.find(f => parseInt(f.id) === country.iso);
+  if (!feature) return buildCapitalQ(country, area, pool);
+  const bbox = computeBBox(feature.geometry);
+
+  const container = document.createElement('div');
+  container.style.cssText = 'width:100%;max-width:620px;height:300px;position:relative;background:#0b1220;border-radius:12px;overflow:hidden;margin:0 auto 12px;';
+  const mapDiv = document.createElement('div');
+  mapDiv.id = 'map'; mapDiv.style.cssText = 'width:100%;height:100%;';
+  container.appendChild(mapDiv);
+  area.appendChild(container);
+
+  const choicesArea = document.createElement('div');
+  choicesArea.style.cssText = 'width:100%;display:flex;justify-content:center;';
+  area.appendChild(choicesArea);
+  if (currentDiff === 'jeroen') {
+    buildTypedInput(choicesArea, country.name, localName(country), t().ui.typeCountry);
+  } else {
+    const wrongs = shuffle(pool.filter(c => c !== country)).slice(0, 3);
+    buildChoices(shuffle([country, ...wrongs]), choicesArea, c=>localName(c), c=>c===country, localName(country));
+  }
+
+  setTimeout(() => {
+    if (map) { map.remove(); map = null; }
+    mapboxgl.accessToken = '__MAPBOX_TOKEN__';
+    map = new mapboxgl.Map({
+      container: 'map',
+      style: { version: 8, sources: {}, layers: [{ id:'bg', type:'background', paint:{ 'background-color':'#0b1220' } }] },
+      interactive: false,
+      attributionControl: false,
+    });
+    map.on('load', () => {
+      map.addSource('country-src', { type:'geojson', data: feature });
+      map.addLayer({ id:'country-fill', type:'fill', source:'country-src', paint:{ 'fill-color':'#fbbf24', 'fill-opacity':0.85 } });
+      map.addLayer({ id:'country-line', type:'line', source:'country-src', paint:{ 'line-color':'#ffffff', 'line-width':1.5 } });
+      try { map.fitBounds(bbox, { padding: 40, animate: false, maxZoom: 6 }); } catch {}
+    });
+  }, 50);
+}
+
+// ── SATELLITE (World) ──
+function buildSatelliteQ(country, area, pool) {
+  document.getElementById('question-text').innerHTML = t().ui.whichCountrySatellite;
+  const proceed = () => renderSatelliteQ(country, area, pool);
+  if (!geoJsonCache) ensureGeoJsonLoaded().then(proceed); else proceed();
+}
+function renderSatelliteQ(country, area, pool) {
+  const feature = geoJsonCache?.features.find(f => parseInt(f.id) === country.iso);
+  const bbox = feature ? computeBBox(feature.geometry) : null;
+
+  const container = document.createElement('div');
+  container.style.cssText = 'width:100%;max-width:620px;height:300px;position:relative;background:#0b1220;border-radius:12px;overflow:hidden;margin:0 auto 12px;';
+  const mapDiv = document.createElement('div');
+  mapDiv.id = 'map'; mapDiv.style.cssText = 'width:100%;height:100%;';
+  container.appendChild(mapDiv);
+  area.appendChild(container);
+
+  const choicesArea = document.createElement('div');
+  choicesArea.style.cssText = 'width:100%;display:flex;justify-content:center;';
+  area.appendChild(choicesArea);
+  if (currentDiff === 'jeroen') {
+    buildTypedInput(choicesArea, country.name, localName(country), t().ui.typeCountry);
+  } else {
+    const wrongs = shuffle(pool.filter(c => c !== country)).slice(0, 3);
+    buildChoices(shuffle([country, ...wrongs]), choicesArea, c=>localName(c), c=>c===country, localName(country));
+  }
+
+  setTimeout(() => {
+    if (map) { map.remove(); map = null; }
+    mapboxgl.accessToken = '__MAPBOX_TOKEN__';
+    map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/mapbox/satellite-v9',
+      center: [country.lng, country.lat],
+      zoom: 4,
+      interactive: false,
+      attributionControl: false,
+    });
+    map.on('load', () => {
+      // Hide labels so they don't give away the country name
+      map.getStyle().layers.forEach(layer => {
+        if (layer.type === 'symbol') {
+          try { map.setLayoutProperty(layer.id, 'visibility', 'none'); } catch {}
+        }
+      });
+      if (bbox) { try { map.fitBounds(bbox, { padding: 30, animate: false, maxZoom: 6 }); } catch {} }
+    });
+  }, 50);
+}
+
+// ── PROVINCE → PLACE (NL reversal) ──
+function buildNLProvinceToPlaceQ(place, area, pool) {
+  document.getElementById('question-text').innerHTML = t().ui.whichInProvince(place.province);
+  if (currentDiff === 'jeroen') {
+    buildTypedInput(area, place.name, place.name, t().ui.typePlaceInProvince);
+  } else {
+    const wrongs = shuffle(pool.filter(p => p !== place && p.province !== place.province)).slice(0, 3);
+    if (wrongs.length < 3) { nextQuestion(); return; }
+    buildChoices(shuffle([place, ...wrongs]), area, p => p.name, p => p === place, place.name);
+  }
+}
+
+// ── POPULATION BATTLE (NL) ──
+function buildNLPopBattleQ(place, area, pool) {
+  document.getElementById('question-text').innerHTML = t().ui.whichMorePopNL;
+  if (!place?.pop) { nextQuestion(); return; }
+  const candidates = pool.filter(p => {
+    if (p === place || !p.pop) return false;
+    const ratio = p.pop > place.pop ? p.pop / place.pop : place.pop / p.pop;
+    return ratio >= 1.5 && ratio <= 50;
+  });
+  if (candidates.length === 0) { nextQuestion(); return; }
+  const opponent = getRngItem(candidates) || candidates[0];
+  const winner = (place.pop > opponent.pop) ? place : opponent;
+  const choices = shuffle([place, opponent]);
+  const grid = document.createElement('div'); grid.className = 'choices-grid';
+  choices.forEach((c, i) => {
+    const btn = document.createElement('button'); btn.className = 'choice-btn';
+    btn.innerHTML = `<span class="choice-letter">${'AB'[i]}</span>${c.name}`;
+    btn.onclick = () => {
+      if (awaitingNext) return; stopTimer();
+      grid.querySelectorAll('.choice-btn').forEach((b, bi) => {
+        b.disabled = true;
+        const cc = choices[bi];
+        b.innerHTML = b.innerHTML + ` <span style="opacity:0.6;font-weight:400;">(${cc.pop.toLocaleString()})</span>`;
+        if (cc === winner) b.classList.add('correct');
+      });
+      if (c !== winner) btn.classList.add('wrong');
+      showFeedback(c === winner, c === winner ? t().ui.correct : t().ui.wrong(winner.name));
+    };
+    grid.appendChild(btn);
+  });
+  area.appendChild(grid);
+}
+
 function pointInGeoJSON(point, feature) {
   const [px, py] = point;
   function inRing(ring) {
@@ -3685,6 +4109,14 @@ async function loadAdminSettings() {
     document.getElementById('setting-easter-ga-werken').checked = s.easter_ga_werken !== false;
     document.getElementById('setting-unlock-medium').value = s.unlock_medium_streak ?? 10;
     document.getElementById('setting-unlock-jeroen').value = s.unlock_jeroen_streak ?? 15;
+    document.getElementById('setting-qt-borders').checked = s.qt_borders !== false;
+    document.getElementById('setting-qt-capital-to-country').checked = s.qt_capital_to_country !== false;
+    document.getElementById('setting-qt-city-to-country').checked = s.qt_city_to_country !== false;
+    document.getElementById('setting-qt-pop-battle').checked = s.qt_pop_battle !== false;
+    document.getElementById('setting-qt-shape').checked = s.qt_shape !== false;
+    document.getElementById('setting-qt-satellite').checked = s.qt_satellite !== false;
+    document.getElementById('setting-qt-province-to-place').checked = s.qt_province_to_place !== false;
+    document.getElementById('setting-qt-nl-pop-battle').checked = s.qt_nl_pop_battle !== false;
   } catch {}
 }
 
@@ -3719,6 +4151,14 @@ async function saveSettings() {
     easter_ga_werken: document.getElementById('setting-easter-ga-werken').checked ? '1' : '0',
     unlock_medium_streak: Math.max(0, parseInt(document.getElementById('setting-unlock-medium').value) || 0),
     unlock_jeroen_streak: Math.max(0, parseInt(document.getElementById('setting-unlock-jeroen').value) || 0),
+    qt_borders: document.getElementById('setting-qt-borders').checked ? '1' : '0',
+    qt_capital_to_country: document.getElementById('setting-qt-capital-to-country').checked ? '1' : '0',
+    qt_city_to_country: document.getElementById('setting-qt-city-to-country').checked ? '1' : '0',
+    qt_pop_battle: document.getElementById('setting-qt-pop-battle').checked ? '1' : '0',
+    qt_shape: document.getElementById('setting-qt-shape').checked ? '1' : '0',
+    qt_satellite: document.getElementById('setting-qt-satellite').checked ? '1' : '0',
+    qt_province_to_place: document.getElementById('setting-qt-province-to-place').checked ? '1' : '0',
+    qt_nl_pop_battle: document.getElementById('setting-qt-nl-pop-battle').checked ? '1' : '0',
   };
   try {
     await fetch('/api/admin/settings', {
