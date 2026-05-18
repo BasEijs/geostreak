@@ -14,7 +14,7 @@
 <body>
 <div id="app">
 <!-- BUILD_MARKER: bump on every commit. Format: vYYYY-MM-DD-short-tag (see CLAUDE.md "Version Marker") -->
-<div id="build-version-badge" class="build-version-badge">v2026-05-18-borders-multi</div>
+<div id="build-version-badge" class="build-version-badge">v2026-05-18-capital-choices-nl</div>
 
 <!-- AUTH -->
 <div id="auth-screen" class="screen active">
@@ -1063,6 +1063,21 @@ const NL = {
     badgeAreaBattle: '📏 Oppervlakte-duel',
     badgeSandwich: '🥪 Sandwich',
     badgeBordersMulti: '🧭 Buren (multi)',
+    badgeCapital: '🏛 Hoofdstad',
+    badgeFlag: '🚩 Vlag',
+    badgeMap: '🗺 Kaart',
+    badgeContinent: '🌍 Continent',
+    badgeMatchFlags: '🚩 Vlaggen koppelen',
+    badgeMatchCapitals: '🏛 Hoofdsteden koppelen',
+    badgeCapitalMap: '🗺 Hoofdstad → Kaart',
+    badgeSecondCity: '🏙 Tweede stad',
+    badgePopulation: '👥 Bevolking',
+    badgeMatchPopulation: '👥 Bevolking koppelen',
+    badgeNLProvince: '🗺 Provincie',
+    badgeNLMap: '📍 Kaart',
+    badgeNLPopulation: '👥 Inwoners',
+    badgeNLMatch: '🔗 Koppelen',
+    wrongSecondCity: (c) => `Tweede stad: ${c}`,
   }
 };
 
@@ -1176,6 +1191,21 @@ const EN = {
     badgeAreaBattle: '📏 Area Battle',
     badgeSandwich: '🥪 Sandwich',
     badgeBordersMulti: '🧭 Borders (multi)',
+    badgeCapital: '🏛 Capital',
+    badgeFlag: '🚩 Flag',
+    badgeMap: '🗺 Map',
+    badgeContinent: '🌍 Continent',
+    badgeMatchFlags: '🚩 Match Flags',
+    badgeMatchCapitals: '🏛 Match Capitals',
+    badgeCapitalMap: '🗺 Capital → Map',
+    badgeSecondCity: '🏙 Second City',
+    badgePopulation: '👥 Population',
+    badgeMatchPopulation: '👥 Match Population',
+    badgeNLProvince: '🗺 Province',
+    badgeNLMap: '📍 Map',
+    badgeNLPopulation: '👥 Population',
+    badgeNLMatch: '🔗 Match',
+    wrongSecondCity: (c) => `Second city: ${c}`,
   }
 };
 
@@ -1224,6 +1254,10 @@ const NL_CAPITALS = {
 function localCapital(country) {
   if (currentLang === 'nl' && NL_CAPITALS[country.capital]) return NL_CAPITALS[country.capital];
   return country.capital;
+}
+function localCapitalName(name) {
+  if (currentLang === 'nl' && NL_CAPITALS[name]) return NL_CAPITALS[name];
+  return name;
 }
 
 // ── FUZZY MATCH ──
@@ -2012,7 +2046,7 @@ function nextQuestion() {
       place = getRandom(cfg.places);
     }
     currentQ = {type, place};
-    const nlBadges = {'nl-province':'🗺 Provincie','nl-map':'📍 Kaart','nl-population':'👥 Inwoners','nl-match':'🔗 Koppelen','nl-province-to-place': t().ui.badgeProvinceToPlace,'nl-pop-battle': t().ui.badgePopBattle};
+    const nlBadges = {'nl-province': t().ui.badgeNLProvince, 'nl-map': t().ui.badgeNLMap, 'nl-population': t().ui.badgeNLPopulation, 'nl-match': t().ui.badgeNLMatch, 'nl-province-to-place': t().ui.badgeProvinceToPlace, 'nl-pop-battle': t().ui.badgePopBattle};
     document.getElementById('q-type-badge').textContent = nlBadges[type] || type;
     const area = document.getElementById('answer-area');
     area.innerHTML=''; area.classList.remove('map-mode','match-mode');
@@ -2056,7 +2090,7 @@ function nextQuestion() {
   }
 
   currentQ = {type, country};
-  const badges = {capital:'🏛 Capital', flag:'🚩 Flag', map:'🗺 Map', continent:'🌍 Continent', 'match-flags':'🚩 Match Flags', 'match-capitals':'🏛 Match Capitals', 'capital-map':'🗺 Capital → Map', 'second-city':'🏙 Second City', 'population':'👥 Population', 'match-population':'👥 Match Population',
+  const badges = {capital: t().ui.badgeCapital, flag: t().ui.badgeFlag, map: t().ui.badgeMap, continent: t().ui.badgeContinent, 'match-flags': t().ui.badgeMatchFlags, 'match-capitals': t().ui.badgeMatchCapitals, 'capital-map': t().ui.badgeCapitalMap, 'second-city': t().ui.badgeSecondCity, population: t().ui.badgePopulation, 'match-population': t().ui.badgeMatchPopulation,
     borders: t().ui.badgeBorders, 'capital-to-country': t().ui.badgeCapitalToCountry, 'city-to-country': t().ui.badgeCityToCountry, 'pop-battle': t().ui.badgePopBattle, shape: t().ui.badgeShape, satellite: t().ui.badgeSatellite, landlocked: t().ui.badgeLandlocked, 'area-battle': t().ui.badgeAreaBattle, sandwich: t().ui.badgeSandwich, 'borders-multi': t().ui.badgeBordersMulti};
   document.getElementById('q-type-badge').textContent = badges[type] || type;
 
@@ -2158,7 +2192,7 @@ function buildCapitalQ(country, area, pool) {
     ['A','B','C','D'].forEach((letter, i) => {
       if (!choices[i]) return;
       const btn = document.createElement('button'); btn.className = 'choice-btn';
-      btn.innerHTML = `<span class="choice-letter">${letter}</span>${choices[i]}`;
+      btn.innerHTML = `<span class="choice-letter">${letter}</span>${localCapitalName(choices[i])}`;
       btn.onclick = () => {
         if (awaitingNext) return; stopTimer();
         grid.querySelectorAll('.choice-btn').forEach(b => {
@@ -2736,7 +2770,7 @@ function buildSecondCityQ(country, area, pool) {
         });
         if (choices[i] !== extra.secondCity) btn.classList.add('wrong');
         showFeedback(choices[i] === extra.secondCity,
-          choices[i] === extra.secondCity ? t().ui.correct : `Tweede stad: ${extra.secondCity}`);
+          choices[i] === extra.secondCity ? t().ui.correct : t().ui.wrongSecondCity(extra.secondCity));
       };
       grid.appendChild(btn);
     });

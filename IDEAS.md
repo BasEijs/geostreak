@@ -2,37 +2,52 @@
 
 Scratchpad for design alternatives we considered but didn't ship. Not a roadmap — just so they don't get lost.
 
-## Population MC — alternative difficulty knobs
+## Un-built question types (from the diversity brainstorm)
 
-The current implementation (shipped 2026-05-18) uses dynamic log-scale buckets in `buildPopulationQ` ([backend/public/index.html](backend/public/index.html)). It replaced the old "closest 3 numeric distractors" approach, which was too hard in Medium because the wrong answers were always within a few million of the correct value.
+Tier 1 shipped on 2026-05-18 (8 new question types: borders, capital→country, city→country, province→place, two population battles, shape, satellite). What's left:
 
-If buckets later feel too easy, or if we want more knobs to tune difficulty per-mode, these are the alternatives that were on the table:
+### Tier 2 — Small data add (one new field per country/place)
 
-### Spread distractors out (Millionaire-style)
+Each of these needs one new field added to `COUNTRY_EXTRA` (or a small lookup constant). Build cost per question is the same as a regular MC type once the data is in.
 
-Keep precise numeric MC, but instead of the 3 closest values, pick **1 close + 1 medium-far + 1 far** wrong answer. Restores some signal-from-knowledge while staying harder than buckets.
+- **Language MC** — add `languages: ["French"]` per country. "What language is spoken in Senegal?" — MC in Medium, typed in Jeroen. ~1h data, ~30 min build.
+- **Demonym MC** — add `demonym: "French"` per country. "What are people from Iceland called?" Same shape as language. ~1h data, ~20 min build.
+- **EU/NATO/UN membership** — store as `{eu, nato, un}` bools or a Set. Question shapes: "Is X in the EU?" (yes/no), or "Which of these is in NATO?" (MC). ~30 min data, ~30 min build.
+- **Year of independence** — add `independence: 1776`. MC by decade in Medium, exact ± tolerance in Jeroen. Hardest data to source consistently (contested cases — UK, Japan). ~2h data, ~30 min build.
+- **Currency text MC** — add `currency: "Euro"`. "What currency does Portugal use?" or reverse. ~1h data, ~30 min build.
+- **Borders MC — NL provinces variant** — build a 12-province adjacency map by hand. "Which province borders Gelderland?" MC. ~15 min data, ~30 min build.
+- **Borders multi-select (World)** — Bas's original idea was multi-select, but Tier 1 shipped single-select MC. A multi-select variant ("pick all countries that border France") would add a different question feel and reward deeper knowledge. Needs a new UI pattern (checkboxes + submit). ~1h.
+- **Time zone MC** — add `tz: "UTC+1"` per country. "Which UTC offset is Argentina in?" Ignore DST. Natural battle variant: "Is it later right now in Tokyo or Mumbai?" ~1h data, ~30 min build.
+- **Driving side** — add `drivingSide: "right"|"left"`. Quick yes/no or "pick the one that drives on the left." Trivia-feel question that mixes up rhythm. ~30 min data, ~20 min build.
+- **Calling code MC** — add `callingCode: "+33"`. Bidirectional: "+47 is which country?" or "What's Japan's calling code?" ~45 min data, ~30 min build.
+- **Country TLD MC** — add `tld: ".nl"`. Same shape as calling code. Could combine with calling code into a single "internet/phone identity" question type. ~45 min data, ~30 min build.
+- **Landlocked or coastal** — add `landlocked: true`. "Which of these 4 is landlocked?" MC. Doubles as a teaching question — most players underestimate how many landlocked countries there are. ~30 min data, ~20 min build.
+- **Hemisphere** — *no new data needed* if capital coords are already in place. "Northern or Southern hemisphere?" yes/no, or a 4-way N/S × E/W picker. ~0 data, ~30 min build.
+- **NL — provinciehoofdstad** — 12-entry hand-built map. "Wat is de hoofdstad van Drenthe?" → Assen. Symmetric pair to the existing NL province question. ~10 min data, ~30 min build.
+- **Flag color count / palette** — add `flagColors: ["red","white","blue"]` per country. "How many colors in this flag?" or "Which flag uses only red and white?" Reuses existing flag asset. ~1.5h data (some judgement calls on what counts as a color), ~30 min build.
+- **Country anagram** — *no data add*. Scramble the letters of a country or capital name; type the unscrambled answer. Pure algorithmic — gives Jeroen Mode a wordplay variant. ~0 data, ~30 min build.
 
-- Could be the right fit for Jeroen MC if buckets ever feel too easy there.
-- Implementation: same shape as the old code, but sort by closeness and stratify the picks (e.g., closest, ~3× away, ~10× away).
+### Tier 3 — Bigger data lift
 
-### Typed with wide margin
+- **Higher/lower elevation** — highest-peak metres per country. ~120 entries to source. Same "battle" UI as population.
+- **Higher/lower GDP or HDI** — needs GDP/HDI per country. Politically sensitive when out of date. Same "battle" UI.
+- **Closer/further** — needs country center coords (cheap from topojson centroid). "Is Algeria closer to Spain than to Egypt?" The novelty is small though — feels niche.
+- **River longer/shorter** — new `RIVERS` dataset, ~50 famous rivers with lengths. Same "battle" UI.
+- **Continent/region sorting variants** — reuses existing match infra. Tag countries with finer regions (Balkans, SE Asia, Maghreb) and sort by those. Needs a `region` field per country.
+- **Area battle** — add `area_km2` per country. Same battle UI as population. "Bigger: Mongolia or Argentina?" Surprise factor (Mongolia is bigger than most expect) makes it genuinely educational. ~120 entries, trivially sourceable from Wikipedia.
+- **Country sandwich** — uses the borders graph that the Tier 2 multi-select idea would already build. "Which country lies between France and Spain?" → Andorra. Or "Which country borders both Germany and Italy?" → Austria/Switzerland. Algorithmic; no new data once borders exist.
+- **UNESCO World Heritage count battle** — count of sites per country. "More UNESCO sites: Italy or France?" (Italy by 1 at last check). Surprising answers, same battle UI. ~120 entries.
+- **Köppen climate MC** — primary climate code per country (Af/BWh/Cfb/etc.) collapsed into 5–6 human-readable buckets ("hot desert", "temperate oceanic", etc.). "What's Egypt's main climate?" Educational and teachable. ~2h data (judgement calls on countries that span zones), ~30 min build.
+- **Coord → country click** — give a lat/lon, ask user to click the country it lands in. Reuses existing map-click infra; data is just a curated list of "interesting" coordinates (or random points filtered to land via the existing TopoJSON). ~1h to curate a good seed list.
 
-Same UX as Jeroen typed mode (`medium_pop_margin` setting, default 20%) but with a much larger margin in Medium — e.g. 40–50%. Removes MC entirely.
+### Tier 4 — Hard (external assets, licensing, hosting)
 
-- Teaches actual numbers rather than ranges.
-- Risk: typing on a phone or with a number-pad is fiddly compared to clicking; the game is desktop-only but still.
-- Implementation: just route Medium to the typed branch with a separate `medium_pop_margin_wide` setting (or repurpose the existing one).
+- **Landmark photos** — show a photo of the Eiffel Tower / Colosseum / Christ the Redeemer; ask which country/city. Need ~100+ photo URLs with confirmed licenses (Wikimedia CC works but you'd want a stable host) and a curated landmark→country mapping. Photo loading adds latency. NL variant: Rijksmuseum, Euromast, etc.
+- **Currency banknote/coin images** — same hosting/licensing problem as landmarks. Harder to source clean images.
+- **License plate recognition** — niche; very few clean image sources; plate format varies a lot. Marginal value vs effort.
 
-### Raise the population_min threshold for world mode
+### Notes for whoever picks these up
 
-Currently `population_min` (default 5,000) only filters NL mode. World mode asks population for any country with `extra.pop` set. Adding a `world_population_min` setting (e.g. 20M) would restrict the pool to well-known large countries.
-
-- Smallest code change of the four.
-- Doesn't change the question itself — just makes the pool less obscure.
-- Could be combined with any of the above.
-
-### Notes for whoever picks this up
-
-- The bucket stops `[0, 3, 10, 30, 100, 300, 1000, ∞]` are hardcoded. If we want admin control, those become a config string.
-- The `population_mc` setting is global (not per-difficulty). If we want different Medium vs Jeroen behavior (e.g. buckets for Medium, spread distractors for Jeroen), we'd need to split that toggle or branch on `currentDiff` inside `buildPopulationQ`.
-- Only ~42 countries currently have `pop` data in `COUNTRY_EXTRA`. Whatever direction we go, expanding that pool would help variety more than tweaking the question format.
+- The 4 "battle" ideas (elevation, GDP, HDI, river length) all share the same 2-choice UI we already shipped in `buildPopBattleQ` — they'd be near-clones with different fields. Worth factoring out a generic `buildBattleQ(field, label)` helper if more than one of these lands.
+- Tier 4 photo-based questions need a thinking pass on hosting before any build work: hotlinking Wikimedia is fragile, but bundling images blows up the Docker image size.
+- Anything with year/date data (independence, founding) should store ISO dates not just years, so we can format per language later.
