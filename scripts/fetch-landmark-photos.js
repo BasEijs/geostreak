@@ -99,9 +99,7 @@ async function fetchThumbnail(wiki) {
   if (!res.ok) return null;
   const data = await res.json();
   const src = data?.thumbnail?.source;
-  if (!src) return null;
-  // Upsize: replace the Npx- segment with 600px
-  return src.replace(/\/\d+px-/, '/600px-');
+  return src || null;
 }
 
 async function main() {

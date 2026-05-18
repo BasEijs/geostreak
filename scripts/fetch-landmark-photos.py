@@ -101,10 +101,7 @@ def fetch_thumbnail(wiki):
         with urllib.request.urlopen(req, timeout=10) as r:
             data = json.loads(r.read())
         src = data.get("thumbnail", {}).get("source")
-        if not src:
-            return None
-        # Upsize: replace the Npx- thumbnail segment with 600px
-        return re.sub(r'/\d+px-', '/600px-', src)
+        return src
     except Exception as e:
         return None
 
