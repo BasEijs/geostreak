@@ -108,6 +108,7 @@ const DEFAULT_SETTINGS = {
   qt_area_battle: '1',
   qt_sandwich: '1',
   qt_borders_multi: '1',
+  qt_landmark: '1',
 };
 for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
   try { db.prepare('INSERT INTO settings (key, value) VALUES (?, ?)').run(key, value); } catch {}
@@ -213,6 +214,7 @@ app.get('/api/settings', (req, res) => {
     qt_area_battle: getSetting('qt_area_battle') !== '0',
     qt_sandwich: getSetting('qt_sandwich') !== '0',
     qt_borders_multi: getSetting('qt_borders_multi') !== '0',
+    qt_landmark: getSetting('qt_landmark') !== '0',
   });
 });
 
@@ -334,6 +336,7 @@ app.post('/api/admin/settings', auth, adminOnly, (req, res) => {
     'qt_borders', 'qt_capital_to_country', 'qt_city_to_country', 'qt_pop_battle',
     'qt_shape', 'qt_satellite', 'qt_province_to_place', 'qt_nl_pop_battle',
     'qt_landlocked', 'qt_area_battle', 'qt_sandwich', 'qt_borders_multi',
+    'qt_landmark',
   ];
   for (const key of allowed) {
     if (req.body[key] !== undefined) {

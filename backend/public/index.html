@@ -14,7 +14,7 @@
 <body>
 <div id="app">
 <!-- BUILD_MARKER: bump on every commit. Format: vYYYY-MM-DD-short-tag (see CLAUDE.md "Version Marker") -->
-<div id="build-version-badge" class="build-version-badge">v2026-05-18-capital-choices-nl</div>
+<div id="build-version-badge" class="build-version-badge">v2026-05-18-landmark-question</div>
 
 <!-- AUTH -->
 <div id="auth-screen" class="screen active">
@@ -462,6 +462,10 @@
               <label class="switch"><input type="checkbox" id="setting-qt-satellite" checked><span class="slider"></span></label>
             </div>
             <div class="setting-row">
+              <div class="setting-label">Landmark photo<span>Identify the country from a photo of a landmark.</span></div>
+              <label class="switch"><input type="checkbox" id="setting-qt-landmark" checked><span class="slider"></span></label>
+            </div>
+            <div class="setting-row">
               <div class="setting-label">Landlocked<span>"Which of these is landlocked?" MC.</span></div>
               <label class="switch"><input type="checkbox" id="setting-qt-landlocked" checked><span class="slider"></span></label>
             </div>
@@ -607,6 +611,7 @@
 
 <script src="data/countries.js?v=__APP_VERSION__"></script>
 <script src="data/nl-places.js?v=__APP_VERSION__"></script>
+<script src="data/landmarks.js?v=__APP_VERSION__"></script>
 
 <script>
 // Dynamic filtering based on gameSettings thresholds
@@ -672,6 +677,7 @@ let gameSettings = {
   qt_area_battle: true,
   qt_sandwich: true,
   qt_borders_multi: true,
+  qt_landmark: true,
 };
 
 // Per-lane unlock chain: each (region, mode) lane has its own gate.
@@ -739,6 +745,7 @@ function getDiffConfig(diff) {
         ...(gameSettings.qt_area_battle ? ["area-battle"] : []),
         ...(gameSettings.qt_sandwich ? ["sandwich"] : []),
         ...(gameSettings.qt_borders_multi ? ["borders-multi"] : []),
+        ...(gameSettings.qt_landmark ? ["landmark"] : []),
       ],
       mapThreshold: 800,
       timers: {
@@ -762,6 +769,7 @@ function getDiffConfig(diff) {
         ...(gameSettings.qt_area_battle ? ["area-battle"] : []),
         ...(gameSettings.qt_sandwich ? ["sandwich","sandwich"] : []),
         ...(gameSettings.qt_borders_multi ? ["borders-multi","borders-multi"] : []),
+        ...(gameSettings.qt_landmark ? ["landmark","landmark"] : []),
       ],
       mapThreshold: gameSettings.jeroen_map_threshold,
       timers: {
@@ -1048,6 +1056,7 @@ const NL = {
     whichMorePopNL: "Welke plaats heeft <span>meer inwoners</span>?",
     whichCountryShape: "Welk land heeft deze vorm?",
     whichCountrySatellite: "Welk land zie je hier?",
+    whichCountryLandmark: "In welk land staat dit gebouw of monument?",
     whichLandlocked: "Welk van deze landen heeft <span>geen kustlijn</span>?",
     whichLargerArea: "Welk land is <span>groter in oppervlakte</span>?",
     whichBordersBoth: (a, b) => `Welk land grenst aan zowel <span>${a}</span> als <span>${b}</span>?`,
@@ -1059,6 +1068,7 @@ const NL = {
     badgePopBattle: '⚖️ Bevolking-duel',
     badgeShape: '🌐 Vorm',
     badgeSatellite: '🛰 Satelliet',
+    badgeLandmark: '🏛 Monument',
     badgeLandlocked: '🏔 Geen kust',
     badgeAreaBattle: '📏 Oppervlakte-duel',
     badgeSandwich: '🥪 Sandwich',
@@ -1176,6 +1186,7 @@ const EN = {
     whichMorePopNL: "Which place has <span>more inhabitants</span>?",
     whichCountryShape: "Which country has this shape?",
     whichCountrySatellite: "Which country is shown here?",
+    whichCountryLandmark: "In which country is this landmark?",
     whichLandlocked: "Which of these countries is <span>landlocked</span>?",
     whichLargerArea: "Which country has a <span>larger area</span>?",
     whichBordersBoth: (a, b) => `Which country borders both <span>${a}</span> and <span>${b}</span>?`,
@@ -1187,6 +1198,7 @@ const EN = {
     badgePopBattle: '⚖️ Population Battle',
     badgeShape: '🌐 Shape',
     badgeSatellite: '🛰 Satellite',
+    badgeLandmark: '🏛 Landmark',
     badgeLandlocked: '🏔 Landlocked',
     badgeAreaBattle: '📏 Area Battle',
     badgeSandwich: '🥪 Sandwich',
@@ -2076,6 +2088,7 @@ function nextQuestion() {
     : (type === 'city-to-country' || type === 'pop-battle' || type === 'area-battle') ? (extraPool.length >= 4 ? extraPool : nonHistoricalPool)
     : (type === 'borders' || type === 'shape' || type === 'sandwich' || type === 'borders-multi') ? nonHistoricalPool.filter(c => c.iso != null)
     : type === 'satellite' ? nonHistoricalPool.filter(c => typeof c.lat === 'number' && typeof c.lng === 'number')
+    : type === 'landmark' ? nonHistoricalPool.filter(c => LANDMARKS.some(l => l.iso === c.iso))
     : type === 'landlocked' ? nonHistoricalPool.filter(c => LANDLOCKED.has(c.name))
     : nonHistoricalPool;
 
@@ -2091,7 +2104,7 @@ function nextQuestion() {
 
   currentQ = {type, country};
   const badges = {capital: t().ui.badgeCapital, flag: t().ui.badgeFlag, map: t().ui.badgeMap, continent: t().ui.badgeContinent, 'match-flags': t().ui.badgeMatchFlags, 'match-capitals': t().ui.badgeMatchCapitals, 'capital-map': t().ui.badgeCapitalMap, 'second-city': t().ui.badgeSecondCity, population: t().ui.badgePopulation, 'match-population': t().ui.badgeMatchPopulation,
-    borders: t().ui.badgeBorders, 'capital-to-country': t().ui.badgeCapitalToCountry, 'city-to-country': t().ui.badgeCityToCountry, 'pop-battle': t().ui.badgePopBattle, shape: t().ui.badgeShape, satellite: t().ui.badgeSatellite, landlocked: t().ui.badgeLandlocked, 'area-battle': t().ui.badgeAreaBattle, sandwich: t().ui.badgeSandwich, 'borders-multi': t().ui.badgeBordersMulti};
+    borders: t().ui.badgeBorders, 'capital-to-country': t().ui.badgeCapitalToCountry, 'city-to-country': t().ui.badgeCityToCountry, 'pop-battle': t().ui.badgePopBattle, shape: t().ui.badgeShape, satellite: t().ui.badgeSatellite, landlocked: t().ui.badgeLandlocked, 'area-battle': t().ui.badgeAreaBattle, sandwich: t().ui.badgeSandwich, 'borders-multi': t().ui.badgeBordersMulti, landmark: t().ui.badgeLandmark};
   document.getElementById('q-type-badge').textContent = badges[type] || type;
 
   const area = document.getElementById('answer-area');
@@ -2121,6 +2134,7 @@ function nextQuestion() {
   else if (type==='area-battle') buildAreaBattleQ(country, area, nonHistoricalPool);
   else if (type==='sandwich') buildSandwichQ(country, area, nonHistoricalPool);
   else if (type==='borders-multi') buildBordersMultiQ(country, area, nonHistoricalPool);
+  else if (type==='landmark') buildLandmarkQ(country, area, nonHistoricalPool);
 
   if (useTimer) startTimer(type);
 }
@@ -2135,7 +2149,7 @@ function startTimer(questionType) {
     : questionType === 'map' ? 'map'
     : questionType === 'capital-map' ? 'capitalmap'
     : questionType === 'shape' || questionType === 'satellite' ? 'map'
-    : (['capital','flag','continent','borders','capital-to-country','city-to-country','nl-province-to-place','sandwich'].includes(questionType)) && currentDiff === 'jeroen' ? 'typed'
+    : (['capital','flag','continent','borders','capital-to-country','city-to-country','nl-province-to-place','sandwich','landmark'].includes(questionType)) && currentDiff === 'jeroen' ? 'typed'
     : 'simple';
   // For Jeroen typed questions (capital/flag) use typed timer
   const seconds = cfg.timers[typeKey] || 0;
@@ -3859,6 +3873,30 @@ function renderSatelliteQ(country, area, pool) {
   }, 50);
 }
 
+// ── LANDMARK PHOTO ──
+function buildLandmarkQ(country, area, pool) {
+  const options = LANDMARKS.filter(l => l.iso === country.iso);
+  if (!options.length) return buildCapitalQ(country, area, pool);
+  const landmark = getRandom(options);
+  document.getElementById('question-text').innerHTML = t().ui.whichCountryLandmark;
+
+  const imgWrap = document.createElement('div');
+  imgWrap.style.cssText = 'width:100%;max-width:620px;height:300px;margin:0 auto 12px;border-radius:12px;overflow:hidden;background:#0b1220;';
+  const img = document.createElement('img');
+  img.src = landmark.photo_url;
+  img.alt = 'landmark';
+  img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+  imgWrap.appendChild(img);
+  area.appendChild(imgWrap);
+
+  if (currentDiff === 'jeroen') {
+    buildTypedInput(area, country.name, localName(country), t().ui.typeCountry);
+  } else {
+    const wrongs = getWrongAnswers(country, 'name', pool.filter(c => !c.historical));
+    buildChoices(shuffle([country, ...wrongs]), area, c => localName(c), c => c === country, localName(country));
+  }
+}
+
 // ── PROVINCE → PLACE (NL reversal) ──
 function buildNLProvinceToPlaceQ(place, area, pool) {
   document.getElementById('question-text').innerHTML = t().ui.whichInProvince(place.province);
@@ -4394,6 +4432,7 @@ async function loadAdminSettings() {
     document.getElementById('setting-qt-area-battle').checked = s.qt_area_battle !== false;
     document.getElementById('setting-qt-sandwich').checked = s.qt_sandwich !== false;
     document.getElementById('setting-qt-borders-multi').checked = s.qt_borders_multi !== false;
+    document.getElementById('setting-qt-landmark').checked = s.qt_landmark !== false;
   } catch {}
 }
 
@@ -4440,6 +4479,7 @@ async function saveSettings() {
     qt_area_battle: document.getElementById('setting-qt-area-battle').checked ? '1' : '0',
     qt_sandwich: document.getElementById('setting-qt-sandwich').checked ? '1' : '0',
     qt_borders_multi: document.getElementById('setting-qt-borders-multi').checked ? '1' : '0',
+    qt_landmark: document.getElementById('setting-qt-landmark').checked ? '1' : '0',
   };
   try {
     await fetch('/api/admin/settings', {
