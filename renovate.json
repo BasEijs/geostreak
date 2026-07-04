@@ -1,0 +1,105 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":enableVulnerabilityAlerts"
+  ],
+  "dependencyDashboard": true,
+  "dependencyDashboardTitle": "Renovate Dependency Dashboard",
+  "dependencyDashboardHeader": "This issue contains a list of Renovate updates and statuses.",
+  "timezone": "Europe/Amsterdam",
+  "assigneesFromCodeOwners": true,
+  "reviewers": ["BasEijs"],
+  "assignAutomerge": true,
+  "enabledManagers": [
+    "npm",
+    "dockerfile",
+    "github-actions"
+  ],
+  "labels": [
+    "renovate"
+  ],
+  "ignoreUnstable": true,
+  "prHourlyLimit": 6,
+  "prConcurrentLimit": 10,
+  "pinDigests": true,
+  "automerge": true,
+  "automergeType": "pr",
+  "platformAutomerge": true,
+  "pruneStaleBranches": true,
+  "recreateWhen": "always",
+  "dependencyDashboardAutoclose": false,
+  "rebaseWhen": "behind-base-branch",
+  "branchConcurrentLimit": 10,
+  "osvVulnerabilityAlerts": true,
+  "vulnerabilityAlerts": {
+    "addLabels": ["security"],
+    "schedule": ["at any time"],
+    "minimumReleaseAge": "0 hours"
+  },
+  "packageRules": [
+    {
+      "description": "npm: group non-major devDependencies and dependencies, hold new releases briefly",
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "minimumReleaseAge": "3 days"
+    },
+    {
+      "description": "npm: keep major bumps in their own PR for manual review",
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["major"],
+      "automerge": false
+    },
+    {
+      "description": "GitHub Actions: pin to digests and group updates",
+      "matchManagers": ["github-actions"],
+      "groupName": "github-actions",
+      "groupSlug": "github-actions",
+      "pinDigests": true
+    },
+    {
+      "description": "Docker: allow only stable SemVer or CalVer",
+      "matchDatasources": ["docker"],
+      "allowedVersions": "/^(?:\\d+\\.\\d+\\.\\d+(?:[-._][A-Za-z0-9]+)?|20\\d{2}\\.\\d{1,2}(?:\\.\\d+)?)$/i"
+    },
+    {
+      "description": "Docker: reject prereleases globally",
+      "matchDatasources": ["docker"],
+      "allowedVersions": "!/(alpha|beta|rc|canary|nightly|snapshot|preview|experimental|dev)/i"
+    },
+    {
+      "description": "Docker: reject hash-only and channel tags",
+      "matchDatasources": ["docker"],
+      "allowedVersions": "!/^(?:latest|stable|edge|release|rolling|master|main)$|^[a-f0-9]{7,}$/i"
+    },
+    {
+      "description": "Docker: minimum release age to avoid fresh-tag churn",
+      "matchDatasources": ["docker"],
+      "minimumReleaseAge": "12 hours"
+    },
+    {
+      "description": "Docker: keep majors separate from minor/patch",
+      "matchDatasources": ["docker"],
+      "separateMajorMinor": true
+    },
+    {
+      "description": "Docker: skip digest-only updates for versioned images",
+      "matchDatasources": ["docker"],
+      "matchUpdateTypes": ["digest"],
+      "matchCurrentVersion": "!/^(latest|stable|edge|release|rolling|master|main)$/i",
+      "enabled": false
+    }
+  ],
+  "hostRules": [
+    {
+      "matchHost": "registry-1.docker.io",
+      "hostType": "docker",
+      "timeout": 120000
+    },
+    {
+      "matchHost": "docker.io",
+      "hostType": "docker",
+      "timeout": 120000
+    }
+  ]
+}
