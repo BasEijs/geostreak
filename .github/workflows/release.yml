@@ -1,0 +1,116 @@
+name: Release & Deploy
+
+on:
+  push:
+    branches: [ main ]
+
+# Serialize runs so tag creation and releases never race on quick successive pushes.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # create tags + GitHub releases
+      packages: write   # push to ghcr.io
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0  # full history + tags for git-cliff
+
+      - name: Install git-cliff
+        run: |
+          GIT_CLIFF_VERSION=2.6.1
+          curl -sSL "https://github.com/orhun/git-cliff/releases/download/v${GIT_CLIFF_VERSION}/git-cliff-${GIT_CLIFF_VERSION}-x86_64-unknown-linux-gnu.tar.gz" | tar -xz
+          sudo install -m 0755 "git-cliff-${GIT_CLIFF_VERSION}/git-cliff" /usr/local/bin/git-cliff
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Determine version and generate release notes
+        id: version
+        run: |
+          set -euo pipefail
+
+          # Latest strict-semver tag (legacy tags like v0.5-stable are ignored).
+          LATEST=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n1 || true)
+
+          if [ -z "$LATEST" ]; then
+            # First run: seed the baseline version instead of git-cliff's 0.1.0 default.
+            VERSION=v0.5.0
+            if git rev-parse -q --verify refs/tags/v0.5-stable >/dev/null; then
+              git-cliff --config cliff.toml v0.5-stable..HEAD --tag "$VERSION" --output NOTES.md
+            else
+              git-cliff --config cliff.toml --tag "$VERSION" --output NOTES.md
+            fi
+          else
+            # Compute the next semver from Conventional Commits since the last tag.
+            VERSION=$(git-cliff --config cliff.toml --bumped-version)
+            git-cliff --config cliff.toml --unreleased --tag "$VERSION" --output NOTES.md
+          fi
+
+          # A new release only happens when the computed tag doesn't exist yet.
+          if git rev-parse -q --verify "refs/tags/${VERSION}" >/dev/null; then
+            NEW_RELEASE=false
+          else
+            NEW_RELEASE=true
+          fi
+
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "docker_version=${VERSION#v}" >> "$GITHUB_OUTPUT"
+          echo "new_release=${NEW_RELEASE}" >> "$GITHUB_OUTPUT"
+
+          echo "Computed version: ${VERSION} (new_release=${NEW_RELEASE})"
+          echo "----- release notes -----"
+          cat NOTES.md
+
+      - name: Create and push git tag
+        if: steps.version.outputs.new_release == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "${{ steps.version.outputs.version }}" -m "${{ steps.version.outputs.version }}"
+          git push origin "${{ steps.version.outputs.version }}"
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute image tags
+        id: tags
+        run: |
+          {
+            echo "list<<EOF"
+            echo "ghcr.io/baseijs/geostreak:latest"
+            if [ "${{ steps.version.outputs.new_release }}" = "true" ]; then
+              echo "ghcr.io/baseijs/geostreak:${{ steps.version.outputs.docker_version }}"
+            fi
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25 # v5
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ steps.tags.outputs.list }}
+          build-args: |
+            APP_VERSION=${{ steps.version.outputs.docker_version }}
+            GIT_SHA=${{ github.sha }}
+          labels: |
+            org.opencontainers.image.version=${{ steps.version.outputs.docker_version }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+
+      - name: Create GitHub Release
+        if: steps.version.outputs.new_release == 'true'
+        uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: ${{ steps.version.outputs.version }}
+          body_path: NOTES.md

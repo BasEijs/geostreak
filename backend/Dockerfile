@@ -5,5 +5,9 @@ RUN apk add --no-cache --virtual .build-deps python3 make g++ \
     && npm install --omit=dev \
     && apk del .build-deps
 COPY . .
+ARG APP_VERSION=dev
+ARG GIT_SHA=unknown
+ENV APP_VERSION=$APP_VERSION
+ENV GIT_SHA=$GIT_SHA
 EXPOSE 3000
 CMD ["node", "server.js"]

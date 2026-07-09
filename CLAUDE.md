@@ -30,7 +30,7 @@ geostreak/
 ├── docker-compose.yml         # Local dev compose (NOT the production one)
 ├── .github/
 │   └── workflows/
-│       └── docker-build.yml   # CI/CD: builds Docker image, pushes to ghcr.io
+│       └── release.yml        # CI/CD: auto-versions, builds Docker image, pushes to ghcr.io, publishes GitHub Release
 └── CLAUDE.md
 ```
 
@@ -46,7 +46,7 @@ The server handles:
 - **Scores**: `/api/scores` (POST to save, GET for leaderboard) — scores are stored per `user_id`, `difficulty`, `mode`, and `region`
 - **Settings**: `/api/settings` (GET public settings), `/api/admin/settings` (POST, admin-only) — key-value pairs in a `settings` table
 - **Admin**: `/api/admin/users` — user management, admin-only
-- **Version**: `/api/version` — returns `APP_VERSION` and `GIT_SHA` from build args
+- **Version**: the deployed image is version-tagged (`ghcr.io/baseijs/geostreak:X.Y.Z`) and `APP_VERSION`/`GIT_SHA` are injected as env vars at build time (see "Deployment & CI/CD"). There is no `/api/version` endpoint.
 
 Database tables:
 - `users` — id, username, password (bcrypt), is_admin
@@ -194,14 +194,27 @@ Accessible only to admin users. Organized into collapsible `<details>` sections:
 
 ## Deployment & CI/CD
 
-### GitHub Actions (`.github/workflows/docker-build.yml`)
+### GitHub Actions (`.github/workflows/release.yml`)
 
-On push to `main`:
-1. Builds Docker image from `./backend`
-2. Tags with `latest` only
-3. Pushes to `ghcr.io/baseijs/geostreak`
+On every push to `main`, the **Release & Deploy** workflow runs and:
+1. Uses [`git-cliff`](https://git-cliff.org) + `cliff.toml` to compute the next semantic version from the Conventional Commits made since the last `vX.Y.Z` tag.
+2. Creates and pushes that git tag (`vX.Y.Z`), using the built-in `GITHUB_TOKEN`.
+3. Builds the Docker image from `./backend` and pushes it to `ghcr.io/baseijs/geostreak` tagged with **both** the version (`:X.Y.Z`) and `:latest`. It also sets OCI image labels (`org.opencontainers.image.version`, `.revision`, `.source`) and passes `APP_VERSION`/`GIT_SHA` build args.
+4. Publishes a **GitHub Release** named `vX.Y.Z` whose body is the git-cliff-generated, grouped changelog for that version.
 
-(The workflow does **not** currently pass `APP_VERSION` or `GIT_SHA` as build args — so `__APP_VERSION__` in the HTML always resolves to `'dev'` in production. Visible versioning is handled by the hand-bumped marker in [`backend/public/index.html`](backend/public/index.html) — see "Version Marker" below.)
+Komodo still deploys `:latest`, so the deploy cadence is unchanged — the version tag and release are added on top.
+
+**First run**: there is no strict-semver tag yet (the legacy `v0.5-stable` tag is deliberately ignored), so the workflow seeds the version at **`v0.5.0`** and generates its notes from `v0.5-stable..HEAD`. Every subsequent push bumps from there.
+
+**Commit conventions (required for correct versioning):** commit subjects — and, when squash-merging, the PR/squash title — MUST follow [Conventional Commits](https://www.conventionalcommits.org):
+- `feat: ...` → **minor** bump (new user-facing feature)
+- `fix: ...` → **patch** bump (bug fix)
+- `feat!: ...` or a `BREAKING CHANGE:` footer → **major** bump
+- `docs:`, `refactor:`, `perf:`, `style:`, `test:`, `ci:`, `build:`, `chore:` → grouped in the notes; still produce at least a **patch** bump
+- `chore(deps): ...` / `chore(release): ...` → skipped in the notes (used for Renovate/release noise)
+- Merge commits (`Merge ...`) are skipped.
+
+Non-conventional subjects still work but land under a generic "🔧 Other Changes" group and only ever trigger a patch bump — so use the prefixes to get accurate semver and clean notes. Because every push to `main` contains at least one commit, every push produces at least a patch release.
 
 ### Docker
 
@@ -288,4 +301,4 @@ Format: `v<YYYY-MM-DD>-<short-kebab-tag>`
 - Tag: 1–4 kebab-case words describing the change. Keep it terse — it's a marker, not a changelog. Examples: `versioning`, `nl-province-rev`, `duel-rematch-fix`, `lock-icon-polish`.
 - If you make multiple commits in one day, suffix with `-2`, `-3`, etc.: `v2026-05-18-versioning-2`.
 
-There is **no** `/api/version` endpoint and CI does **not** inject a build number — earlier versions of this doc claimed both, but neither exists. If you ever wire them up, update this section.
+There is **no** `/api/version` endpoint. CI (the `release.yml` workflow) **does** inject the semantic version: it passes `APP_VERSION` (e.g. `0.6.0`) and `GIT_SHA` as Docker build args, which the Dockerfile turns into env vars, and `server.js` substitutes `APP_VERSION` into the `__APP_VERSION__` asset cache-bust placeholders. So in production `__APP_VERSION__` now resolves to the real release version instead of `'dev'`. This is separate from the hand-bumped `BUILD_MARKER` badge above, which you must still bump on every shipped change.
