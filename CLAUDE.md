@@ -219,7 +219,7 @@ Non-conventional subjects still work but land under a generic "🔧 Other Change
 ### Docker
 
 The Dockerfile:
-- Base: `node:20-alpine`
+- Base: `node:24-alpine`
 - Installs production deps
 - Accepts `APP_VERSION` and `GIT_SHA` build args, sets them as env vars
 - Exposes port 3000
