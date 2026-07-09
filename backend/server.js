@@ -430,7 +430,7 @@ app.post('/api/duel/room/:code/progress', auth, (req, res) => {
   res.json({ ok: true });
 });
 
-app.get('*', (req, res) => {
+app.use((req, res) => {
   const html = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
   const token = process.env.MAPBOX_TOKEN || '';
   const version = process.env.APP_VERSION || 'dev';
